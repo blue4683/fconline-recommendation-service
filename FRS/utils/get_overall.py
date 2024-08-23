@@ -13,14 +13,18 @@ keyword_path = 'FRS/schema/keyword.json'
 with open(keyword_path, 'r', encoding='utf8') as f:
     keyword = json.load(f)
 
-# 선수 능력치를 저장할 데이터 선언
-data_path = 'FRS/schema/player_info.json'
-with open(data_path, 'r', encoding='utf8') as f:
-    data = json.load(f)
+file_path = 'FRS/utils/data/player_overall_data.json'
+with open(file_path, 'r', encoding='utf8') as f:
+    player_data = json.load(f)
 
-player_data = dict()
+buffer = len(player_data)
+cnt = buffer
+for player in players[buffer:]:
+    # 선수 능력치를 저장할 데이터 선언
+    data_path = 'FRS/schema/player_info.json'
+    with open(data_path, 'r', encoding='utf8') as f:
+        data = json.load(f)
 
-for player in players:
     id, name = player['id'], player['name']
     data['name'] = name
     url = f'https://fconline.nexon.com/DataCenter/PlayerInfo?spid={id}'
@@ -97,7 +101,11 @@ for player in players:
         data['team_colors'].append(club_div[1].get_text())
 
     player_data[id] = data
+    cnt += 1
+    if not cnt % 100 or cnt == len(players):
+        with open(file_path, 'w', encoding='utf8') as f:
+            json.dump(player_data, f, ensure_ascii=False)
 
-file_path = 'FRS/utils/data/player_overall_data.json'
-with open(file_path, 'w', encoding='utf8') as f:
-    json.dump(player_data, f, ensure_ascii=False)
+        print(cnt)
+
+print('크롤링 완료')

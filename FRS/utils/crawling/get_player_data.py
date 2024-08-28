@@ -1,10 +1,18 @@
-from get_response_thread import get_response
+from FRS.utils.crawling.get_response import get_response
 from get_spid import update_spid
 from process_data import get_data
 from parse_html import get_soup
 
 import json
 import time
+
+
+def chunker(iterable):
+    chunk_size = 1000
+    chunks = [iterable[i:i + chunk_size]
+              for i in range(0, len(iterable), chunk_size)]
+
+    return chunks
 
 
 def crawling():
@@ -35,7 +43,7 @@ def crawling():
 
         print(f'url {len(urls)}개 파싱 완료(중복 {len(players) - len(urls)}개)')
 
-        pages, failed_get_response, duration = get_response(urls)
+        pages, failed_get_response, duration = get_response(chunker(urls))
         print(
             f'page {len(pages)}개 request 완료 {len(failed_get_response)}개 실패 {duration}분 소요')
 
@@ -75,6 +83,7 @@ def crawling():
             print(f'{len(failed)}개 크롤링 실패')
 
         players = failed
+        del output
 
 
 if __name__ == '__main__':

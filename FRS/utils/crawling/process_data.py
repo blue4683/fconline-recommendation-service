@@ -1,5 +1,5 @@
-import concurrent.futures
 import json
+import multiprocessing
 import time
 
 # 능력치 이름에 해당하는 데이터 컬럼 사전
@@ -112,8 +112,8 @@ def process_data(player_data):
 def get_data(soups):
     start = time.time()
     output, failed = [], []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
-        results = executor.map(process_data, soups)
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        results = pool.imap(process_data, soups)
         for result in results:
             if result[0] == None:
                 failed.append(result[1])

@@ -1,4 +1,4 @@
-from FRS.utils.crawling.get_response import get_response
+from get_response import get_response
 from get_spid import update_spid
 from process_data import get_data
 from parse_html import get_soup

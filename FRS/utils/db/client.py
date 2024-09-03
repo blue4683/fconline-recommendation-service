@@ -1,12 +1,22 @@
+import os
+
+from dotenv import load_dotenv
 from pymongo import MongoClient
+
+load_dotenv()
+
+HOST = os.getenv('HOST')
+PORT = os.getenv('PORT')
+USERID = os.getenv('USERID')
+PASSWORD = os.getenv('PASSWORD')
 
 
 class Client:
-    def __init__(self, host, port, userid, password, dbname):
-        self.host = host
-        self.port = port
-        self.userid = userid
-        self.password = password
+    def __init__(self, dbname):
+        self.host = HOST
+        self.port = PORT
+        self.userid = USERID
+        self.password = PASSWORD
         self.dbname = dbname
         self.client = MongoClient(
             f'mongodb://{self.userid}:{self.password}@{self.host}', int(self.port))

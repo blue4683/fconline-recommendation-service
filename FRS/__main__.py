@@ -1,8 +1,8 @@
-from FRS.core.position_recommend import preprocess
+from FRS.core.position_recommend.recommend import recommend
 
 
 def main():
-    preprocess.run()
+    recommend()
 
 
 if __name__ == '__main__':

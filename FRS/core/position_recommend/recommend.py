@@ -1,9 +1,7 @@
+from FRS.core.position_recommend.model import Classifier, prepare
 from FRS.utils.db.client import Client
 
-import FRS.core.position_recommend.train as train
-import os
 import pandas as pd
-import pickle
 
 MODEL_PATH = 'FRS/utils/data/position_recommend_model.pickle'
 
@@ -20,14 +18,16 @@ def get_data(id):
 
     df = df.astype({'id': 'int64'})
     info_df = df[['id', 'name']]
-    data, position_encoder, _ = train.prepare(df)
+    data, position_encoder, _ = prepare(df)
     X, y = data.drop(['id', 'name', 'positions'], axis=1), data['positions']
 
     return X, y, info_df, position_encoder
 
 
-def recommend(id=['100214100', '100000250']):
-    clf = train.run()
+def recommend(id=['100214100', '100000250', '804270673']):
+    clf = Classifier()
+    clf.call(MODEL_PATH)
+
     X, y, info_df, position_encoder = get_data(id)
     predict = clf.predict(X)
     predict = pd.Series(
@@ -39,3 +39,4 @@ def recommend(id=['100214100', '100000250']):
     predict_df['predict_position'] = predict
 
     print(predict_df)
+    print(f'{clf.precision(predict, y)}%')

@@ -1,4 +1,4 @@
-from FRS.core.position_recommend.recommend import recommend
+from FRS.core.squad_recommend.recommend import recommend
 
 
 def main():

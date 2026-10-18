@@ -130,3 +130,28 @@ def test_empty_batch_makes_no_requests(transport):
     pages, failed, _ = http.get_response([])
     assert pages == failed == []
     get.assert_not_called()
+
+
+def test_form_post_preserves_default_identification(monkeypatch):
+    post = Mock(return_value=response())
+    monkeypatch.setattr(http.requests, "post", post)
+    monkeypatch.setattr(http.time, "sleep", Mock())
+    http.fetch_url(ITEM, method="POST", data={"level": 5})
+    post.assert_called_once_with(
+        ITEM[0], timeout=(5.0, 20.0), allow_redirects=False, data={"level": 5}
+    )
+
+
+def test_transport_observes_every_retry(transport):
+    send = Mock(side_effect=[response(503), response()])
+    http.fetch_url(ITEM, transport=send)
+    assert send.call_count == 2
+    assert send.call_args.args == ("GET", ITEM[0])
+
+
+@pytest.mark.parametrize("options", [{"method": "DELETE"}, {"data": {"level": 5}}])
+def test_unsupported_request_rejected_before_network(transport, options):
+    get, _ = transport
+    with pytest.raises(ValueError):
+        http.fetch_url(ITEM, **options)
+    get.assert_not_called()

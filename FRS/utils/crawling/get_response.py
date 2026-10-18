@@ -41,7 +41,9 @@ class CollectionStopped(RuntimeError):
         super().__init__(f"수집 중단: {failure['kind']}")
 
 
-def fetch_url(chunked_url, *, policy=None):
+def fetch_url(chunked_url, *, policy=None, method="GET", data=None, transport=None):
+    if method not in ("GET", "POST") or (method == "GET" and data is not None):
+        raise ValueError("GET 또는 폼 POST 요청만 지원합니다.")
     policy = policy or RequestPolicy()
     url, player_id, name = chunked_url
 
@@ -53,11 +55,17 @@ def fetch_url(chunked_url, *, policy=None):
         time.sleep(policy.request_interval)
         started = time.monotonic()
         try:
-            response = requests.get(
-                url,
-                timeout=(policy.connect_timeout, policy.read_timeout),
-                allow_redirects=False,
-            )
+            options = {
+                "timeout": (policy.connect_timeout, policy.read_timeout),
+                "allow_redirects": False,
+            }
+            if data is not None:
+                options["data"] = data
+            if transport is not None:
+                response = transport(method, url, **options)
+            else:
+                send = requests.get if method == "GET" else requests.post
+                response = send(url, **options)
         except requests.Timeout:
             raise CollectionStopped(failure("timeout")) from None
         except requests.ConnectionError:

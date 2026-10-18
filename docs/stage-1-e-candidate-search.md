@@ -49,3 +49,5 @@
 ```
 
 가상 관측의 1시간 유효 기간은 고정 테스트 입력이며 D8의 실제 신선도 정책을 정한 값이 아니다. 실존 선수·실제 수집 응답을 fixture로 넣지 않았다. Stage 1-E 공통 검색의 구현·로컬 검증은 완료했으며 원격 CI·PR 병합은 별도로 확인한다. 1-D·1-F와 Stage 1 전체의 완료를 뜻하지 않는다.
+
+최신 코드 ec5012c는 [CI 39177728968](https://github.com/blue4683/fconline-recommendation-service/actions/runs/39177728968)에서도 quality 검사를 통과했다. [PR #16](https://github.com/blue4683/fconline-recommendation-service/pull/16)을 d8f7248로 Squash merge했고 공동저자 표기가 없는지 확인했다.

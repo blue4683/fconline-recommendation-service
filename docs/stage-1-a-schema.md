@@ -48,4 +48,6 @@ Python 3.11 호환 안정 버전을 선정하도록 위임받은 기준에 따�
 
 로컬 Python 3.11.15에서 고정 의존성 설치·pip check, pytest **88개**, Ruff 린트·포맷 전체, 환경 실행 확인을 통과했다. 네트워크 없이 실제 PyMongo 클라이언트의 시간대 옵션도 확인했다. 원격 CI 결과는 이 변경의 PR checks에 남긴다.
 
+코드 커밋 `8eb040d`는 [Linux CI 39109363065](https://github.com/blue4683/fconline-recommendation-service/actions/runs/39109363065)에서도 고정 파일 설치·pip check·pytest·Ruff·환경 실행 확인을 모두 통과했다.
+
 Stage 0의 제공자 허용 확인은 미완료지만, 사용자 자동 후속 진행 요청과 D2·D3 결정에 따라 외부 데이터를 저장·사용하지 않는 공통 스키마만 구현했다. 대량 수집 허용으로 확대하지 않았다. 다음 Stage 1-B에서는 새 파서와 파일럿을 다루며 실제 요청·저장은 기존 외부 수집 제한을 따른다.

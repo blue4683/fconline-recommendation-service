@@ -172,7 +172,7 @@ class PlayerCard(CardObservation):
     dribble_skill: Positive | None = None
     left_foot: Positive | None = None
     right_foot: Positive | None = None
-    skills: tuple[Text, ...] = ()
+    skills: tuple[Text, ...] | None = None
     used: NonNegative | None = None
 
     @model_validator(mode="after")

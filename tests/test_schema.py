@@ -190,6 +190,7 @@ def test_missing_attributes_are_not_filled_with_zero():
     record = card()
     assert record.height is None
     assert record.used is None
+    assert record.skills is None
     assert record.stats.get("unknown_stat") is None
     with pytest.raises(ValidationError):
         card(stats={})

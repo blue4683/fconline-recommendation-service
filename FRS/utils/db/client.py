@@ -64,6 +64,7 @@ class Client:
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=5000,
             socketTimeoutMS=10000,
+            tz_aware=True,
             connect=False,
         )
         self.db = self.client[database]

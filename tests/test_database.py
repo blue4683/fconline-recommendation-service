@@ -68,6 +68,7 @@ def test_client_handles_special_characters_and_closes_on_failure(monkeypatch):
         serverSelectionTimeoutMS=5000,
         connectTimeoutMS=5000,
         socketTimeoutMS=10000,
+        tz_aware=True,
         connect=False,
     )
     mongo.close.assert_called_once()

@@ -261,6 +261,7 @@ class FailureKind(StrEnum):
     SLOW_RESPONSE = "slow_response"
     UNEXPECTED_RESPONSE = "unexpected_response"
     PARSING = "parsing"
+    INTERRUPTED = "interrupted"
 
 
 class CrawlLog(ObservedDocument):
@@ -269,7 +270,7 @@ class CrawlLog(ObservedDocument):
     reinforce_level: ReinforceLevel | None = None
     outcome: FetchOutcome
     attempt: Positive
-    duration_ms: NonNegative
+    duration_ms: NonNegative | None
     http_status: Annotated[int, Field(strict=True, ge=100, le=599)] | None
     failure_kind: FailureKind | None
 

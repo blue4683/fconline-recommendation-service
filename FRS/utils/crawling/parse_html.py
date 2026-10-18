@@ -1,15 +1,15 @@
-from bs4 import BeautifulSoup
-
 import multiprocessing
 import time
+
+from bs4 import BeautifulSoup
 
 
 def parse_html(page):
     response, id, name = page
-    if response == None:
-        return None, {'id': id, 'name': name}
+    if response is None:
+        return None, {"id": id, "name": name}
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.text, "html.parser")
 
     return soup, id, name
 
@@ -20,7 +20,7 @@ def get_soup(pages):
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
         results = pool.imap(parse_html, pages)
         for result in results:
-            if result[0] == None:
+            if result[0] is None:
                 failed.append(result[1])
 
             else:

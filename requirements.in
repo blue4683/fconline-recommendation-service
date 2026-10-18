@@ -1,0 +1,10 @@
+# Python 3.11 호환 비사전 릴리스를 PyPI에서 확인한 직접 의존성이다.
+beautifulsoup4==4.15.0
+numpy==2.4.6
+pandas==3.0.6
+pymongo==4.19.0
+python-dotenv==1.2.4
+requests==2.34.2
+scikit-learn==1.9.1
+tqdm==4.70.1
+xgboost==3.2.0

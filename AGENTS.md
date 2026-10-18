@@ -143,10 +143,10 @@ python -m ruff format --check .
 
 ## 프로젝트 환경
 
-Stage 1-0 완료 후 확정값으로 갱신한다. 그전까지는 아래 항목을 추측해서 채우지 않는다.
+Stage 1-0에서 확정·로컬 검증한 환경이다. 사용자 답변과 버전 근거는 `docs/stage-1-0-foundation.md`에 기록한다.
 
-- Python 버전:
-- 가상환경·의존성 설치 명령:
-- 로컬 실행 명령 (`docker compose` 등):
-- 검증 도구 설정 위치 (`pyproject.toml` 등):
-- 문서·코드 주석 언어:
+- Python 버전: 3.11.15 (`.python-version`)
+- 가상환경·의존성 설치 명령: `python3.11 -m venv .venv`, `source .venv/bin/activate`, `python -m pip install pip==26.2.1`, `python -m pip install -r requirements-dev.txt`
+- 로컬 실행 명령: `python -m FRS --check-environment` (수집·DB 접속·학습 없이 import 확인), DB는 `.env` 설정 후 `docker compose up -d mongodb`
+- 검증 도구 설정 위치: `pyproject.toml`, `.github/workflows/ci.yml`. 도구 버전은 `requirements-dev.txt`, 실행 명령은 위 필수 검증 절을 따른다.
+- 문서·코드 주석 언어: 한국어. 커밋·PR 제목의 영어 규칙은 위 정책을 유지한다.

@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 작업 브랜치: **feat/candidate-search**, 최신 origin/develop 47d6ba0 기준 생성. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **docs/model-data-contract**, 최신 origin/develop d8f7248 기준 생성. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 현재 작업: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 신규 넥슨 요청은 보내지 않았다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -153,4 +153,8 @@
 
 ## Stage 1-E 구현 현황 (2026-10-19)
 
-명시적 자료별 배치·정확 등록 포지션·충돌/미상/기한 지난 관측 제외 계약으로 순수 후보 검색과 읽기 전용 MongoDB 어댑터를 구현했다. 전체 pytest 268개·Ruff·환경·pip 검사 통과. 사용자가 Docker를 켠 뒤 고정 이미지의 임시 인증 MongoDB에서도 합성 통합 검증을 통과하고 컨테이너·볼륨을 정리했다. 검색 계약과 검증 명령·한계는 [Stage 1-E 기록](stage-1-e-candidate-search.md)을 따른다. 원격 CI와 PR 병합을 확인한 뒤 완료 보고한다. 1-D·1-F와 전체 Stage 1은 미완료다.
+명시적 자료별 배치·정확 등록 포지션·충돌/미상/기한 지난 관측 제외 계약으로 순수 후보 검색과 읽기 전용 MongoDB 어댑터를 구현했다. 전체 pytest 268개·Ruff·환경·pip 검사 통과. 사용자가 Docker를 켠 뒤 고정 이미지의 임시 인증 MongoDB에서도 합성 통합 검증을 통과하고 컨테이너·볼륨을 정리했다. 검색 계약과 검증 명령·한계는 [Stage 1-E 기록](stage-1-e-candidate-search.md)을 따른다. 최신 ec5012c의 원격 CI 39177728968 성공 후 PR #16을 d8f7248로 Squash merge했고 공동저자 없음 확인. Stage 1-E 공통 검색 완료, 1-D·1-F와 전체 Stage 1은 미완료다.
+
+## Stage 2-0 설계 선행 결정·현황 (2026-10-19)
+
+사용자가 외부 요청 없이 2-0 학습 데이터 계약 설계를 먼저 정리하도록 선택했다. 1-D·1-F는 미완료이며 이번 작업에서는 계약 코드 구현·적재·재학습·평가를 하지 않는다. 현재 코드와 저장 기본 카드 1,104개를 읽고 [계약 설계](stage-2-0-model-data-contract.md)를 작성했다. 사용자가 확정했다: **40개 피처·필수 누락 오류**, 복수 등록 포지션별 행 유지·동일 spid 함께 분할·전체 학습 클래스 확률·미학습 좌우 확장 없음, 구조·출처·해시가 검증된 명시 완료 배치 과거 관측의 오프라인 학습 사용과 추천 unknown 유지. 세 정책은 설계도 §5·§11과 AGENTS.md에 기록했다. 세부 구현 초안과 확정 정책을 구분하고 같은 결정을 다시 질문하지 않는다. PR #17의 최신 head·CI와 Squash 병합 결과를 실제 상태로 확인한다. 계약 설계는 정리했으며 Stage 2-0 코드·계약 테스트는 미완료다.

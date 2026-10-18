@@ -265,7 +265,8 @@ class FailureKind(StrEnum):
 
 class CrawlLog(ObservedDocument):
     spid: CardId | None
-    resource: Literal["metadata", "ability", "price"]
+    resource: Literal["metadata", "ability", "detail", "price"]
+    reinforce_level: ReinforceLevel | None = None
     outcome: FetchOutcome
     attempt: Positive
     duration_ms: NonNegative

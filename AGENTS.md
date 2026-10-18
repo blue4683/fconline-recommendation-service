@@ -25,6 +25,14 @@
 
 강제 푸시, 원격 브랜치 삭제, 기존 이력 재작성 등 추가 영향이 있는 작업은 일반적인 커밋·푸시 허용에 포함되지 않는다. 필요하면 이유와 영향을 설명하고 확인한다.
 
+## 브랜치 이름
+
+- 작업 브랜치는 **`<type>/<short-description>`** 형식으로 작성한다. 설명은 영어 소문자와 하이픈으로 구성한다.
+- 작업 유형에 맞는 접두사를 사용한다: 기능 추가는 `feat/`, 버그 수정은 `fix/`, 문서 변경은 `docs/`, 리팩터링은 `refactor/`, 테스트는 `test/`, 유지보수는 `chore/`.
+- 예: `feat/squad-solver`, `fix/crawler-headers`, `docs/agent-guidelines`.
+- **`codex/` 등 agent 이름을 기준으로 한 접두사는 사용하지 않는다.**
+- 브랜치 이름과 관계없이 생성 기준과 PR 대상은 `develop`으로 유지한다.
+
 ## 커밋 메시지
 
 - **Conventional Commits 형식과 영어 설명**을 사용한다.

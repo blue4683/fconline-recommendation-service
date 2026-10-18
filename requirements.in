@@ -2,6 +2,7 @@
 beautifulsoup4==4.15.0
 numpy==2.4.6
 pandas==3.0.6
+pydantic==2.14.1
 pymongo==4.19.0
 python-dotenv==1.2.4
 requests==2.34.2

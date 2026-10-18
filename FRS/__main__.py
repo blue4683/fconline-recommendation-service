@@ -12,6 +12,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.check_environment:
         for module in (
+            "FRS.schema.models",
+            "FRS.schema.scope",
             "FRS.utils.crawling.get_player_data",
             "FRS.utils.db.save_data",
             "FRS.core.position_recommend.model",

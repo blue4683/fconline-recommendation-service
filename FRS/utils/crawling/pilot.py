@@ -169,6 +169,12 @@ def ability_form(spid, level):
 
 
 class Pilot:
+    run_id = PILOT_ID
+    max_attempts = MAX_ATTEMPTS
+
+    def execution_plan(self):
+        return plan()
+
     def __init__(self, raw_path, processed_path, session):
         # 같은 승인으로 새 수집을 반복하지 않도록 기존 디렉터리는 거부한다.
         raw_path.mkdir(parents=True, exist_ok=False)
@@ -177,7 +183,7 @@ class Pilot:
         self.processed_path = processed_path
         self.session = session
         self.state = {
-            **plan(),
+            **self.execution_plan(),
             "attempts": 0,
             "status": "running",
             "started_at": now().isoformat(),
@@ -196,7 +202,7 @@ class Pilot:
         write_json(self.raw_path / "manifest.json", self.state)
 
     def transport(self, method, url, **options):
-        if self.state["attempts"] >= MAX_ATTEMPTS:
+        if self.state["attempts"] >= self.max_attempts:
             raise PilotStopped("승인된 요청 상한에 도달했습니다.")
         self.state["attempts"] += 1
         attempt = self.state["attempts"]
@@ -245,6 +251,9 @@ class Pilot:
         except requests.RequestException:
             failure = "request_error"
             raise
+        except (KeyboardInterrupt, SystemExit):
+            failure = "interrupted"
+            raise
         finally:
             elapsed = max(0, int((time.monotonic() - started) * 1000))
             stopped = failure in {
@@ -255,7 +264,7 @@ class Pilot:
                 "unexpected_response",
             }
             log = CrawlLog(
-                batch_id=PILOT_ID,
+                batch_id=self.run_id,
                 source="nexon_api" if resource == "metadata" else "nexon_web",
                 observed_at=observed,
                 delete_after=None,
@@ -321,7 +330,7 @@ class Pilot:
             return None
         entry = self.responses[("ability", spid, grade)]
         context = ParseContext(
-            batch_id=PILOT_ID,
+            batch_id=self.run_id,
             source="nexon_web",
             observed_at=entry["observed_at"],
             delete_after=None,
@@ -414,7 +423,7 @@ class Pilot:
     def report(self):
         sample = [self.cards[spid].card for spid in self.state.get("selected_ids", [])]
         return {
-            "pilot_id": PILOT_ID,
+            "pilot_id": self.run_id,
             "status": self.state["status"],
             "attempts": self.state["attempts"],
             "stop_reason": self.state.get("stop_reason"),

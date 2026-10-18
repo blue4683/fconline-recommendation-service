@@ -14,6 +14,7 @@ LOCAL_PATHS = MappingProxyType(
         "models": ROOT / "artifacts/models",
     }
 )
+PRIORITY_CLUBS = ("리버풀", "첼시", "바이에른 뮌헨")
 SUPPORTED_REINFORCEMENTS = tuple(range(5, 12))
 SUPPORTED_TEAM_COLOR_TYPES = frozenset({TeamColorType.CLUB})
 

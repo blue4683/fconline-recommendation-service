@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **docs/team-color-list-inspection** (기능 증분은 feat/player-market-data의 PR #14에서 병합 완료)
+- 현재 작업 브랜치: **feat/candidate-search**, 최신 origin/develop 47d6ba0 기준 생성. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 현재 작업: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 신규 넥슨 요청은 보내지 않았다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -150,3 +150,7 @@
 사용자가 **1-E 공통 후보 검색을 합성 데이터로 먼저 구현**하도록 선택했다. Stage 1-D의 공식 자격 조회는 위 두 오류로 미완료 상태를 유지한다. 외부 요청 없이 가상 선수·가상 수치로 공통 검색을 검증하며 D1 실데이터 경로를 데모로 전환하지 않는다. 1-D 완료 기준·수집 상한·D8 신선도 정책을 바꾸는 승인이 아니다. 기존 단계 순서와 다른 이 선택을 별도 문서 PR에 기록한다.
 
 사용자가 조회 계약도 확정했다: 자료 종류별 명시적 배치 ID, 등록 포지션 정확 일치, 충돌 관측·미상·기한 지난 자료 제외 및 사유 보고. 최신 배치 자동 선택·좌우 포지션 확장은 후속 스냅샷·D5 결정이 필요하다.
+
+## Stage 1-E 구현 현황 (2026-10-19)
+
+명시적 자료별 배치·정확 등록 포지션·충돌/미상/기한 지난 관측 제외 계약으로 순수 후보 검색과 읽기 전용 MongoDB 어댑터를 구현했다. 전체 pytest 268개·Ruff·환경·pip 검사 통과. 사용자가 Docker를 켠 뒤 고정 이미지의 임시 인증 MongoDB에서도 합성 통합 검증을 통과하고 컨테이너·볼륨을 정리했다. 검색 계약과 검증 명령·한계는 [Stage 1-E 기록](stage-1-e-candidate-search.md)을 따른다. 원격 CI와 PR 병합을 확인한 뒤 완료 보고한다. 1-D·1-F와 전체 Stage 1은 미완료다.

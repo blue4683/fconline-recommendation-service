@@ -4,9 +4,8 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 
 from FRS.schema.models import CardSalary, PlayerCard, Position, TeamColor
-from FRS.schema.scope import supports_reinforcement
+from FRS.schema.scope import PRIORITY_CLUBS, supports_reinforcement
 
-PRIORITY_CLUBS = ("리버풀", "첼시", "바이에른 뮌헨")
 SALARY_BANDS = (
     ("<=20", 1, 20),
     ("21-25", 21, 25),

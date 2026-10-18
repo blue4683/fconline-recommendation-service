@@ -60,6 +60,8 @@ MongoDB는 기존 7 계열의 안정 태그 `7.0.45-jammy`로 선정했다. [Mon
 
 CI는 Linux x86_64에서 고정 파일 설치·pip check·pytest·Ruff·환경 실행 확인을 수행한다. 기본 pytest에는 실제 DB나 외부 API 호출이 없다.
 
+Ubuntu 24.04·Python 3.11.15에서도 [GitHub Actions 실행 39107814163](https://github.com/blue4683/fconline-recommendation-service/actions/runs/39107814163)이 성공했다 (코드 커밋 `07d4684`). 이 실행은 의존성 설치·pip check·pytest·Ruff 린트·포맷·환경 실행 확인을 모두 포함한다.
+
 ## 남은 제한
 
 - 현재 파서 수정·파일럿 수집·스키마·실데이터 적재·모델 학습은 수행하지 않았다.

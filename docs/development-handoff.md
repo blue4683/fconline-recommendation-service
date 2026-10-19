@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **docs/liverpool-filtered-url**, 최신 origin/develop 2eb3d48 기준 생성. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **docs/player-search-contract**, 최신 origin/develop 284ae9b 기준 생성. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -168,3 +168,7 @@
 ## 사용자 제공 리버풀 검색 URL 확인 (2026-10-19)
 
 사용자가 strTeamColorName=리버풀이 포함된 공식 목록 URL을 제공하고 확인을 요청했다. 별도 실행 stage-1-d-filtered-url-20261019에서 그 URL만 1회 GET하여 HTTP 200을 확인했다. 리버풀 관련 팀컬러 10개, 기본 리버풀 ID 1001·4단계·11명 표시이며 멤버 검색 폼은 없었다. 상세/멤버/가격 후속 요청은 하지 않았다. 목록 검색 성공과 기존 상세 302를 구분하고 1-D 미완료를 유지한다. 원본·manifest는 Git 제외 로컬에 보관한다. 상세는 [재진단 기록](stage-1-d-reinspection.md)의 사용자 URL 절을 따른다.
+
+## 사용자 제공 선수 검색 경로 확인 (2026-10-19)
+
+/datacenter/index 사용자 URL을 별도 실행 stage-1-d-user-player-search-20261019에서 1회 GET하여 HTTP 200을 확인했다. 공식 HTML에서 리버풀 클럽 ID 9, **클럽 경력 체크 시 n1History=0·해제 시 1**, 현재 1강, 특정 팀컬러 미선택(teamcolorid=0)을 확인했다. n1History의 0을 경력 제외로 오해하지 않는다. 공식 소속 팀컬러 리버풀 선택은 별도의 teamcolorid=1001이다. 초기 #divPlayerList는 비어 있고 JS가 실제 목록을 별도 요청하므로 선수 목록·페이지 범위·팀컬러 자격은 미검증이다. 추가 외부 요청은 하지 않았다. 이 경로는 후보 탐색 진입점으로 검토할 수 있으나 1-D 완료나 새 수집 승인으로 취급하지 않는다. 상세는 재진단 기록의 선수 검색 URL 절을 따른다.

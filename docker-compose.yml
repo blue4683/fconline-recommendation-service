@@ -1,4 +1,22 @@
 services:
+  api:
+    build: .
+    image: frs-api:local
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    environment:
+      MONGO_HOST: mongodb
+      MONGO_PORT: "27017"
+      MONGO_DATABASE: ${MONGO_DATABASE:-frs}
+      MONGO_USERNAME: ${MONGO_USERNAME:?MONGO_USERNAME을 설정하세요}
+      MONGO_PASSWORD: ${MONGO_PASSWORD:?MONGO_PASSWORD를 설정하세요}
+      API_MODEL_DIR: ${API_MODEL_DIR:-}
+      API_MODEL_VERSION: ${API_MODEL_VERSION:-}
+    volumes:
+      - ./artifacts/models:/models:ro
+    depends_on:
+      - mongodb
+
   mongodb:
     image: mongo:7.0.45-jammy@sha256:7fba8c37d681a79f22a85d2b06bd5ed121a7973c0a6ca20ed4887bb0a1548ce0
     restart: unless-stopped

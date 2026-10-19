@@ -1,0 +1,7 @@
+**
+!Dockerfile
+!requirements.txt
+!FRS/
+!FRS/**/
+!FRS/**/*.py
+!FRS/schema/*.json

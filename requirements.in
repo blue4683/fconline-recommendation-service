@@ -9,3 +9,7 @@ requests==2.34.2
 scikit-learn==1.9.1
 tqdm==4.70.1
 xgboost==3.2.0
+
+# Stage 2-C HTTP API의 Python 3.11 호환 안정 버전
+fastapi==0.147.0
+uvicorn==0.54.0

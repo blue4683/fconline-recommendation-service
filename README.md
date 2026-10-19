@@ -2,7 +2,7 @@
 
 현재 스쿼드메이커에 있는 AI 추천 기능을 비슷하게 구현하는 프로젝트입니다.
 
-현재는 FRS 2.0의 데이터 스키마·현재 사이트 파서·명시 배치 후보 검색·수동 갱신 도구와 **Stage 2-0 모델 계약, 2-A 재학습, 2-B 평가 정정**을 구현했습니다. [MVP 범위·무기한 로컬 보관 정책](docs/mvp-scope.md)에 따라 실제 관측/모델은 Git에서 제외합니다. Stage 1-D 커버리지·팀컬러 발동 규칙, 1-F 실제 갱신, 2-C API와 새 스쿼드 엔진은 미완료입니다. 제공자의 수집 허용 여부도 미확정이며 종료한 수집 승인을 재사용하지 않습니다.
+현재는 FRS 2.0의 데이터 스키마·현재 사이트 파서·명시 배치 후보 검색·수동 갱신 도구와 **Stage 2-0 모델 계약, 2-A 재학습, 2-B 평가 정정, 2-C 읽기 전용 API**을 구현했습니다. [MVP 범위·무기한 로컬 보관 정책](docs/mvp-scope.md)에 따라 실제 관측/모델은 Git에서 제외합니다. Stage 1-D 커버리지·팀컬러 발동 규칙, 1-F 실제 갱신과 새 스쿼드 엔진은 미완료입니다. 제공자의 수집 허용 여부도 미확정이며 종료한 수집 승인을 재사용하지 않습니다.
 
 ## 포지션 분류 평가
 
@@ -16,7 +16,7 @@
 | 인물 그룹 / 전체 | 0 / 0 | 66.12% | 66.12% | 87.74% | 2.0710 |
 | 인물 그룹 / train | 0 / 0 | 66.12% | 66.12% | 87.74% | 2.0710 |
 
-행 분할의 카드 지표는 train에 다른 등록 라벨이 남은 카드도 포함합니다. 보류 행 지표와 분모가 다릅니다. 같은 그룹 분할에서 전체/train fit의 확률은 이번 실행에서 동일했지만 정상 모델은 train에만 fit합니다. 검증 표본이 다른 분할 사이의 점수 차이를 누수의 순수 효과로 단정하지 않습니다. 포지션별 재현율·표본 수·비교용 모델 격리·재현 명령은 [2-B 평가 기록](docs/stage-2-b-evaluation.md), 기본 모델은 [2-A 기록](docs/stage-2-a-baseline.md)을 확인하세요. 모델의 API 활성화·새 데이터 수집은 실행하지 않았습니다.
+행 분할의 카드 지표는 train에 다른 등록 라벨이 남은 카드도 포함합니다. 보류 행 지표와 분모가 다릅니다. 같은 그룹 분할에서 전체/train fit의 확률은 이번 실행에서 동일했지만 정상 모델은 train에만 fit합니다. 검증 표본이 다른 분할 사이의 점수 차이를 누수의 순수 효과로 단정하지 않습니다. 포지션별 재현율·표본 수·비교용 모델 격리·재현 명령은 [2-B 평가 기록](docs/stage-2-b-evaluation.md), 기본 모델은 [2-A 기록](docs/stage-2-a-baseline.md)을 확인하세요. API는 명시한 번들만 로드하며 실데이터 자동 적재·새 수집은 실행하지 않았습니다.
 
 ## 개발 환경
 
@@ -38,7 +38,7 @@ python -m FRS --check-environment
 - Ruff·pytest 설정: `pyproject.toml`
 - CI: `.github/workflows/ci.yml`
 
-의존성 갱신은 `.in`의 직접 버전을 바꾸고 별도 깨끗한 가상환경에 `python -m pip install -r requirements-dev.in`으로 설치한 후, `pip freeze`와 패키지 의존성 메타데이터를 대조해 두 설치용 고정 파일을 갱신합니다. macOS의 freeze에 없는 Linux 전용 `nvidia-nccl-cu12` 조건부 고정도 유지·검증해야 합니다. 고정 파일 설치, `pip check`, 아래 검증까지 수행한 변경만 반영합니다. 미래 단계의 FastAPI·LangGraph는 아직 추가하지 않았습니다.
+의존성 갱신은 `.in`의 직접 버전을 바꾸고 별도 깨끗한 가상환경에 `python -m pip install -r requirements-dev.in`으로 설치한 후, `pip freeze`와 패키지 의존성 메타데이터를 대조해 두 설치용 고정 파일을 갱신합니다. macOS의 freeze에 없는 Linux 전용 `nvidia-nccl-cu12` 조건부 고정도 유지·검증해야 합니다. 고정 파일 설치, `pip check`, 아래 검증까지 수행한 변경만 반영합니다. FastAPI·Uvicorn과 개발 테스트용 HTTPX2를 고정했습니다. LangGraph는 아직 추가하지 않았습니다.
 
 ## 검증
 
@@ -78,6 +78,16 @@ docker compose --profile tools down
 이미지는 MongoDB `7.0.45-jammy`, mongo-express `1.0.2-20-alpine3.19`의 버전과 digest를 고정했습니다. 기존 MongoDB 7 계열을 유지하며 새 named volume `frs-mongo-data`를 사용합니다. 이전 `./mongo-data`는 자동으로 연결·이관·삭제하지 않습니다. DB 초기화 계정은 새 볼륨 생성 시 설정되므로 `.env` 변경만으로 기존 계정이 바뀌지는 않습니다.
 
 현재 데이터 적재 CLI는 기존 파일 형식 호환용이며 import 시 적재하지 않습니다. 실제 수집·적재·학습은 데이터 정책과 해당 단계의 선행 조건 확인 후 진행합니다. [Stage 1-0 구현 기록](docs/stage-1-0-foundation.md)에 검증 범위와 남은 제한을 기록했습니다.
+
+## 로컬 API
+
+`.env`의 API_MODEL_DIR과 API_MODEL_VERSION에 사용할 번들 경로·매니페스트 버전을 직접 지정합니다. Compose 경로는 /models/실행ID/bundle이며 기본 API 주소는 127.0.0.1:8000입니다. 미설정이면 /health가 503을 반환하며 모델을 자동 선택하거나 학습하지 않습니다.
+
+```sh
+docker compose up -d --build
+```
+
+GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/position(명시 model_version·selection)을 제공합니다. MongoDB는 조회만 하며 unknown/만료 관측은 현재 추천에서 거부합니다. 실제 데이터 적재는 수행하지 않았습니다. 요청/오류 스키마, 호스트 실행·계정 권한·합성 Compose 검증은 [2-C API 기록](docs/stage-2-c-api.md)을 확인하세요.
 
 ## Skills
 

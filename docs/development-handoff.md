@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **feat/model-artifact-contract**, 최신 origin/develop 80f73f3 기준 생성. PR #29는 522cabb의 CI 39204368390 성공 후 80f73f3으로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #28은 7cb0961의 CI 39203361582 성공 후 777fe41로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #27은 23ea26d의 CI 39201257075 성공 후 2c21fa5로 Squash merge했고 공동저자 없음 확인. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **feat/position-baseline-training**, 최신 origin/develop afdcaf2 기준 생성. PR #30은 16b4693의 CI 39207059415 성공 후 afdcaf2로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #29는 522cabb의 CI 39204368390 성공 후 80f73f3으로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #28은 7cb0961의 CI 39203361582 성공 후 777fe41로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #27은 23ea26d의 CI 39201257075 성공 후 2c21fa5로 Squash merge했고 공동저자 없음 확인. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -263,3 +263,16 @@ artifacts.py는 모델과 공통 변환/출처/분할 기록·파일 SHA256·정
 Stage 2-0 계약 코드는 합성 검증 범위에서 완료한다. 다음 2-A/2-B의 실제 학습 배치·분할 비율/시드는 아직 미확정이며 실제 학습 실행도 이번 승인에 포함하지 않는다. 1-D·1-F 전체 미완료, 외부 수집 예외 종료, 기존 unknown 원본과 사용자 미추적 파일 보존은 유지한다.
 
 최종 로컬 검증은 새 합성 50개·전체 pytest 553개·Ruff 린트/포맷·환경 import·pip check 통과다. 원시 입력과 새 산출물 관련 143개가 통과했다. Stage 2-0 계약 코드는 합성 범위의 완료 기준을 충족했으며 2-A/2-B 실데이터 검증을 완료한 뜻은 아니다. 원격 최신 head·CI·병합은 PR에서 확인한다.
+
+
+## Stage 2-A/2-B 실제 학습 승인과 2-A 실행 (2026-10-19)
+
+사용자가 실제 학습/평가/로컬 저장을 위해 1-B/C 1,104카드와 70/30·분할 시드 123을 선택했다. 과거 합성 전용 제한은 이 2-A/2-B 범위에서 해제했다. 신규 수집·1-D 합치기·최신 관측 선택 승인은 아니다.
+
+현재 feat/position-baseline-training는 afdcaf2 기준이다. train.py 기본값은 계획이며 새 실행 ID만 --run으로 수행한다. stage-2-a-20261019-001은 네트워크 차단·원본 검증 후 완료했다. 학습 772카드/1,191행, 검증 332카드/549행, 카드 중복 0·인물 중복 84. 2024 XGBoost 설정/현재 런타임·CPU 1스레드로 학습했고 bundle 저장/로드 확률이 같았다. 원본 1,104 unknown은 유지했다. 모델 버전 4c4e1562cbb181ab99e45e6d1d6ab14c8a6eda3886682c8878694502db2e3be2다.
+
+등록 라벨 포함률 69.40%·카드 하나 이상 92.17%·평균 집합 2.0602이며 LWB 0/9·RWB 0/1 한계가 있다. 산출물은 artifacts/models/stage-2-a-20261019-001에 Git 제외 보관한다. 이번 실행을 자동 덮어쓰지 않는다. 상세 docs/stage-2-a-baseline.md.
+
+2-A 병합 후 승인된 2-B 비교를 자동으로 이어간다. 행/카드/인물 분할·전처리 누수 비교 및 레거시 precision 문자열 버그 수정이 남았다. 1-D·1-F 미완료·수집 예외 종료는 유지한다.
+
+2-A 최종 로컬 검증: 전체 pytest 562개·Ruff 린트/포맷·환경 import·pip check 통과. 학습 종료 후 원본 manifest/가공 파일 집합 해시와 실행 출력 해시도 다시 대조해 불변을 확인했다. 최신 head/CI/병합은 PR에서 실제 확인한다.

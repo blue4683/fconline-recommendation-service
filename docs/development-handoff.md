@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **docs/reference-price-eligibility-policy**, 최신 origin/develop c510129 기준 생성. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **feat/manual-refresh-execution**, 최신 origin/develop 2c21fa5 기준 생성. PR #27은 23ea26d의 CI 39201257075 성공 후 2c21fa5로 Squash merge했고 공동저자 없음 확인. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -224,3 +224,14 @@
 ## Stage 1-F 관측 의미 결정 (2026-10-19)
 
 사용자가 **공식 표시값을 참고가격(reference)**으로, **공식 소속 팀컬러 필터 결과의 카드 ID를 자격 관측 근거**로 채택했다. 0/누락은 unknown, 체결·즉시 구매 보장 없음, 경력은 보조 대조, 발동/단계/보너스는 별도다. 기존 원본·unknown은 유지하며 이후 검증된 새 배치부터 적용한다. 새 외부 요청 승인은 아니다. [관측 계약](stage-1-f-observation-policy.md)을 따르고 같은 의미 결정을 다시 질문하지 않는다. 현재 계획 명령의 자격 차단은 후속 출처 어댑터 구현에서 갱신해야 하며 실제 수집/자동 실행은 하지 않는다.
+
+
+## Stage 1-F 수동 실행기·파생 배치 (2026-10-19)
+
+현재 증분은 `feat/manual-refresh-execution`이다. reference 가격·공식 소속 필터 자격 정규화, 새 배치/명시 상한의 수동 실행기, 원본/가공 재검증을 구현했다. 기본 명령은 오프라인 계획이며 새 넥슨 HTTP는 0회다. 실행기 합성 검증을 통과했지만 실제 --run은 새 수집 범위 승인 전 실행하지 않는다. 자동 실행·자동 재개·활성 스냅샷·최신 선택·DB 적재·학습은 없다.
+
+기존 원본을 읽어 새 `stage-1-f-derived-20261019-001` 배치를 검증했다. source_mode=derived, 원래 관측 시각/해시·참조 원본 manifest 해시 보존, 기존 unknown 배치 불변이다. 카드 259·급여/강화 각 1,813·참고가격 2,142·공식 자격 306이다. 생성 당시 ok 6,172·unknown 161이며 이후 시간에는 기한을 다시 평가한다. 가격의 서로 다른 키 1,813개 중 미상 154·중복 관측 329개로, 1-E의 충돌 제외 계약을 유지한다.
+
+새 배치 명시 ST 검색은 5강/11강 각각 리버풀 3·첼시 9·뮌헨 6개다. 후보 11명 구성/N=3/모델 검증은 아니다. 가격 갱신 예정은 원래 시각 기준 10월 19일 21:41 KST, 능력치/급여는 10월 22일 09:53 KST다. 새 파싱 시각으로 미루지 않는다. 전체 pytest 410개·Ruff·환경/pip 통과, PR 최신 head/CI/병합은 실제 원격에서 확인한다.
+
+1-D의 N=3 부족(직전 경력 집계 253칸), 발동/보너스 규칙, 1-F 실제 HTTP 갱신·중복 관측/스냅샷 선택은 남아 있다. 2-0은 설계만 승인됐고 코드/학습은 미실행이다. 새 수집 승인·종료 실행 재사용·자동 스케줄러를 추정하지 않는다. 재현/제한은 [수동 갱신 기록](stage-1-f-manual-refresh.md)을 따른다.

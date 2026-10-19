@@ -16,7 +16,7 @@ from FRS.utils.crawling.enrich_cards import (
     CardEnrichment,
     source_selection,
 )
-from FRS.utils.crawling.pilot import ROOT
+from FRS.utils.crawling.pilot import ROOT, PilotStopped
 from FRS.utils.crawling.verify_enrichment import verify
 
 
@@ -115,7 +115,12 @@ def build_plan(*, target_ids, profiles, prices, profile_batch, price_batch, at):
         raise RefreshPlanError("미래 관측이 있어 갱신 시점을 판단하지 않습니다.")
     jobs = []
     for name, resources, records, count in (
-        ("display_prices", [Resource.PRICE], prices, 15),
+        (
+            "catalog_prices_and_memberships",
+            [Resource.PRICE, Resource.TEAM_COLOR],
+            prices,
+            15,
+        ),
         (
             "abilities_and_salaries",
             [Resource.ABILITY, Resource.SALARY],
@@ -151,11 +156,7 @@ def build_plan(*, target_ids, profiles, prices, profile_batch, price_batch, at):
         estimated_requests_due=sum(
             j["estimated_requests"] for j in jobs if j["refresh_due"]
         ),
-        blocked_jobs=[
-            dict(
-                resource="team_color", reason="verified_eligibility_source_unconfirmed"
-            )
-        ],
+        blocked_jobs=[],
         price_keys=len(price_values),
         unknown_price_values=sum(v[0] is None for v in price_values.values()),
         source_status_counts=dict(Counter(str(r.status) for r in (*profiles, *prices))),
@@ -166,41 +167,90 @@ def build_plan(*, target_ids, profiles, prices, profile_batch, price_batch, at):
     )
 
 
-def load_plan(*, at):
+def load_plan(*, at, profile_batch=RUN_ID, catalog_batch=SOURCE_ID):
+    from FRS.utils.crawling.refresh_run import validate_run_id
+    from FRS.utils.crawling.verify_refresh import verify as verify_refresh
+
     raw = ROOT / "data/raw" / RUN_ID
     processed = ROOT / "data/processed" / RUN_ID
     source = ROOT / "data/raw" / SOURCE_ID
     selection = source_selection(source)
-    verify(raw, processed, expected_selection=selection)
     state = json.loads((raw / "manifest.json").read_text(encoding="utf-8"))
-    if len(state["selected_ids"]) != 259:
-        raise RefreshPlanError("확정한 259개 관리 대상이 아닙니다.")
-    reader = object.__new__(CardEnrichment)
-    reader.state, reader.processed_path = state, processed
-    profiles = []
-    for spid in state["selected_ids"]:
-        records = reader.load_card(spid)
-        for key in ("player_card", "card_salary", "reinforce_stats"):
-            profiles.extend(records[key])
-    targets = set(state["selected_ids"])
-    prices = [
-        p
-        for _, rows in saved_rows(source)
-        for row in rows
-        if row.spid in targets
-        for p in row.prices
+    if (
+        len(state["selected_ids"]) != 259
+        or state.get("selection") != selection
+        or state["status"] != "completed"
+    ):
+        raise RefreshPlanError("확정한 완료 배치의 259개 관리 대상이 아닙니다.")
+    targets = state["selected_ids"]
+    cache = {}
+
+    def refreshed(batch):
+        if batch.startswith("stage-1-f-derived-"):
+            from FRS.utils.crawling.derive_refresh import verify as verify_derived
+
+            if batch not in cache:
+                cache[batch] = verify_derived(ROOT, batch, expected_targets=targets)
+            return cache[batch]
+        validate_run_id(batch)
+        if batch not in cache:
+            cache[batch] = verify_refresh(
+                ROOT / "data/raw" / batch,
+                ROOT / "data/processed" / batch,
+                expected_targets=targets,
+            )
+        return cache[batch]
+
+    if profile_batch == RUN_ID:
+        verify(raw, processed, expected_selection=selection)
+        reader = object.__new__(CardEnrichment)
+        reader.state, reader.processed_path = state, processed
+        data = {key: [] for key in ("player_card", "card_salary", "reinforce_stats")}
+        for spid in targets:
+            rows = reader.load_card(spid)
+            for key in data:
+                data[key].extend(rows[key])
+    else:
+        data = refreshed(profile_batch)
+        if not all(
+            key in data for key in ("player_card", "card_salary", "reinforce_stats")
+        ):
+            raise RefreshPlanError("능력치·급여가 없는 갱신 배치입니다.")
+    profiles = [
+        r
+        for key in ("player_card", "card_salary", "reinforce_stats")
+        for r in data[key]
     ]
+    memberships = []
+    if catalog_batch == SOURCE_ID:
+        prices = [
+            p
+            for _, rows in saved_rows(source)
+            for row in rows
+            if row.spid in targets
+            for p in row.prices
+        ]
+    else:
+        data = refreshed(catalog_batch)
+        if "card_price" not in data or "team_color" not in data:
+            raise RefreshPlanError("가격·공식 자격 관측이 없는 갱신 배치입니다.")
+        prices, memberships = data["card_price"], data["team_color"]
     result = build_plan(
-        target_ids=state["selected_ids"],
+        target_ids=targets,
         profiles=profiles,
         prices=prices,
-        profile_batch=RUN_ID,
-        price_batch=SOURCE_ID,
+        profile_batch=profile_batch,
+        price_batch=catalog_batch,
         at=at,
     )
+    result["membership_baseline"] = catalog_batch if memberships else None
+    result["membership_observations"] = len(memberships)
+    result["membership_initialization_needed"] = not memberships
     result["input_manifest_hashes"] = {
-        RUN_ID: hashlib.sha256((raw / "manifest.json").read_bytes()).hexdigest(),
-        SOURCE_ID: hashlib.sha256((source / "manifest.json").read_bytes()).hexdigest(),
+        batch: hashlib.sha256(
+            (ROOT / "data/raw" / batch / "manifest.json").read_bytes()
+        ).hexdigest()
+        for batch in sorted({RUN_ID, SOURCE_ID, profile_batch, catalog_batch})
     }
     return result
 
@@ -213,10 +263,16 @@ def main():
     parser.add_argument(
         "--at", type=datetime.fromisoformat, help="시간대를 포함한 기준 시각"
     )
+    parser.add_argument("--profile-batch-id", default=RUN_ID)
+    parser.add_argument("--catalog-batch-id", default=SOURCE_ID)
     args = parser.parse_args()
     try:
-        result = load_plan(at=args.at or datetime.now(timezone.utc))
-    except (ValueError, TypeError, OSError) as error:
+        result = load_plan(
+            at=args.at or datetime.now(timezone.utc),
+            profile_batch=args.profile_batch_id,
+            catalog_batch=args.catalog_batch_id,
+        )
+    except (ValueError, TypeError, OSError, PilotStopped) as error:
         parser.error(str(error))
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

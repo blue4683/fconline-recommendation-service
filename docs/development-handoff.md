@@ -368,3 +368,8 @@ placement.py의 PlacementQuery/PlacementResult와 placement를 구현했다. 등
 OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정하고 기존 모델 라이브러리는 유지했다. macOS arm64 실제 실행·Linux x86_64 wheel 다운로드와 aarch64 wheel 제공을 확인했다. 새 /tmp/frs-engine-deps-venv에서 고정 requirements-dev를 설치해 전체 pytest 818개(신규 합성71) 통과, Ruff·환경 import·pip check도 통과했다. 테스트는 외부 네트워크를 호출하지 않으며 넥슨 요청·DB/실데이터 스쿼드 실행·학습·API 연결은 없다. GitHub의 최신 head CI와 병합 결과는 실제 원격에서 확인한다.
 
 1-D/1-F·공식 팀컬러 발동/보너스와 D6/3-E 벤치마크는 미완료다. 다음에는 대규모 합성 벤치마크의 범위·문제 세트/시드·성공 기준을 추측하지 말고 사용자에게 확인한다. 기존 수집 예외를 재사용하거나 실제 DB/API 연결로 범위를 확대하지 않는다.
+
+
+## Stage 3-E 후속 결정 (2026-10-20)
+
+엔진 PR #43은 최신 head 33c09ec의 CI 39343754675 성공 후 7f9bb17로 develop에 Squash 병합했고 Linux x86_64 전체 검증/최종 표기/트리 일치를 확인했다. docs/synthetic-benchmark-policy는 그 최신 develop에서 분기했다. 사용자 승인으로 합성60문제(해존재30/해없음15/작은전수대조15), 포메이션3종·후보3/10/30·생성시드123, D6 유효해95%/제약·소규모최적값·상태100%/OPTIMAL 탐욕 대비 악화0을 확정했다. 지연 p50/p95는 우선 기록하고 목표는 첫 결과 후 결정한다. docs/stage-3-e-benchmark-contract.md를 따르며 DB·새 수집·실데이터/학습·API 연결과 1-D/F 완료는 아니다. 코드는 후속 기능 PR로 분리하고 실제 결과만 보고한다.

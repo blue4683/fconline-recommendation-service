@@ -42,3 +42,15 @@ Location과 응답 본문의 링크는 `http://bulletin.nexon.com/nxk/error.html
 새 원본·manifest·검사 스크립트는 `data/raw/stage-1-d-reinspection-20261019/`에 있다. 새 응답 4건의 SHA-256을 대조했다. 과거 `stage-1-d-inspection-20261018`은 stopped/6회, `stage-1-d-membership-inspection-20261019`는 stopped/1회 상태로 보존했다. 원본과 가공 데이터는 커밋하지 않는다.
 
 이번 저장소 변경은 승인·실행 결과를 기록하는 문서뿐이다. 문서 내용·상대 링크·실제 로컬 증거·Git diff를 확인하며, 코드 변경이 없어 로컬 pytest·Ruff를 재실행하지 않는다. 원격 CI는 이 PR의 최신 head에서 별도로 확인한다.
+
+## 사용자 제공 검색 URL 단건 확인
+
+2026-10-19 사용자가 아래 URL을 제공하고 직접 확인을 요청했다. 앞선 stopped 실행을 재시작하지 않고 `stage-1-d-filtered-url-20261019`라는 별도 실행에 **최대 1회·실제 1회** GET 요청을 기록했다. HTTP 기본 UA·비로그인·출처 위장 없음·리다이렉트 추적/재시도 없음 조건을 유지했다.
+
+[리버풀 이름으로 필터한 공식 팀컬러 목록](https://fconline.nexon.com/datacenter/teamcolor?strTeamColorCategory=&strTeamColorType=&strCategory=&strTeamColorName=%EB%A6%AC%EB%B2%84%ED%92%80)
+
+응답은 **HTTP 200**이며 제목은 ‘팀컬러·감독 | FC온라인 데이터센터’다. 팀컬러 항목 10개를 확인했다. 기본 ‘리버풀’은 ID 1001·4단계·11명으로 표시됐고, 나머지는 시즌·엠버서더·중원 트리오 등 리버풀 관련 팀컬러였다.
+
+이 URL은 이름 필터를 적용한 **팀컬러 목록**이다. 응답에 `#teacolorSearchform`은 없으며 소속 선수 목록·단계별 전체 발동 조건을 확보한 결과는 아니다. HTTP 200으로 목록 검색이 동작함은 확인했지만, 기존 TeamColorDetail의 302가 해결됐다고 판정하지 않는다. 상세·멤버 목록·추가 JS·다른 클럽·가격 요청은 보내지 않았다. Stage 1-D는 미완료다.
+
+원본·요청 manifest는 Git 제외 로컬 `data/raw/stage-1-d-filtered-url-20261019/`에 보관한다. 응답 SHA-256·문서 링크·Git diff를 확인했다. 저장소 변경은 문서뿐이므로 로컬 기능 테스트는 재실행하지 않는다. 이 결과는 앞서 끝난 10회 상한 진단의 남은 횟수를 재사용한 것이 아니며, 사용자 지정 URL의 단건 확인으로 종료했다.

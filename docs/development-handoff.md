@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **docs/stage-one-d-reinspection**, 최신 origin/develop d62e3a1 기준 생성. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **docs/liverpool-filtered-url**, 최신 origin/develop 2eb3d48 기준 생성. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -164,3 +164,7 @@
 사용자의 재수행 요청과 별도 새 진단 1회 승인(최대 10 HTTP 시도·초당 최대 1회·302/403/429 및 오류 즉시 중단·로그인/출처 위장 없음·로컬 보관)을 받고 실행했다. 공식 목록·현재 JS 2개는 200, 리버풀 상세는 오류 페이지 302로 **4/10회에서 stopped**다. 멤버 목록·가격·다른 클럽은 요청하지 않았다. 실행 ID는 stage-1-d-reinspection-20261019. 남은 6회 재사용·자동 재시작 금지. 두 과거 중단 실행도 보존했다. 원인 미확정이며 1-D는 미완료다. 자세한 근거와 브라우저 문맥 미재현 한계는 [재진단 기록](stage-1-d-reinspection.md)에 있다.
 
 새 요청 중단 후 local_market_report를 오프라인 재실행해 1-B·1-C 원본/가공·스키마 대조와 기존 가격 2건 파싱을 통과했다. 기본 카드 1,104개·세 클럽 경력 합집합 241개·420칸 중 관측 133개/목표 미달 351개로 이전과 같다. 출력은 Git 제외 data/processed/stage-1-d-local-report에 갱신했으며 원래 관측 시각·unknown 신선도는 유지한다. 이 작업은 신규 데이터 수집이 아니다.
+
+## 사용자 제공 리버풀 검색 URL 확인 (2026-10-19)
+
+사용자가 strTeamColorName=리버풀이 포함된 공식 목록 URL을 제공하고 확인을 요청했다. 별도 실행 stage-1-d-filtered-url-20261019에서 그 URL만 1회 GET하여 HTTP 200을 확인했다. 리버풀 관련 팀컬러 10개, 기본 리버풀 ID 1001·4단계·11명 표시이며 멤버 검색 폼은 없었다. 상세/멤버/가격 후속 요청은 하지 않았다. 목록 검색 성공과 기존 상세 302를 구분하고 1-D 미완료를 유지한다. 원본·manifest는 Git 제외 로컬에 보관한다. 상세는 [재진단 기록](stage-1-d-reinspection.md)의 사용자 URL 절을 따른다.

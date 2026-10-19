@@ -373,3 +373,12 @@ OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정�
 ## Stage 3-E 후속 결정 (2026-10-20)
 
 엔진 PR #43은 최신 head 33c09ec의 CI 39343754675 성공 후 7f9bb17로 develop에 Squash 병합했고 Linux x86_64 전체 검증/최종 표기/트리 일치를 확인했다. docs/synthetic-benchmark-policy는 그 최신 develop에서 분기했다. 사용자 승인으로 합성60문제(해존재30/해없음15/작은전수대조15), 포메이션3종·후보3/10/30·생성시드123, D6 유효해95%/제약·소규모최적값·상태100%/OPTIMAL 탐욕 대비 악화0을 확정했다. 지연 p50/p95는 우선 기록하고 목표는 첫 결과 후 결정한다. docs/stage-3-e-benchmark-contract.md를 따르며 DB·새 수집·실데이터/학습·API 연결과 1-D/F 완료는 아니다. 코드는 후속 기능 PR로 분리하고 실제 결과만 보고한다.
+
+
+## Stage 3-E 구현·측정 (2026-10-20)
+
+계약 PR #44는 최신 head c852c94의 CI 39344208593 성공 후 17e28d0으로 develop에 Squash 병합했고 표기/트리 일치를 확인했다. feat/synthetic-engine-benchmark는 그 최신 develop에서 분기했다. benchmark.py의 합성 생성기·작은 전수 탐색·D6 집계·기본 계획/새 실행ID 실행·중간 보고서와 오류 보존을 구현했다. 신규19개 포함 전체 pytest837개·Ruff 통과다.
+
+최초 stage-3-e-20261020-001은 전체 pytest와 CPU 부하가 겹쳐 원래 report.json과 별도 measurement-context.md를 보존했다. 테스트 종료 후002를 단독 실행했으며 같은 코드/문제 집합 해시를 확인했다. 최종문제 해시95cab9dccdec060fc4f9d01ff29ac330e5aa3eeb54636a9462286396cea39b88, 로컬 artifacts/benchmarks/stage-3-e-20261020-002/report.json. optimal45/infeasible15, 유효해45/45·제약107/107·전수15/15·상태180/180·탐욕대비 개선45/동점17/악화0(62회)으로 D6 기능 기준 통과다. CP-SAT 스냅샷 포함 p50/p95는27.1/206.5ms, 지연 목표는 아직 미정이다. README와 docs/stage-3-e-benchmark-results.md에 분모·재현·측정 범위를 기록했다.
+
+새 넥슨 요청·DB/실데이터·학습·API 연결은 없다. 1-D/1-F·공식 발동/보너스·지연 목표/운영 성능과 전체 Stage 3는 미완료다. 최신 head CI/병합은 실제 원격에서 확인하고 지연 기준이나 다음 선행 범위를 추측하지 않는다.

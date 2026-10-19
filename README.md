@@ -79,6 +79,8 @@ docker compose --profile tools down
 
 현재 데이터 적재 CLI는 기존 파일 형식 호환용이며 import 시 적재하지 않습니다. 실제 수집·적재·학습은 데이터 정책과 해당 단계의 선행 조건 확인 후 진행합니다. [Stage 1-0 구현 기록](docs/stage-1-0-foundation.md)에 검증 범위와 남은 제한을 기록했습니다.
 
+기존 관측에서 입력 생성·학습·매니페스트 저장/로드까지의 명령과 실제 산출물 재생 결과는 [2-D 재현성 기록](docs/stage-2-d-reproducibility.md)을 따릅니다. 수집 데이터와 모델이 없는 새 환경에서는 합성 검증만 재현할 수 있습니다.
+
 ## 로컬 API
 
 `.env`의 API_MODEL_DIR과 API_MODEL_VERSION에 사용할 번들 경로·매니페스트 버전을 직접 지정합니다. Compose 경로는 /models/실행ID/bundle이며 기본 API 주소는 127.0.0.1:8000입니다. 미설정이면 /health가 503을 반환하며 모델을 자동 선택하거나 학습하지 않습니다.

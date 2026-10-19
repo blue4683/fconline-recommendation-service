@@ -359,3 +359,12 @@ placement.py의 PlacementQuery/PlacementResult와 placement를 구현했다. 등
 ## Stage 3-B/3-C 후속 결정 (2026-10-20)
 
 스냅샷 PR #41은 최신 head 3ae9d89의 CI 39342230971 성공 후 6ab6213으로 develop에 Squash 병합했다. 이번 docs/squad-engine-contract는 해당 최신 develop에서 분기했다. 사용자 답변으로 CP-SAT·탐욕 2종·검증기 합성 선행, person_id 최대1명·11명 전원 선택 클럽 자격, 10초/1스레드/시드123, OVR 정수 목적·BP/급여 손실 없는 제약, 탐욕 고정 순서/동점 spid·강화/되돌리기 없음을 확정했다. DB·새 수집·실데이터 실행·학습·API 연결은 제외한다. D6 벤치마크·공식 발동 단계/보너스와 1-D/1-F는 미완료다. docs/stage-3-b-c-engine-contract.md에 결정/구현 경계를 기록하며 코드는 별도 기능 PR이다.
+
+
+## Stage 3-B/3-C 합성 엔진 구현 (2026-10-20)
+
+계약 PR #42는 최신 head 2b8aff2의 CI 39342860664 성공 후 a5cf24b로 develop에 Squash 병합했고 최종 공동저자/생성 표기 부재와 트리 일치를 확인했다. feat/synthetic-squad-engine은 그 최신 develop에서 분기했다. solver.py/validator.py에 CP-SAT·탐욕2종·독립 관측/제약 재검증·11인 person_id 중복/클럽/합계·손실 없는 BP/급여 정수 제약·상태/최적성 간극·응답 직전 전체 만료를 구현했다. 정책 버전 521c1b0a6ebad08ce9e9d442eab58ca2c78ecdf2284e377089ae3ac51c8d0e8e, 상세 docs/stage-3-b-c-engine-implementation.md.
+
+OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정하고 기존 모델 라이브러리는 유지했다. macOS arm64 실제 실행·Linux x86_64 wheel 다운로드와 aarch64 wheel 제공을 확인했다. 새 /tmp/frs-engine-deps-venv에서 고정 requirements-dev를 설치해 전체 pytest 818개(신규 합성71) 통과, Ruff·환경 import·pip check도 통과했다. 테스트는 외부 네트워크를 호출하지 않으며 넥슨 요청·DB/실데이터 스쿼드 실행·학습·API 연결은 없다. GitHub의 최신 head CI와 병합 결과는 실제 원격에서 확인한다.
+
+1-D/1-F·공식 팀컬러 발동/보너스와 D6/3-E 벤치마크는 미완료다. 다음에는 대규모 합성 벤치마크의 범위·문제 세트/시드·성공 기준을 추측하지 말고 사용자에게 확인한다. 기존 수집 예외를 재사용하거나 실제 DB/API 연결로 범위를 확대하지 않는다.

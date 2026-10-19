@@ -13,3 +13,6 @@ xgboost==3.2.0
 # Stage 2-C HTTP API의 Python 3.11 호환 안정 버전
 fastapi==0.147.0
 uvicorn==0.54.0
+
+# Stage 3-B CP-SAT 탐색기의 Python 3.11 호환 안정 버전
+ortools==9.15.6755

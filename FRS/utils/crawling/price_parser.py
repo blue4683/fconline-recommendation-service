@@ -9,7 +9,8 @@ from FRS.schema.models import CardPrice, DataStatus, PriceType
 from FRS.utils.crawling.ability_parser import ParseContext, ParseError
 
 
-def _bp(value):
+def parse_bp(value):
+    """속성의 절대 정수 BP를 읽는다. 0의 의미는 호출자가 구분한다."""
     if (
         value is None
         or re.fullmatch(r"(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)", value.strip()) is None
@@ -38,7 +39,7 @@ def parse_price(html: str | bytes, context: ParseContext) -> CardPrice:
     if len(values) != 1:
         raise ParseError("현재가 숫자 영역이 변경되었습니다.")
     node = values[0]
-    title, alternate = _bp(node.get("title")), _bp(node.get("alt"))
+    title, alternate = parse_bp(node.get("title")), parse_bp(node.get("alt"))
     if title != alternate:
         raise ParseError("현재가의 두 정수 속성이 서로 다릅니다.")
     try:

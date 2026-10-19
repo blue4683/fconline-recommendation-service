@@ -29,3 +29,5 @@ CP-SAT의 OPTIMAL/FEASIBLE은 독립 검증을 통과한 경우만 선수 목록
 [CP-SAT 공식 정수/상태 문서](https://developers.google.com/optimization/cp/cp_solver), [공식 시간 제한 문서](https://developers.google.com/optimization/cp/cp_tasks)를 확인했다. [OR-Tools PyPI 배포 정보](https://pypi.org/project/ortools/9.15.6755/)에서 Python >=3.9와 3.11 macOS arm64/Linux x86_64 wheel을 확인했다. 의존성 설치·실제 모델 검증·합성 결과는 후속 구현 PR에서 보고한다.
 
 검증 계획은 유효/해 없음/미확정/오류/만료 상태 구분, 중복 인물/시즌/강화·포메이션·팀컬러·관측·합계 변조 거부, 큰 정수와 소수점 없는 점수 합, 전수 탐색 대조와 탐욕 실패 사례다. 새 넥슨 요청·DB/실데이터/학습·API 연결은 없다.
+
+실제 코드·상태·정수 제약과 검증 범위는 [엔진 구현 기록](stage-3-b-c-engine-implementation.md)을 따른다.

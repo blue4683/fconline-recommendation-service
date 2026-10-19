@@ -1,5 +1,6 @@
 # Python 3.11 / macOS arm64와 Linux x86_64용 고정 의존성
 # 직접 의존성은 requirements.in 참조
+absl-py==2.5.1
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.15.1
@@ -12,12 +13,15 @@ dnspython==2.9.0
 fastapi==0.147.0
 h11==0.16.0
 idna==3.20
+immutabledict==4.3.1
 joblib==1.6.0
 narwhals==2.27.1
 numpy==2.4.6
 nvidia-nccl-cu12==2.32.3; platform_system == "Linux"
 opentelemetry-api==1.45.1
+ortools==9.15.6755
 pandas==3.0.6
+protobuf==6.33.6
 pydantic-core==2.50.1
 pydantic==2.14.1
 pymongo==4.19.0

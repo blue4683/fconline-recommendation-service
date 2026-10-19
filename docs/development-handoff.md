@@ -8,12 +8,12 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **docs/freshness-refresh-policy**, 최신 origin/develop f95cc24 기준 생성. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **feat/manual-refresh-planning**, 최신 origin/develop 2443d7e 기준 생성. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
 - 기존 사용자 미추적 파일 `.DS_Store`, `docs/FRS_2.0_설계_검토.md`, `docs/FRS_2.0_v2_설계_재검토.md`를 보존한다. 임의 staging·삭제·복원 금지.
-- 수집은 남아 있지 않다. 1-B·1-C는 완료, 1-D 소량 확인은 오류로 중단했다.
+- 실행 중인 수집은 없다. 1-B·1-C 및 1-D 상세 보강 259카드/2,072회는 완료했고, 과거 소량 진단의 오류 중단 기록은 보존한다. 갱신 계획은 오프라인이며 새 외부 실행 승인은 없다.
 
 ## 개발 운영 결정
 
@@ -25,7 +25,7 @@
 - Python 3.11.15 + `.venv` + pip. 의존성/이미지는 고정되어 있다. pytest·Ruff 린트/포맷 필수. 단위 테스트의 외부 네트워크는 차단되어 있다.
 - 비상업 개인 포트폴리오 실데이터 수집·저장·학습은 사용자 선택이다. **제공자 허용(0-B)은 미확정**이다. 사용자 선택과 제공자 허용을 혼동하지 않는다.
 - 원본·가공·백업·모델은 로컬 무기한 보관(`delete_after=null`). 실제 데이터·모델·비밀값은 Git 제외. 백업 생성·외부 저장소 연결을 승인한 뜻은 아니다.
-- 추천 신선도 D8은 미정. 수집 성공 데이터도 `status=unknown`, `valid_until=null`이다. 게임 내 팀컬러 자격도 경력 이력만으로 확인 처리하지 않는다.
+- D8 기간은 2026-10-19 확정했다: 가격 유효 24h/갱신 12h, 급여·능력치·검증된 자격 유효 7일/갱신 3일. 기존 수집 자료의 `status=unknown`, `valid_until=null`은 유지하며, 경력만으로 자격 확인 처리하지 않는다.
 - HTTP 기본 UA, 순차 요청, 최소 1초 간격. 403/429·연결 오류·timeout·비정상 응답·지연 시 중단. 자동 로그인·출처 위장·프록시 우회 금지.
 - 넥슨 앱·키 보유는 사용자 확인했지만 키를 열람하거나 인증 API를 호출하지 않았다.
 - 모바일 알림의 설정·연결·수신은 확인하지 않았다. 직접 푸시 발송 도구도 구성하지 않았다. 이 대화의 질문 도구로 의사결정을 받았다.
@@ -42,7 +42,7 @@
 
 - [PR #12](https://github.com/blue4683/fconline-recommendation-service/pull/12): 최종 head bd8653a, [최종 CI](https://github.com/blue4683/fconline-recommendation-service/actions/runs/39111687522) 성공 후 병합. 최종 공동저자 표기 없음 확인.
 - [PR #13](https://github.com/blue4683/fconline-recommendation-service/pull/13): 최종 head a03bcd1, [최종 CI](https://github.com/blue4683/fconline-recommendation-service/actions/runs/39114668001) 성공 후 병합. 최종 공동저자 표기 없음 확인.
-- 마지막 기능 검증: pytest **127개**, Ruff 린트·포맷, pip check, 환경 import 확인 통과. 마지막 결과 문서 변경 후에는 원격 CI도 통과했다.
+- Stage 1-C 병합 당시 검증: pytest **127개**, Ruff 린트·포맷, pip check, 환경 import 확인 통과. 당시 최종 결과 문서의 원격 CI도 통과했다. 최신 증분 검증은 아래 해당 단계 기록을 따른다.
 
 ## 실데이터 실행과 사용한 승인
 
@@ -209,3 +209,13 @@
 사용자가 2-0 코드 구현 대신 1-F 신선도·갱신 정책을 먼저 정했다. **D8 확정**: 가격 유효 24h/갱신 12h, 급여·능력치·검증된 팀컬러 자격 유효 7일/갱신 3일. 초기 운영 정책이며 변동 실증이나 자격/가격 의미 검증을 대신하지 않는다. **수동 갱신 명령부터, 자동 실행 꺼짐, 최근 보강 259개 카드/5~11강부터**다. 이 결정을 반복 질문하지 않는다.
 
 원래 관측 시각 기준으로 판단하고 기존 unknown/valid_until=null을 덮어쓰지 않는다. 과거 원본·다른 배치의 무기한 보관과 명시 배치 조회를 유지한다. 추가 외부 요청·스케줄러 실행은 승인하지 않았고 이전 수집 예외도 종료됐다. [1-F 정책](stage-1-f-freshness-policy.md)을 문서 PR로 정리한 뒤, 네트워크 없이 기간 판단·수동 갱신 계획 명령과 합성 테스트부터 구현한다. 1-D·1-F·2-0 전체는 미완료이며 2-0 코드 구현은 아직 승인되지 않았다.
+
+
+## Stage 1-F 기한 판단·계획 구현 (2026-10-19)
+
+확정한 D8을 `FRS/core/freshness.py`에 반영하고, `python -m FRS.utils.crawling.refresh_plan --plan`으로 완료 배치 원본/가공/선별/로그를 검증한 뒤 259개 카드의 갱신 계획을 출력하도록 했다. 현재 실행기는 없고 네트워크·DB·스케줄러·삭제·학습을 실행하지 않는다. `--run`도 없다. 기존 후보 검색의 계약을 바꾸지 않았으며 만료 경계/기존 기한을 엄격하게 평가하고 unknown을 자동 승격하지 않는다.
+
+네트워크를 차단한 실제 로컬 계획 검증에서 6,027개 원래 unknown 관측을 보존하고 전송 0회를 확인했다. 2026-10-19 13:36 KST 기준 갱신 도래 0회이며 가격 예정은 10월 19일 21:41 KST, 능력치/급여는 10월 22일 09:53 KST다. 계획용 시각일 뿐 과거 valid_until을 새로 설정한 것이 아니다. 전량 요청량 제안은 가격 목록 15+능력치/급여 1,813=1,828회이며 **새 수집 승인이 아니다.** 공식 자격 갱신은 출처/채택 계약 미확정으로 차단한다. [1-F 구현 기록](stage-1-f-refresh-planning.md)을 따른다. 추가 실행·가격 의미/자격·부분 실패 적용 계약과 1-D/1-F 전체는 미완료다.
+
+
+최신 1-F 계획 증분의 전체 검증은 pytest 366개·Ruff 린트/포맷·환경 import·pip 검사 통과다. 원격 CI·Squash merge 여부는 최신 PR에서 실제 상태를 확인한다. 정책 PR #25의 CI 39200010591 성공·2443d7e 병합과 공동저자 부재는 확인했다.

@@ -354,3 +354,8 @@ placement.py의 PlacementQuery/PlacementResult와 placement를 구현했다. 등
 범위/정책 PR #40은 최신 head CI 39341963665 통과 후 88d2ecb로 develop에 Squash 병합했다. feat/request-snapshot은 그 최신 develop에서 분기했다. SnapshotQuery·build_snapshot·RequestSnapshot으로 명시 배치 자료의 단일 읽기/복사·기본 배치 계열별 검색 결합·허용 강화별 성능/기본 배치·원래 출처·내용 해시·불변 사본·응답 시 전체 만료를 구현했다. 스냅샷 정책 버전 6b5e1adfe9f8ee4a29b5227694d92e2b10f055d6ee5fb2c73412b1633e743264, 상세 docs/stage-3-0-snapshot-implementation.md.
 
 합성 62개 포함 전체 pytest 747개·Ruff·환경 import·pip check를 통과했다. 새 넥슨 요청/DB·실데이터 스냅샷 실행·학습·solver·API 연결은 없고 기존 1-E 정확 검색은 유지한다. 메모리 고정은 DB 일관 읽기를 구현한 뜻이 아니다. D4/D6와 D5 동일 인물/팀컬러 잔여, 1-D/1-F와 전체 Stage 3는 미완료다. PR/최신 head CI/병합은 실제 원격에서 확인한다.
+
+
+## Stage 3-B/3-C 후속 결정 (2026-10-20)
+
+스냅샷 PR #41은 최신 head 3ae9d89의 CI 39342230971 성공 후 6ab6213으로 develop에 Squash 병합했다. 이번 docs/squad-engine-contract는 해당 최신 develop에서 분기했다. 사용자 답변으로 CP-SAT·탐욕 2종·검증기 합성 선행, person_id 최대1명·11명 전원 선택 클럽 자격, 10초/1스레드/시드123, OVR 정수 목적·BP/급여 손실 없는 제약, 탐욕 고정 순서/동점 spid·강화/되돌리기 없음을 확정했다. DB·새 수집·실데이터 실행·학습·API 연결은 제외한다. D6 벤치마크·공식 발동 단계/보너스와 1-D/1-F는 미완료다. docs/stage-3-b-c-engine-contract.md에 결정/구현 경계를 기록하며 코드는 별도 기능 PR이다.

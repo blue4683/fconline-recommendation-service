@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **feat/manual-refresh-execution**, 최신 origin/develop 2c21fa5 기준 생성. PR #27은 23ea26d의 CI 39201257075 성공 후 2c21fa5로 Squash merge했고 공동저자 없음 확인. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **feat/model-input-contract**, 최신 origin/develop 777fe41 기준 생성. PR #28은 7cb0961의 CI 39203361582 성공 후 777fe41로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #27은 23ea26d의 CI 39201257075 성공 후 2c21fa5로 Squash merge했고 공동저자 없음 확인. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -235,3 +235,16 @@
 새 배치 명시 ST 검색은 5강/11강 각각 리버풀 3·첼시 9·뮌헨 6개다. 후보 11명 구성/N=3/모델 검증은 아니다. 가격 갱신 예정은 원래 시각 기준 10월 19일 21:41 KST, 능력치/급여는 10월 22일 09:53 KST다. 새 파싱 시각으로 미루지 않는다. 전체 pytest 410개·Ruff·환경/pip 통과, PR 최신 head/CI/병합은 실제 원격에서 확인한다.
 
 1-D의 N=3 부족(직전 경력 집계 253칸), 발동/보너스 규칙, 1-F 실제 HTTP 갱신·중복 관측/스냅샷 선택은 남아 있다. 2-0은 설계만 승인됐고 코드/학습은 미실행이다. 새 수집 승인·종료 실행 재사용·자동 스케줄러를 추정하지 않는다. 재현/제한은 [수동 갱신 기록](stage-1-f-manual-refresh.md)을 따른다.
+
+
+## Stage 2-0 입력 계약 코드 승인·검증 (2026-10-19)
+
+사용자가 질문에 “2-0 계약 코드 구현”을 선택해, 외부 요청·학습 없이 입력 어댑터·40개 피처·포지션 라벨·동일 카드 그룹 검증을 승인했다. 과거 설계 전용 제한 중 이 범위는 현재 결정이 우선하며 AGENTS.md·설계도 §5/§11에 기록했다. 이미 답한 범위를 다시 질문하지 않는다.
+
+현재 `feat/model-input-contract`는 777fe41 기준이다. 순수 data_contract.py는 관측 키와 강화 기준을 명시하고 원시 40열을 검증한다. 숫자 int64·체형 string[python], 식별자/라벨은 X 밖에 보존, 원본 unknown/시각/기한 불변, 누락/관측 충돌은 오류다. 등록 포지션별 라벨 행과 카드 그룹 검사기를 구현했고 분할 자체는 실행하지 않는다. 명시 완료 배치 진단은 기존 원본 검증기를 사용하며 원격 요청이 없다.
+
+실제 1-B/C 배치를 네트워크 차단 후 원본부터 대조해 1,104카드·40열·1,740라벨 행·15클래스·835인물을 확인했다. 기존 1,104개 unknown과 파일 해시를 보존했다. 요약은 Git 제외 data/processed/stage-2-0-input-verification.json이다. 합성 93개 추가·전체 pytest 503개·Ruff·환경/pip 통과. PR 최신 head/CI/병합 결과는 실제 GitHub에서 확인한다.
+
+1-D·1-F 전체 미완료는 유지한다. 이번 승인에는 공통 변환/체형 인코더/스케일러, 확률 출력·모델 매니페스트의 코드·분할 비율/시드 결정·실제 분할·fit·학습·모델 로드를 포함하지 않는다. 해당 후속 계약의 미확정 정책을 질문 없이 결정하지 않는다. Stage 2-0 전체는 아직 미완료다. [입력 계약 구현](stage-2-0-input-contract.md)을 따른다.
+
+PR #29 최초 head e7ac2f9의 CI 39204127231은 테스트 503개·린트 통과 후 문서 Python 예제 포맷으로 실패했다. 예제를 포맷하고 로컬 전체 Ruff를 재확인한 새 커밋에서 CI를 다시 받는다. 실패한 검사로 병합하지 않는다. 최신 head·CI·병합 여부는 실제 원격에서 확인한다.

@@ -186,6 +186,7 @@ class LabeledInput:
     X: pd.DataFrame
     y: pd.Series
     metadata: pd.DataFrame
+    selection: InputSelection
 
     @property
     def card_groups(self):
@@ -215,6 +216,7 @@ def to_labeled_input(cards, *, selection: InputSelection) -> LabeledInput:
         X=X,
         y=pd.Series(labels, dtype=STRING_DTYPE, name="position"),
         metadata=pd.DataFrame(metadata).astype({"spid": "int64", "person_id": "int64"}),
+        selection=InputSelection.model_validate(selection.model_dump()),
     )
 
 
@@ -243,6 +245,15 @@ def validate_card_split(rows: LabeledInput, *, train_indices, test_indices):
         or rows.y.dtype != STRING_DTYPE
     ):
         raise InputContractError("카드 그룹 식별 정보가 유효하지 않습니다.")
+    if not isinstance(rows.selection, InputSelection):
+        raise InputContractError("라벨 행의 원래 관측 선택이 없습니다.")
+    selected = InputSelection.model_validate(rows.selection.model_dump())
+    expected = {(k.spid, k.batch_id, k.version) for k in selected.observations}
+    actual = set(
+        meta[["spid", "batch_id", "version"]].itertuples(index=False, name=None)
+    )
+    if actual != expected:
+        raise InputContractError("라벨 행과 원래 관측 선택이 다릅니다.")
     for _, indices in meta.groupby("spid").groups.items():
         group = meta.loc[indices]
         for _, row in group.iterrows():

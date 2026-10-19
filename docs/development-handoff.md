@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **feat/model-input-contract**, 최신 origin/develop 777fe41 기준 생성. PR #28은 7cb0961의 CI 39203361582 성공 후 777fe41로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #27은 23ea26d의 CI 39201257075 성공 후 2c21fa5로 Squash merge했고 공동저자 없음 확인. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **feat/model-artifact-contract**, 최신 origin/develop 80f73f3 기준 생성. PR #29는 522cabb의 CI 39204368390 성공 후 80f73f3으로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #28은 7cb0961의 CI 39203361582 성공 후 777fe41로 Squash merge했고 공동저자 없음·파일 일치를 확인했다. PR #27은 23ea26d의 CI 39201257075 성공 후 2c21fa5로 Squash merge했고 공동저자 없음 확인. PR #26 최신 d1793c0의 CI 39200686324 성공·Squash merge·공동저자 부재를 확인했다. PR #25는 c8166b1의 CI 39200010591 성공 후 2443d7e로 Squash merge했고 공동저자 없음 확인. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -248,3 +248,18 @@
 1-D·1-F 전체 미완료는 유지한다. 이번 승인에는 공통 변환/체형 인코더/스케일러, 확률 출력·모델 매니페스트의 코드·분할 비율/시드 결정·실제 분할·fit·학습·모델 로드를 포함하지 않는다. 해당 후속 계약의 미확정 정책을 질문 없이 결정하지 않는다. Stage 2-0 전체는 아직 미완료다. [입력 계약 구현](stage-2-0-input-contract.md)을 따른다.
 
 PR #29 최초 head e7ac2f9의 CI 39204127231은 테스트 503개·린트 통과 후 문서 Python 예제 포맷으로 실패했다. 예제를 포맷하고 로컬 전체 Ruff를 재확인한 새 커밋에서 CI를 다시 받는다. 실패한 검사로 병합하지 않는다. 최신 head·CI·병합 여부는 실제 원격에서 확인한다.
+
+
+## Stage 2-0 공통 변환·출력·매니페스트 (2026-10-19)
+
+사용자가 기존 StandardScaler·체형 정수 인코딩 유지와 미학습 체형 오류/입력 수정 요청을 확정했다. 같은 질문 범위인 공통 전처리·전체 클래스 확률·매니페스트를 합성 테스트로 구현하며 실데이터 학습은 실행하지 않는다. 현재 브랜치는 feat/model-artifact-contract, 기준 80f73f3이다. 이전 설계/입력 증분의 후속 제외 범위는 이 새 승인 범위에서 해제했다.
+
+model_contract.py는 원래 관측 선택/강화 기준과 TrainingContext를 연결하고 명시 train 행에서만 StandardScaler·체형/포지션 LabelEncoder를 fit한다. 분할 비율/시드를 선택하지 않으며 같은 객체로 transform한다. 추론 중 fit·미학습 범주 대체는 없다. probabilities.py는 전체 학습 클래스와 model_version을 반환하며 합/범위/유한성/순서를 검사한다. 0.1 목록은 별도 함수다.
+
+artifacts.py는 모델과 공통 변환/출처/분할 기록·파일 SHA256·정확한 런타임 버전을 새 로컬 디렉터리로 저장하고 manifest 해시를 model_version으로 쓴다. 명시 버전의 번들만 로드하고 파일/스펙/클래스/런타임을 검증한다. 모델 부재/변조 때 자동 학습·이전 pickle·최신 자동 선택은 없다. joblib 경로는 호출자가 작성한 로컬 산출물용이다.
+
+검증은 합성 전처리 fit과 학습하지 않는 확률 대역으로만 수행했다. 실데이터의 새 읽기·분할·전처리 fit·XGBoost fit·평가·새 수집·적재는 없다. 운영 모델 산출물을 생성하지 않았다. 최신 필수 검사·CI·PR 병합은 실제 GitHub 상태를 확인한다. [산출물 계약 기록](stage-2-0-artifact-contract.md)을 따른다.
+
+Stage 2-0 계약 코드는 합성 검증 범위에서 완료한다. 다음 2-A/2-B의 실제 학습 배치·분할 비율/시드는 아직 미확정이며 실제 학습 실행도 이번 승인에 포함하지 않는다. 1-D·1-F 전체 미완료, 외부 수집 예외 종료, 기존 unknown 원본과 사용자 미추적 파일 보존은 유지한다.
+
+최종 로컬 검증은 새 합성 50개·전체 pytest 553개·Ruff 린트/포맷·환경 import·pip check 통과다. 원시 입력과 새 산출물 관련 143개가 통과했다. Stage 2-0 계약 코드는 합성 범위의 완료 기준을 충족했으며 2-A/2-B 실데이터 검증을 완료한 뜻은 아니다. 원격 최신 head·CI·병합은 PR에서 확인한다.

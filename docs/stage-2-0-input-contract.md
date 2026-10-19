@@ -8,7 +8,10 @@
 
 ```python
 from FRS.core.position_recommend.data_contract import (
-    InputSelection, ObservationKey, to_model_input, to_labeled_input,
+    InputSelection,
+    ObservationKey,
+    to_model_input,
+    to_labeled_input,
 )
 
 # cards는 별도로 명시한 완료 배치의 원본·출처·해시 검증을 마친 PlayerCard 목록이다.
@@ -68,3 +71,5 @@ validate_card_split(labeled, train_indices=..., test_indices=...)는 호출자�
 - 실제 분할·fit·학습·모델 로드·외부 요청은 0회다. 레거시 학습 모듈이 import되지 않았음도 확인했다. 이 검증은 원시 입력/라벨 계약 검증이며 모델 정확도·학습/추론 변환 일치 검증이 아니다.
 
 실제 입력 요약·원본 manifest/가공 파일 집합 해시는 Git 제외 `data/processed/stage-2-0-input-verification.json`에 보관한다. 입력 문서 해시는 `45cc940281f63139063344dc07b8a58e093d5e4c2c344f38dd2ee3f089aa628d`다. 보고서에는 선수별 레코드나 명단을 출력하지 않으며, 이 해시를 model_version으로 사용하지 않는다. 원격 최신 head의 CI와 Squash merge 결과는 해당 PR에서 확인한다.
+
+첫 원격 CI 39204127231에서는 테스트 503개·린트가 통과했으나, 추가 문서의 Python 예제 포맷이 실패했다. 예제만 포맷한 뒤 로컬 전체 Ruff 린트/포맷을 재검증했다. 이전 실패를 통과로 처리하지 않으며 최신 head의 CI 성공 전 병합하지 않는다.

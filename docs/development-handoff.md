@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **docs/player-info-connection**, 최신 origin/develop 4b63e9e 기준 생성. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **feat/player-list-parser**, 최신 origin/develop b4dfe22 기준 생성. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -180,3 +180,14 @@
 ## 사용자 상세 페이지와 기존 구현 연결 (2026-10-19)
 
 사용자가 제공한 spid=866241084·n1Strong=1의 PlayerInfo URL을 별도 실행 stage-1-d-user-player-info-20261019에서 1회 GET하여 200을 확인했다. 초기 HTML의 클럽 경력 5행은 기존 parse_club_history로 읽혔고 리버풀 경력이 있었다. 능력치 조각은 초기 HTML에 없고 GetPlayerAbility 호출로 추가 로딩한다. 1-B/1-C의 기존 PlayerAbility 34개 능력치 파서가 있으므로 신규 PlayerList spid를 기존 조회/파서에 연결하면 된다. 이번에는 후속 JS/능력치/가격 요청을 하지 않았으며 1강 단건을 MVP 5~11강 검증으로 세지 않는다. 200개 밖의 목록 확보·가격 신선도 등 1-D 제한은 유지한다. 상세는 [검색 경로 평가](stage-1-d-search-feasibility.md) 마지막 절을 따른다.
+
+
+## 목록 파서·세 클럽 급여 필터 소량 검증 (2026-10-19)
+
+사용자가 새 소량 검증 1회·최대 20 HTTP 시도·초당 최대 1회·302/403/429 및 오류 즉시 중단·로그인/출처 위장 없음·로컬 보관을 승인했다. 페이지 전체 순회·선수 상세 대량 보강·학습은 제외한다. 같은 승인을 AGENTS.md·설계도 §5에 기록했다.
+
+`feat/player-list-parser`에서 순수 목록 파서와 저장 응답 보고 도구를 구현했다. 복수 표시 포지션과 네 능력치·5~11강 가격을 부분 관측으로 보존한다. 가격 0은 null/unknown이며 거래 불가로 간주하지 않는다. 기존 기본 카드/급여와 다른 목록 원본 해시를 무리하게 결합하지 않는다. 전체 pytest 304개·Ruff·환경/pip 통과. 신규 기능 PR의 정확한 head·CI·병합 결과는 실제 GitHub 상태를 확인한다.
+
+새 실행 `stage-1-d-salary-filter-20261019`는 **15/20회 모두 200으로 완료**했다. 최소 요청 간격 1.479412초. 리버풀 666·첼시 695·뮌헨 691개의 클럽별 고유 후보이며, 합집합 1,930개/가격 키 13,510개다. 기존 기본 카드 1,104개와 ID 교집합 132개·신규 후보 1,798개다. 245개 가격 키의 0 표시는 미상이다. 원본/가공 해시와 파서 결과를 대조했다. 남은 5회 재사용·자동 재시작 금지, 과거 실행도 보존했다. 실제 상세·능력치 보강·DB 적재·학습은 실행하지 않았다.
+
+진단은 4~20/21~25/26~30/31~35/36~99의 첫 응답만 확인했다. 급여 범위 내 반환은 검증했으나 전수성/팀컬러 자격/목표 N=3/가격 의미·D8은 미완료다. **Stage 1-D와 1-F는 미완료**를 유지한다. 다음 수집의 새 범위와 총 요청 상한은 사용자 판단이 필요하며 이번 소량 승인을 재사용하지 않는다. [목록 파서 기록](stage-1-d-player-list-parser.md)의 재현 명령으로 외부 요청 없이 저장 결과를 다시 검증할 수 있다.

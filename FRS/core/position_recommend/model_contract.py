@@ -61,7 +61,7 @@ class FitRecord(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     context: TrainingContext
     label_policy: Literal["registered_position_rows"]
-    group_key: Literal["spid"]
+    group_key: Literal["spid", "person_id"]
     split_seed: NonNegative | None
     train_indices: tuple[NonNegative, ...]
     test_indices: tuple[NonNegative, ...]
@@ -88,6 +88,11 @@ class FitRecord(BaseModel):
             raise ValueError("학습 분할 기록이 유효하지 않습니다.")
         if {self.row_spids[i] for i in train} & {self.row_spids[i] for i in test}:
             raise ValueError("학습 기록의 카드 그룹이 겹칩니다.")
+        if self.group_key == "person_id" and (
+            {self.row_spids[i] % 1_000_000 for i in train}
+            & {self.row_spids[i] % 1_000_000 for i in test}
+        ):
+            raise ValueError("학습 기록의 인물 그룹이 겹칩니다.")
         return self
 
 
@@ -229,6 +234,7 @@ def fit_training_contract(
     train_indices,
     test_indices,
     split_seed: int | None,
+    group_key="spid",
 ):
     """지정 분할을 검증하고 train의 전처리/라벨만 fit한다. 모델은 다루지 않는다."""
     if not isinstance(context, TrainingContext):
@@ -236,6 +242,13 @@ def fit_training_contract(
     context = TrainingContext.model_validate(context.model_dump())
     train, test = tuple(train_indices), tuple(test_indices)
     validate_card_split(rows, train_indices=train, test_indices=test)
+    if group_key not in {"spid", "person_id"}:
+        raise InputContractError("학습 분할의 그룹 키가 다릅니다.")
+    if group_key == "person_id" and (
+        set(rows.metadata.iloc[list(train)].person_id)
+        & set(rows.metadata.iloc[list(test)].person_id)
+    ):
+        raise InputContractError("같은 인물이 학습/검증 양쪽에 있습니다.")
     expected = {(k.spid, k.batch_id, k.version) for k in context.selection.observations}
     actual = set(
         rows.metadata[["spid", "batch_id", "version"]].itertuples(
@@ -255,7 +268,7 @@ def fit_training_contract(
     record = dict(
         context=context.model_dump(mode="json"),
         label_policy="registered_position_rows",
-        group_key="spid",
+        group_key=group_key,
         split_seed=split_seed,
         train_indices=list(map(int, train)),
         test_indices=list(map(int, test)),

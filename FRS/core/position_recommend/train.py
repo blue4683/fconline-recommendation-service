@@ -87,13 +87,13 @@ def training_context(verified):
     )
 
 
-def split_report(rows, train, test):
+def split_report(rows, train, test, *, group_key="spid"):
     def values(indices, key):
         return set(rows.metadata.iloc[list(indices)][key])
 
     return dict(
-        algorithm="GroupShuffleSplit",
-        group_key="spid",
+        algorithm="train_test_split" if group_key is None else "GroupShuffleSplit",
+        group_key=group_key,
         test_size=TEST_SIZE,
         seed=SPLIT_SEED,
         train_rows=len(train),

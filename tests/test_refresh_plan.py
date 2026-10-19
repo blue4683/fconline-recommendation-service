@@ -52,9 +52,8 @@ def test_plan_counts_shared_ability_salary_requests_once_and_sends_none(inputs):
     assert result["estimated_requests_due"] == 0
     assert result["network_requests_sent"] == 0 and not result["execution_authorized"]
     assert not result["auto_execution"] and not result["originals_modified"]
-    assert result["blocked_jobs"] == [
-        dict(resource="team_color", reason="verified_eligibility_source_unconfirmed")
-    ]
+    assert result["blocked_jobs"] == []
+    assert result["jobs"][0]["resources"] == ["price", "team_color"]
     assert [r.model_dump() for r in inputs["profiles"] + inputs["prices"]] == before
     assert all(
         r.status == "unknown" and r.valid_until is None

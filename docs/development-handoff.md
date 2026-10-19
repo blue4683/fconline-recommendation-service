@@ -347,3 +347,10 @@ placement.py의 PlacementQuery/PlacementResult와 placement를 구현했다. 등
 ## Stage 3-0 후속 결정 (2026-10-20)
 
 기본 배치 PR #39는 최신 head CI 39341642183 성공 후 5eead95로 develop에 Squash 병합했고 최종 공동저자 표기 부재와 트리 일치를 확인했다. 사용자는 순수 스냅샷/합성 테스트 선행, 허용 강화 집합에서 카드별 선택, 응답 직전 사용 관측 최저 기한이 지났으면 전체 데이터 만료를 확정했다. 자동 재계산/수집은 없으며 DB·실데이터 실행·학습·solver·API 연결은 제외한다. 기존 1-E 정확 검색은 유지하고 3-0에서 등록 계열 검색 결과를 결합한다. 상세 docs/stage-3-0-snapshot-contract.md. 이 문서 PR은 결정/범위만 기록하며 코드는 후속 기능 PR로 분리한다. 1-D/1-F·D4/D6 및 D5 동일 인물/팀컬러 잔여는 미완료다.
+
+
+## Stage 3-0 순수 스냅샷 코드 (2026-10-20)
+
+범위/정책 PR #40은 최신 head CI 39341963665 통과 후 88d2ecb로 develop에 Squash 병합했다. feat/request-snapshot은 그 최신 develop에서 분기했다. SnapshotQuery·build_snapshot·RequestSnapshot으로 명시 배치 자료의 단일 읽기/복사·기본 배치 계열별 검색 결합·허용 강화별 성능/기본 배치·원래 출처·내용 해시·불변 사본·응답 시 전체 만료를 구현했다. 스냅샷 정책 버전 6b5e1adfe9f8ee4a29b5227694d92e2b10f055d6ee5fb2c73412b1633e743264, 상세 docs/stage-3-0-snapshot-implementation.md.
+
+합성 62개 포함 전체 pytest 747개·Ruff·환경 import·pip check를 통과했다. 새 넥슨 요청/DB·실데이터 스냅샷 실행·학습·solver·API 연결은 없고 기존 1-E 정확 검색은 유지한다. 메모리 고정은 DB 일관 읽기를 구현한 뜻이 아니다. D4/D6와 D5 동일 인물/팀컬러 잔여, 1-D/1-F와 전체 Stage 3는 미완료다. PR/최신 head CI/병합은 실제 원격에서 확인한다.

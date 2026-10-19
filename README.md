@@ -18,7 +18,7 @@
 
 행 분할의 카드 지표는 train에 다른 등록 라벨이 남은 카드도 포함합니다. 보류 행 지표와 분모가 다릅니다. 같은 그룹 분할에서 전체/train fit의 확률은 이번 실행에서 동일했지만 정상 모델은 train에만 fit합니다. 검증 표본이 다른 분할 사이의 점수 차이를 누수의 순수 효과로 단정하지 않습니다. 포지션별 재현율·표본 수·비교용 모델 격리·재현 명령은 [2-B 평가 기록](docs/stage-2-b-evaluation.md), 기본 모델은 [2-A 기록](docs/stage-2-a-baseline.md)을 확인하세요. API는 명시한 번들만 로드하며 실데이터 자동 적재·새 수집은 실행하지 않았습니다.
 
-성능 점수는 별도의 [3-A 성능 계약 코드](docs/stage-3-a-performance-implementation.md)에서 포지션별 OVR÷2로 계산합니다. [등록 계열 기본 배치 계약](docs/stage-3-a-placement-implementation.md)도 합성 검증으로 구현했고 모델 확장은 꺼두었습니다. 후보 스냅샷·solver·실데이터 실행은 아직 연결하지 않았습니다.
+성능 점수는 별도의 [3-A 성능 계약 코드](docs/stage-3-a-performance-implementation.md)에서 포지션별 OVR÷2로 계산합니다. [등록 계열 기본 배치 계약](docs/stage-3-a-placement-implementation.md)도 합성 검증으로 구현했고 모델 확장은 꺼두었습니다. [요청별 순수 스냅샷](docs/stage-3-0-snapshot-implementation.md)은 후보 검색·성능·기본 배치를 결합하며 허용 강화 집합과 전체 만료 정책을 합성 자료로 검증했습니다. solver·DB/API 연결·실데이터 실행은 후속입니다.
 
 ## 개발 환경
 

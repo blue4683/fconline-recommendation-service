@@ -8,7 +8,7 @@
 
 - 저장소: `/Users/skala/workspace/fconline-recommendation-service`
 - 원격: `blue4683/fconline-recommendation-service`
-- 현재 기록 브랜치: **feat/stratified-card-enrichment**, 최신 origin/develop b91721d 기준 생성. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
+- 현재 기록 브랜치: **docs/freshness-refresh-policy**, 최신 origin/develop f95cc24 기준 생성. PR #24는 cb6df4d의 CI 39199377626 성공 후 f95cc24로 Squash merge했고 공동저자 없음 확인. PR #23은 dd140d4의 CI 39182124071 성공 후 b91721d로 Squash merge했고 공동저자 없음 확인. PR #22는 9989437의 CI 39181004882 성공 후 b4dfe22로 Squash merge했고 공동저자 없음 확인. PR #21은 946a3c7의 CI 39180466875 성공 후 4b63e9e로 Squash merge했고 공동저자 없음 확인. PR #20은 657d921의 CI 39179809929 성공 후 37f61da로 Squash merge했고 공동저자 없음 확인. PR #19는 c294f40의 CI 39179472735 성공 후 284ae9b로 Squash merge했고 공동저자 없음 확인. PR #18은 3053df1의 CI 39179015000 성공 후 2eb3d48로 Squash merge했고 공동저자 없음 확인. PR #17 설계 문서는 91bed45의 CI 39178279115 통과 후 d62e3a1로 Squash merge했고 공동저자 없음 확인. Stage 1-E 기능 브랜치는 feat/candidate-search였다. 공식 목록 진단·1-E 선행 및 조회 계약 결정 문서는 PR #15에서 f145552의 CI 39177300767 성공 후 47d6ba0로 Squash merge했다. 공동저자 없음 확인.
 - Stage 1-D 브랜치 생성 기준: **70a50137b4cb02e58702e7791be6656f09ea36e2**, 최신 origin/develop에서 생성했다.
 - 기존 완료 증분: **Stage 1-D의 오프라인 코드 증분**. 가격 파서·클럽 경력 재고 집계·로컬 보고 도구를 구현했다. Stage 1-D 전체는 미완료이며 해당 오프라인 증분에서는 신규 넥슨 요청을 보내지 않았다. 이후 소량 진단·재진단의 요청 결과는 아래 기록을 따른다. 코드 증분 [PR #14](https://github.com/blue4683/fconline-recommendation-service/pull/14)는 최신 head 25749f1의 CI 39176654235 성공 후 bcffdfe로 Squash merge했다. 공동저자 없음 확인. 상세는 `docs/stage-1-d-market-inventory.md`.
 - 중지 시 로컬에 보관한 이 문서·AGENTS.md 인수인계 링크를 재개한 작업에 포함해 버전 관리한다. 사용자 재개 요청과 최신 결정은 설계도에도 반영한다.
@@ -202,3 +202,10 @@
 기본 카드 259·급여 1,813·강화 차이값 1,813·경력/국적 1,637개를 저장했고 원본 숫자 61,642개·모든 원본/가공 해시·요청 provenance·선별·로그·강화 기준·경력 대조를 통과했다. 기존 기본 카드와 중복 26개·신규 233개·전체 배치 ID 합집합 1,337개이며 최신 관측 자동 선택은 하지 않았다. 목록-상세 306개 카드/클럽 쌍은 급여·등록 포지션·상단 OVR·4능력치·클럽 경력이 일치했다. 한 등록 RF는 별도 OVR 표에 항목이 없어 현재 position_ovr에 없으며, 다른 위치로 임의 대체하지 않았다.
 
 새 배치만의 5강 경력 기준 420칸 중 관측 206·N=3 이상 167·미달 253칸이다. 공식 자격/추천 커버리지 달성은 아니며 1-D·1-F 전체는 미완료다. pytest 334개·Ruff·환경/pip 통과, 원격 CI·병합은 최신 PR에서 확인한다. 상세 [보강 기록](stage-1-d-enrichment.md)과 오프라인 검증 명령을 따른다. 추가 외부 수집에는 새 범위가 필요하고, D8·가격 의미·팀컬러 발동 자격은 여전히 미확정이다.
+
+
+## Stage 1-F 정책 결정 (2026-10-19)
+
+사용자가 2-0 코드 구현 대신 1-F 신선도·갱신 정책을 먼저 정했다. **D8 확정**: 가격 유효 24h/갱신 12h, 급여·능력치·검증된 팀컬러 자격 유효 7일/갱신 3일. 초기 운영 정책이며 변동 실증이나 자격/가격 의미 검증을 대신하지 않는다. **수동 갱신 명령부터, 자동 실행 꺼짐, 최근 보강 259개 카드/5~11강부터**다. 이 결정을 반복 질문하지 않는다.
+
+원래 관측 시각 기준으로 판단하고 기존 unknown/valid_until=null을 덮어쓰지 않는다. 과거 원본·다른 배치의 무기한 보관과 명시 배치 조회를 유지한다. 추가 외부 요청·스케줄러 실행은 승인하지 않았고 이전 수집 예외도 종료됐다. [1-F 정책](stage-1-f-freshness-policy.md)을 문서 PR로 정리한 뒤, 네트워크 없이 기간 판단·수동 갱신 계획 명령과 합성 테스트부터 구현한다. 1-D·1-F·2-0 전체는 미완료이며 2-0 코드 구현은 아직 승인되지 않았다.

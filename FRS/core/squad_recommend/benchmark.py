@@ -37,6 +37,7 @@ from FRS.schema.scope import FORMATION_SLOTS, ROOT
 
 WHEN = datetime(2026, 1, 1, tzinfo=timezone.utc)
 CLUB = "가상클럽_벤치마크"
+LATENCY_TARGET_SECONDS = 1.0
 
 
 @dataclass(frozen=True)
@@ -470,6 +471,10 @@ def summarize(rows):
                 and v["result"]["absolute_gap"] is not None
             ],
         )
+    request_p95 = methods["cp_sat"]["request_seconds"]["p95"]
+    checks["latency_cp_request_p95"] = (
+        request_p95 is not None and request_p95 <= LATENCY_TARGET_SECONDS
+    )
     return dict(
         case_count=len(rows),
         feasible_count=len(feasible),
@@ -494,7 +499,7 @@ def summarize(rows):
         snapshot_build_seconds=_latencies([r["build_seconds"] for r in rows]),
         checks=checks,
         passed=all(checks.values()),
-        latency_target=None,
+        latency_target=LATENCY_TARGET_SECONDS,
     )
 
 
@@ -534,6 +539,7 @@ def run_benchmark(run_id, *, root=ROOT / "artifacts/benchmarks", seed=123):
         platform=platform.platform(),
         ortools=ortools.__version__,
         solver_config=SolverConfig().model_dump(),
+        latency_target_seconds=LATENCY_TARGET_SECONDS,
         engine=engine_spec(),
         implementation_sha256=sources,
         cases=[],
@@ -581,6 +587,7 @@ def main(argv=None):
                     seed=123,
                     config=SolverConfig().model_dump(),
                     requires_new_run_id=True,
+                    latency_target_seconds=LATENCY_TARGET_SECONDS,
                 )
             )
         )

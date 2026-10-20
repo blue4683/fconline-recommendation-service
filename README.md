@@ -18,7 +18,7 @@
 
 행 분할의 카드 지표는 train에 다른 등록 라벨이 남은 카드도 포함합니다. 보류 행 지표와 분모가 다릅니다. 같은 그룹 분할에서 전체/train fit의 확률은 이번 실행에서 동일했지만 정상 모델은 train에만 fit합니다. 검증 표본이 다른 분할 사이의 점수 차이를 누수의 순수 효과로 단정하지 않습니다. 포지션별 재현율·표본 수·비교용 모델 격리·재현 명령은 [2-B 평가 기록](docs/stage-2-b-evaluation.md), 기본 모델은 [2-A 기록](docs/stage-2-a-baseline.md)을 확인하세요. API는 명시한 번들만 로드하며 실데이터 자동 적재·새 수집은 실행하지 않았습니다.
 
-성능 점수는 별도의 [3-A 성능 계약 코드](docs/stage-3-a-performance-implementation.md)에서 포지션별 OVR÷2로 계산합니다. [등록 계열 기본 배치 계약](docs/stage-3-a-placement-implementation.md)도 합성 검증으로 구현했고 모델 확장은 꺼두었습니다. [요청별 순수 스냅샷](docs/stage-3-0-snapshot-implementation.md)은 후보 검색·성능·기본 배치를 결합하며 허용 강화 집합과 전체 만료 정책을 합성 자료로 검증했습니다. [CP-SAT·탐욕 비교·독립 검증기](docs/stage-3-b-c-engine-implementation.md)도 합성 자료로 구현했습니다. 동일 인물 최대 1명·전원 클럽 자격·정확한 BP/급여 합계와 응답 만료를 검증하며, [합성60문제 벤치마크](docs/stage-3-e-benchmark-results.md)의 D6 기능 기준도 통과했습니다. DB/API 연결·실데이터 실행과 지연 목표 확정은 후속입니다.
+성능 점수는 별도의 [3-A 성능 계약 코드](docs/stage-3-a-performance-implementation.md)에서 포지션별 OVR÷2로 계산합니다. [등록 계열 기본 배치 계약](docs/stage-3-a-placement-implementation.md)도 합성 검증으로 구현했고 모델 확장은 꺼두었습니다. [요청별 순수 스냅샷](docs/stage-3-0-snapshot-implementation.md)은 후보 검색·성능·기본 배치를 결합하며 허용 강화 집합과 전체 만료 정책을 합성 자료로 검증했습니다. [CP-SAT·탐욕 비교·독립 검증기](docs/stage-3-b-c-engine-implementation.md)도 합성 자료로 구현했습니다. 동일 인물 최대 1명·전원 클럽 자격·정확한 BP/급여 합계와 응답 만료를 검증하며, [합성60문제 벤치마크](docs/stage-3-e-benchmark-results.md)의 D6 기능 기준도 통과했습니다. 합성 지연 p95≤1초 기준도 통과했으며 DB/API 연결·실데이터·운영 성능은 후속입니다.
 
 ## 합성 스쿼드 벤치마크
 
@@ -30,9 +30,9 @@
 | 최저가 / 성능 탐욕 유효해 | 35/45 / 27/45 |
 | 반환해 제약 / 작은 최적값 / 상태 | 107/107 / 15/15 / 180/180 |
 | OPTIMAL의 유효 탐욕 대비 | 개선45·동점17·악화0 (62회) |
-| CP-SAT 스냅샷 포함 p50/p95 | 27.1/206.5ms |
+| CP-SAT 스냅샷 포함 p50/p95 | 24.2/194.0ms |
 
-기능 기준은 통과했으며 지연 목표는 측정 후 별도 결정합니다. 지연은 로컬 macOS arm64 합성 관측이고 DB/HTTP·프로세스 시작은 포함하지 않습니다. 가상 원본 생성/전수 탐색도 별도 평가 비용입니다. 재현은 `python -m FRS.core.squad_recommend.benchmark --run --run-id <new-run-id>`이며 [전체 결과·범위·보존 실행](docs/stage-3-e-benchmark-results.md)을 확인하세요.
+stage-3-e-20261020-003에서 기능 기준과 승인한 합성 지연 p95≤1초를 통과했습니다. 지연은 로컬 macOS arm64 합성 관측이고 DB/HTTP·프로세스 시작은 포함하지 않습니다. 가상 원본 생성/전수 탐색도 별도 평가 비용입니다. 재현은 `python -m FRS.core.squad_recommend.benchmark --run --run-id <new-run-id>`이며 [전체 결과·범위·보존 실행](docs/stage-3-e-benchmark-results.md)을 확인하세요.
 
 ## 개발 환경
 

@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App.vue';
+import { REQUEST_EXAMPLES } from '../src/contracts/requestFormat';
 import { finalFor, optimalWithNames, type ScenarioId } from '../src/mocks/fixtures';
 import { createMockTransport } from '../src/mocks/mockTransport';
 import type { Transport } from '../src/services/transport';
@@ -23,7 +24,7 @@ async function chooseMock(w: ReturnType<typeof mount>, scenario?: ScenarioId) {
   if (scenario) await w.get('#scenario').setValue(scenario);
 }
 
-async function submit(w: ReturnType<typeof mount>, text = '리버풀 4-2-3-1 예산 6조 BP 급여 210 5~8강') {
+async function submit(w: ReturnType<typeof mount>, text = REQUEST_EXAMPLES[0]!) {
   await w.get('textarea').setValue(text);
   await w.get('form').trigger('submit');
 }
@@ -204,6 +205,64 @@ describe('App', () => {
     await w.get('textarea').trigger('keydown', { key: 'Enter', ctrlKey: true });
     await flushPromises();
     expect(opened).toHaveLength(1);
+  });
+
+  it('입력 안내와 예시는 쉼표로 나눈 정형 조건문 형식이다', async () => {
+    const w = mountApp();
+    const help = w.get('#request-help').text();
+    expect(help).toContain('쉼표로 나눠');
+    for (const label of ['예산', '급여 상한', '클럽', '포메이션', '강화']) expect(help).toContain(label);
+    const shown = w.findAll('.example').map((b) => b.text());
+    expect(shown).toEqual([...REQUEST_EXAMPLES]);
+    for (const text of shown) {
+      // 백엔드 후보 준비가 되묻는 형태(BP 접미사, "이하", 클럽·포메이션 한 절)를 예시에 쓰지 않는다.
+      expect(text).not.toMatch(/BP|이하|짜줘/);
+      expect(text).toMatch(/^예산 [^,]+, 급여 [0-9]+, [^,]+, [0-9-]+, .+(으로|로) 구성해줘$/);
+    }
+  });
+
+  it('정형 조건문이 아닌 요청에는 문제 절의 원문 구간과 사유를 함께 보인다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'input_format');
+    await submit(w, '리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강으로 구성해줘');
+    await vi.waitFor(() => expect(w.find('[data-testid=issues]').exists()).toBe(true));
+    expect(w.get('[data-testid=result-title]').text()).toContain('조건을 보완');
+    expect(w.findAll('[data-testid=issue-span]').map((s) => s.text())).toEqual(['“리버풀 4-2-3-1”', '“6조 BP”', '“210 이하”']);
+    const issues = w.get('[data-testid=issues]').text();
+    expect(issues).toContain('원문');
+    expect(issues).toContain('정형 조건문으로 다시 입력');
+    expect(w.find('[data-testid=squad-row]').exists()).toBe(false);
+  });
+
+  it('해 없음이면 자리별 후보 수를 보이고 후보가 없는 자리를 짚는다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'infeasible');
+    await submit(w);
+    await vi.waitFor(() => expect(w.find('[data-testid=coverage]').exists()).toBe(true));
+    const cov = w.get('[data-testid=coverage]');
+    expect(cov.findAll('li')).toHaveLength(11);
+    expect(cov.findAll('li.empty').map((li) => li.find('.slot').text())).toEqual(['RCB', 'LCB']);
+    expect(cov.text()).toContain('후보가 없는 자리: RCB, LCB');
+    expect(w.text()).toContain('확인 시각');
+  });
+
+  it('성공 결과에는 자리별 후보 수를 따로 보이지 않는다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'optimal');
+    await submit(w);
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    expect(w.find('[data-testid=coverage]').exists()).toBe(false);
+  });
+
+  it.each([
+    ['llm_unavailable', 'selection_provider_error'],
+    ['internal_error', 'invalid_selection'],
+  ] as [ScenarioId, string][])('%s 결과는 사유 코드를 함께 보인다', async (scenario, code) => {
+    const w = mountApp();
+    await chooseMock(w, scenario);
+    await submit(w);
+    await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));
+    expect(w.get('.detail').text()).toBe(`사유 코드 ${code}`);
   });
 
   it('이전 요청의 늦은 이벤트는 현재 화면을 바꾸지 못한다', async () => {

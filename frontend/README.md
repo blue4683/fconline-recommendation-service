@@ -39,11 +39,22 @@ npm run build       # 타입 검사 후 dist/ 생성
 
 브라우저에 노출되는 설정이므로 API 키나 비밀값을 넣지 않는다.
 
+## 요청 형식
+
+백엔드 후보 준비(develop `7c56bbc`)는 쉼표로 나눈 정형 조건문만 받는다. 순서는 자유이고, 마지막에 `(으)로 구성해줘`를 붙일 수 있다.
+
+```
+예산 6조, 급여 210, 리버풀, 4-2-3-1, 5~8강으로 구성해줘
+```
+
+`예산 6조 BP`, `급여 210 이하`, `리버풀 4-2-3-1`처럼 단위·꾸밈말을 붙이거나 두 조건을 한 절에 쓰면 되묻는다. 화면의 안내와 예시는 `src/contracts/requestFormat.ts`에 있으며, 예시 3개는 위 기준에서 ready를 확인했다(WEB-003). 브라우저는 형식을 검사하거나 원문을 고치지 않는다.
+
 ## 구조
 
 ```
 src/
   contracts/webAgentV0.ts   v0 타입과 구조 검사 (금액은 10진 문자열, 상태별 불변 조건)
+  contracts/requestFormat.ts 입력 안내·예시 문장
   services/sse.ts           증분 SSE 파서
   services/agentSession.ts  요청 하나의 스트림 처리 (seq·request_id·종료 이벤트 검사)
   services/liveTransport.ts fetch 기반 POST 스트림. 재시도·재연결 없음
@@ -74,9 +85,10 @@ tests/                      Vitest 동작 테스트
 - SSE: 1바이트 청크의 한글 분할, CRLF/CR, 여러 data 행, 한 청크 여러 이벤트, heartbeat, 잘못된 JSON·버전·type, seq 누락/역전, started 누락/중복, 종료 후 이벤트, 다른 request_id, 빈 줄 없는 마지막 이벤트, 잘못된 UTF-8
 - final 전 표·설명 미노출, 실패 시 이전 표 제거, 자동 재전송 없음, 진행 중 중복 전송 차단, 기한 경과 감지와 비가역성
 - HTML처럼 생긴 이름·설명의 텍스트 표시, Ctrl/Cmd+Enter 전송, 예시는 입력만 채움
+- WEB-003 선택 필드(`code`·`coverage`·`evaluated_at`·`issues[].span`): 생략/null 허용, 범위·순서·중복·형식 오류와 목록 밖 필드 거부, 원문 구간·자리별 후보 수·사유 코드 표시
 - live transport: 본문 JSON 전송·query string 미사용·HTTP 비정상/비스트림 응답 구분·1회 호출
 
-화면은 빌드 결과를 headless Chromium으로 열어 데스크톱(1360px)·모바일(390px) 폭에서 정상·되묻기·큰 금액·프로토콜 오류 상태를 확인했다. 좁은 화면에서 표는 가로 스크롤된다.
+화면은 빌드 결과를 headless Chromium으로 열어 데스크톱(1360px)·모바일(390px) 폭에서 정상·되묻기·큰 금액·프로토콜 오류 상태와, WEB-003의 정형 조건문이 아닌 요청·해 없음(자리별 후보 수)·모델 사용 불가(사유 코드) 상태를 확인했다. 좁은 화면에서 표는 가로 스크롤된다.
 
 ## 남은 일
 

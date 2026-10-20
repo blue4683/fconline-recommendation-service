@@ -120,6 +120,88 @@ describe('parseFinal', () => {
   });
 });
 
+describe('parseFinal — WEB-003 선택 필드', () => {
+  it('선택 필드가 없거나 null이면 null로 받는다', () => {
+    const raw = clone(finalFor('needs_clarification', FIXED_NOW)!) as unknown as Record<string, unknown>;
+    expect('code' in raw).toBe(false);
+    const absent = parseFinal(raw);
+    expect(absent.code).toBeNull();
+    expect(absent.coverage).toBeNull();
+    expect(absent.evaluated_at).toBeNull();
+    expect(absent.issues[0]!.span).toBeNull();
+    const nulls = parseFinal({ ...raw, code: null, coverage: null, evaluated_at: null });
+    expect(nulls.coverage).toBeNull();
+  });
+
+  it('문제 절의 원문 구간·사유 코드·자리별 후보 수·확인 시각을 그대로 보존한다', () => {
+    const fmt = parseFinal(clone(finalFor('input_format', FIXED_NOW)));
+    expect(fmt.issues.map((i) => i.span?.text)).toEqual(['리버풀 4-2-3-1', '6조 BP', '210 이하']);
+    expect(fmt.issues[0]!.field).toBe('original');
+
+    const err = parseFinal(clone(finalFor('llm_unavailable', FIXED_NOW)));
+    expect(err.code).toBe('selection_provider_error');
+
+    const inf = parseFinal(clone(finalFor('infeasible', FIXED_NOW)));
+    expect(inf.coverage!.map((c) => c.slot)).toEqual(['GK', 'RCB', 'LCB', 'RB', 'LB', 'CDM', 'RCM', 'LCM', 'ST', 'RW', 'LW']);
+    expect(inf.coverage!.filter((c) => c.count === 0).map((c) => c.slot)).toEqual(['RCB', 'LCB']);
+    expect(inf.evaluated_at).toBe(new Date(FIXED_NOW).toISOString());
+  });
+
+  it('구간의 범위·순서·빈 text·모르는 키를 거부한다', () => {
+    const bads: unknown[] = [
+      { start: -1, end: 3, text: 'a' },
+      { start: 3, end: 3, text: 'a' },
+      { start: 0, end: 4001, text: 'a' },
+      { start: 0, end: 1, text: '' },
+      { start: 0, end: 1, text: 'a', context_id: 'ctx-001' },
+      { start: '0', end: 1, text: 'a' },
+    ];
+    for (const span of bads) {
+      const raw = clone(finalFor('input_format', FIXED_NOW)!);
+      (raw.issues[0] as unknown as Record<string, unknown>).span = span;
+      expect(() => parseFinal(raw), JSON.stringify(span)).toThrow(ContractError);
+    }
+  });
+
+  it('자리 순서가 다르거나 중복·음수·소수 후보 수면 거부한다', () => {
+    const swapped = clone(finalFor('infeasible', FIXED_NOW)!);
+    [swapped.coverage![1], swapped.coverage![2]] = [swapped.coverage![2]!, swapped.coverage![1]!];
+    expect(() => parseFinal(swapped)).toThrow(/자리 순서/);
+
+    const dup = clone(finalFor('infeasible', FIXED_NOW)!);
+    dup.coverage![2] = { ...dup.coverage![1]! };
+    expect(() => parseFinal(dup)).toThrow(/중복/);
+
+    for (const count of [-1, 1.5, '3']) {
+      const raw = clone(finalFor('infeasible', FIXED_NOW)!) as unknown as { coverage: { count: unknown }[] };
+      raw.coverage[0]!.count = count;
+      expect(() => parseFinal(raw), String(count)).toThrow(ContractError);
+    }
+    const extra = clone(finalFor('infeasible', FIXED_NOW)!) as unknown as { coverage: Record<string, unknown>[] };
+    extra.coverage[0]!.player = 'x';
+    expect(() => parseFinal(extra)).toThrow(/알 수 없는 필드/);
+  });
+
+  it('형식이 아닌 사유 코드와 시각을 거부한다', () => {
+    for (const code of ['', 'Provider Error', '오류', 'x'.repeat(65), 7]) {
+      const raw = clone(finalFor('internal_error', FIXED_NOW)!) as unknown as Record<string, unknown>;
+      raw.code = code;
+      expect(() => parseFinal(raw), String(code)).toThrow(ContractError);
+    }
+    const raw = clone(finalFor('infeasible', FIXED_NOW)!) as unknown as Record<string, unknown>;
+    raw.evaluated_at = 'yesterday';
+    expect(() => parseFinal(raw)).toThrow(ContractError);
+  });
+
+  it('선택 필드 목록에 없는 백엔드 필드는 여전히 거부한다', () => {
+    for (const key of ['kind', 'presentation_version', 'model_metadata', 'conditions_text']) {
+      const raw = clone(finalFor('infeasible', FIXED_NOW)!) as unknown as Record<string, unknown>;
+      raw[key] = 'x';
+      expect(() => parseFinal(raw), key).toThrow(/알 수 없는 필드/);
+    }
+  });
+});
+
 describe('parseEnvelope', () => {
   it('SSE 이벤트 이름과 type이 다르면 거부한다', () => {
     const data = envelope('r', 0, 'started', { data_mode: 'synthetic' });

@@ -141,3 +141,13 @@ def test_generation_and_measurement_do_not_use_network():
     with patch("socket.socket", side_effect=AssertionError("네트워크 금지")):
         row = benchmark.measure_case(benchmark.case_plans()[15])
     assert row["methods"]["cp_sat"]["constraint_valid"]
+
+
+@pytest.mark.parametrize("seconds,passed", [(1.0, True), (1.000001, False)])
+def test_d6_latency_target_uses_inclusive_request_p95(seconds, passed):
+    row = benchmark.measure_case(benchmark.case_plans()[15])
+    row["methods"]["cp_sat"]["request_seconds"] = seconds
+    summary = benchmark.summarize([row])
+    assert summary["latency_target"] == 1.0
+    assert summary["checks"]["latency_cp_request_p95"] is passed
+    assert not summary["checks"]["complete_case_set"]

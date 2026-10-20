@@ -574,3 +574,16 @@ HTTP/SSE 운영3항목 후속 답변을 받았다. 별도 합성 앱/127.0.0.1:8
 정책 #76은 headebe7fe3·CI39390911643 성공 후53446d6로 Squash 병합·메시지/트리를 확인했다. feat/agent-web-contract는 최신 정책을 반영했다. agent_contract/projection/events의 엄격 DTO·원문/근거/정규화 투영·불변 출력/최종 만료·64KiB 요청·SSE 직렬화와 합성55개를 구현했다. 전체pytest1,409개·Ruff·환경/pip 통과, TypeScript parser12final/42envelope/추가필드12거부를 번들Node24.19.0으로 읽기 전용 대조했다. 시스템node 라이브러리 부재는 시스템 수정 없이 우회했다.
 
 사용자가 GET /health의 시작 시 검증 기록 기반 정책도 확정했다. 실제 상태 확인·서버 실행은 아직 없으며 다음 앱 연결은 대역 검증이다. 기존 core/graph/presentation·웹/사용자 파일·실데이터/과거실행은 보존한다. 최신 CI/병합·브랜치 정리·기능 묶음 PR은 실제 상태를 확인한다. 상세 agent-web-contract-implementation.md·INT-022.
+
+## W4-2 HTTP/SSE 앱 구현 (2026-10-20)
+
+#77은 head3d0147c·CI39391464235 성공 후0d9f9a3로 Squash 병합, 원문/트리를 확인·완료 브랜치 로컬/원격 삭제했다. 최신 develop 기반 feat/synthetic-agent-api에서 Agent 앱/시작 검증/health/단일 worker·lease/150초·64KiB/409·SSE를 구현했다. 신규31개/전체pytest1,440개·Ruff·환경/pip 통과, ASGI9스트림/36이벤트를 TS파서로 대조했다.
+
+실제 모델/metadata·넥슨 요청0회·상주서버/브라우저 실행 없음이다. 새 실제 ASGI E2E(상태2+추론3·정상/누락/충돌·오류중단/기록보존)를 질문했고 답변 전 실행하지 않는다. 명시 AGENT_RUN_ID/OBSERVED_AT/MODEL_DIGEST가 필요하며 시작 자동 시간갱신/다운로드/자료·모델 최신 선택은 없다. core/graph/presentation·웹/WEB-*·사용자 미추적파일은 보존했다. 최신CI/병합/완료브랜치·master PR은 실제 상태를 확인한다. synthetic-agent-api.md·INT-023.
+
+
+## W4-2 실제 E2E 종료·중단 후 재개 (2026-10-21)
+
+사용자 승인으로2026-10-20 agent-api-e2e-20261020-001을 실행해 상태2+추론3회를 사용했다. 정상optimal11명·급여 누락/예산 충돌명확화 응답이다. 최초 검사기의 salary_cap int/문자열 비교 실패를 원래 manifest에 보존하고 별도 저장 응답 검증으로3/3 통과했다. 계획/원본/잠금·오프라인 결과 해시는 synthetic-agent-api.md에 기록했다. 승인 소진이며 재개로 초기화하지 않는다. 상주8001/브라우저/넥슨/외부전송은0이다.
+
+현재 feat/synthetic-agent-api에서 웹 담당 PR#75/#78의 최신 develop d337535를 병합해 변경을 보존했다. 웹/WEB-*를 수정하지 않고 최신TS파서로 저장된 실제3스트림/12이벤트를 대조해 통과했다. 종료 실행 재호출 없이 전체pytest/Ruff/환경/pip·문서/경계 확인과 최신head CI·develop Squash 병합 후 완료 브랜치 정리·기능묶음 master PR 생성이 남았다. master 병합/배포는 하지 않는다. 사용자 중단 전 명시한 완료 브랜치 로컬/원격 정리와 master PR 생성 승인은 재승인 없이 적용하며 최신 AGENTS의 일반 금지를 새 권한으로 확대하지 않는다.

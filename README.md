@@ -6,9 +6,11 @@
 
 AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 진행합니다. [R2 주입 그래프](docs/injected-agent-graph.md)는 테스트 대역으로 기존 엔진까지 연결했고 실제 LLM·웹/API·MCP는 후속입니다.
 
-[강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)의 [R0 순수 계산기](docs/reinforcement-derivation-implementation.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산합니다. MVP 추천 범위는 5~11강을 유지하고 가격·급여 등은 별도 자료로 다룹니다. 기존 관측/모델 변환이나 실제 수집은 실행하지 않았으며 합성 자료 연결은 후속입니다.
+[강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)의 [R0 순수 계산기](docs/reinforcement-derivation-implementation.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산합니다. MVP 추천 범위는 5~11강을 유지하고 가격·급여 등은 별도 자료로 다룹니다. R1 합성 자료에 연결했고 기존 관측/모델 변환이나 실제 수집은 실행하지 않았습니다.
 
 웹 작업 인계는 [웹 담당 설계도](docs/web-agent-blueprint.md)와 [에이전트 공용 기록](docs/agent-collaboration.md)을 사용합니다. Vue 3·Vite·TypeScript의 화면/통신 클라이언트는 웹 담당이, 엔진·Agent·API와 실제 연결은 통합 담당이 맡습니다. 웹 앱/채팅 API는 미구현이며 백엔드에서는 [R1 합성 자료 공급기](docs/synthetic-agent-material.md)까지 진행했습니다.
+
+[R3 코드 출력](docs/validated-agent-presentation.md)은 검증된 합성 스쿼드 표·정확한 문자열 금액/급여·상태 안내를 만들고 출력 직전 기한을 확인합니다. 현재 설명은 코드 템플릿이며 실제 LLM 서술·웹/API 연결은 후속입니다.
 
 ## 포지션 분류 평가
 

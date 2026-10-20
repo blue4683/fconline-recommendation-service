@@ -1,0 +1,81 @@
+:root {
+  --bg: #f3f5f2;
+  --surface: #fbfcfa;
+  --ink: #16201a;
+  --ink-2: #4e5a52;
+  --ink-3: #75817a;
+  --rule: #d3dad4;
+  --pitch: #1f5640;
+  --pitch-stripe: #23604a;
+  --chalk: #eef4ef;
+  --ok: #1f5640;
+  --info: #2c5a86;
+  --warn: #8a5a0e;
+  --bad: #a3352d;
+  --focus: #2c5a86;
+
+  --font: 'IBM Plex Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: 2rem;
+
+  color: var(--ink);
+  background: var(--bg);
+  font-family: var(--font);
+  font-size: 100%;
+  line-height: 1.6;
+  font-feature-settings: 'tnum' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

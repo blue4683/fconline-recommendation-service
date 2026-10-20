@@ -14,14 +14,17 @@ export interface MockOptions {
   delayMs?: number;
 }
 
+/** 백엔드 W4-1(FRS/api/agent_events.py PROGRESS)이 실제로 보내는 두 단계. 내부 세부 단계를 꾸며 내지 않는다. */
 const STAGES: [string, string][] = [
-  ['extract', '요청에서 조건을 찾고 있습니다'],
-  ['normalize', '필수 조건을 확인하고 있습니다'],
-  ['build', '스쿼드를 탐색하고 검증하고 있습니다'],
-  ['render', '검증된 결과로 표를 만들고 있습니다'],
-  ['narrate', '설명을 작성하고 있습니다'],
-  ['check', '설명과 표의 수치를 대조하고 있습니다'],
+  ['agent', '조건 확인과 합성 스쿼드 구성을 시작합니다.'],
+  ['render', '결과와 응답 기한을 확인합니다.'],
 ];
+
+/** 백엔드 공개 오류 코드와 안내(FRS/api/agent_projection.py ERROR_MESSAGES 중 일부). */
+const ERRORS: Record<string, string> = {
+  selection_provider_error: '조건 추출 모델을 사용할 수 없습니다. 잠시 후 새 요청을 보내 주세요.',
+  request_deadline: '응답 기한을 초과해 추천을 반환하지 않습니다.',
+};
 
 type Frame = { type: string; payload: unknown; seq?: number };
 
@@ -46,23 +49,18 @@ function frames(id: ScenarioId, now: number): Frame[] {
   const out: Frame[] = [{ type: 'started', payload: { data_mode: 'synthetic' } }];
   const progress = (n: number) => STAGES.slice(0, n).map(([stage, message]) => ({ type: 'progress', payload: { stage, message } }));
   switch (id) {
-    case 'needs_clarification':
-      out.push(...progress(2));
-      break;
-    case 'server_error':
-      out.push(...progress(3), { type: 'error', payload: { code: 'engine_failed', message: '추천 계산 중 오류가 발생했습니다.' } });
+    case 'selection_error':
+      out.push(...progress(1), { type: 'error', payload: { code: 'selection_provider_error', message: ERRORS.selection_provider_error } });
+      return out;
+    case 'request_deadline':
+      out.push(...progress(1), { type: 'error', payload: { code: 'request_deadline', message: ERRORS.request_deadline } });
       return out;
     case 'protocol_error':
-      out.push(...progress(2), { type: 'progress', payload: { stage: 'build', message: '번호가 건너뛴 이벤트' }, seq: 7 });
+      out.push(...progress(1), { type: 'progress', payload: { stage: 'render', message: '번호가 건너뛴 이벤트' }, seq: 7 });
       return out;
     case 'disconnect':
-      out.push(...progress(3));
+      out.push(...progress(1));
       return out;
-    case 'internal_error':
-    case 'llm_unavailable':
-    case 'data_expired':
-      out.push(...progress(3));
-      break;
     default:
       out.push(...progress(STAGES.length));
   }

@@ -44,6 +44,15 @@
 
 ## 진행·변경·질문 기록
 
+### INT-019 — C4 코드·실제 소량 비교 결과 (2026-10-20)
+
+- 통합 / 상태: 구현·검증·실제 비교 완료. 기준 develop1f05b44(#71), feat/ollama-candidate-selection. INT-018/C4 계약을 구현.
+- ollama_selection·공통 ollama_transport·candidate_comparison을 추가하고 직접 구간 추출기 공개 계약을 보존. 기존 normalizer/core/graph/presentation/API·웹/WEB-* 변경 없음.
+- 신규37개/전체pytest1,354개·Ruff·환경/pip 통과. 실제 candidate-selection-20261020-001은 상태4회·추론12회 completed, 서버/연결/기한/재시도0.
+- 2b 전체근거/의미5/6·8b6/6. 2b의 순서/쉼표 사례 강화ID 누락은 incomplete_coverage로 거부. 두 모델 각 미지원1개 준비 차단/미호출. 중앙 지연4.59/9.00초(로드 포함). 스키마는 모두6/6.
+- 8b를 정형 데모 후보로 추천하되 모델 채택/HTTP·SSE 운영 정책은 사용자 확인 후 결정. 실제 비교에서 엔진/DB/수집/API/웹은 미실행. 웹 DTO 확정 아님·웹 담당 수정 요청 없음.
+- 결과/계획/manifest/모델 digest·해시는 ollama-candidate-selection-results.md. 기존 실행/잠금 보존, 새12회 소진·재실행 금지. 최신 head CI/PR/병합은 실제 완료 후 기록.
+
 ### INT-017 — 후보 선택 C1~C3 코드
 
 - 날짜/담당: 2026-10-20 KST / 통합. 상태: 구현·로컬 합성 검증 완료, 원격 CI 대기.

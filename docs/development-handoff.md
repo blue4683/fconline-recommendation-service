@@ -494,3 +494,7 @@ R0 PR #58은 최신 head 1a451b6의 CI 39355861243 성공 후 a4c98ad로 develop
 R1 PR #59는 head 46a6518의 CI 39356577729 성공 후 2ce7ddb로 develop에 Squash 병합하고 최종 표기/트리를 확인했다. feat/injected-agent-graph는 이 최신 develop에서 분기했다. deps/extraction/graph.py로 추출기·자료·배치·시계의 명시 주입과 단일 요청 LangGraph를 구현한다. 원문/추출/정규화 문제는 자료/엔진 전에 종료하고 기존 build·독립 검증·상태/만료를 재사용한다. 외부 추적은 요청별로 비활성화하고 이력·체크포인트·재시도는 없다.
 
 공식 문서/PyPI와 고정 환경의 해석을 확인해 LangGraph 1.2.16/LangSmith SDK 0.14.11·새 의존성 22개를 고정하고 기존 핀을 유지했다. 신규 합성 23개·전체 pytest 1,176개·Ruff·환경/pip·설치 여부 무시 고정 해석이 통과했고 최신 CI는 완료 후 기록한다. 실제 Ollama 추론·표/설명/HTTP/SSE·웹/수집/실데이터 변경은 없다. 승인된 10회 모델 비교는 아직 실행하지 않았고 노드 뒤 최종 출력/만료 게이트는 R3 후속이다.
+
+## 완료 브랜치·기능 묶음 PR 정책 (2026-10-20)
+
+사용자가 기존 완료분까지 로컬·원격 삭제, 동작 가능한 기능 묶음의 검증 완료 시 develop→master PR 생성을 승인했다. master 병합/배포 승인은 아니다. 1차로 PR head/병합 도달성을 확인한 53개 브랜치를 로컬·원격에서 정리했다. docs/web-agent-handoff는 원래 작업 디렉터리에서 사용 중이고 feat/squad-web-ui는 별도 담당 브랜치라 보존했다. docs/llm-candidate-comparison·feat/position-api는 정확히 일치하는 병합 PR이 없어 보존했다. 보호 브랜치도 유지한다. 자세한 기준과 이력 제한은 git-workflow-policy.md를 따른다.

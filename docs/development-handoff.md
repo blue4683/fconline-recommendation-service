@@ -514,3 +514,11 @@ PR #62는 head 58e0484/CI39378396213 성공 후 be2b720, 정책 PR #63은 head 5
 Ollama 어댑터/1회 비교 실행기·고정 5문장/정답·엄격 JSON/원문 구간·120초 전체 기한·재시도 없음·pending 선기록/승인 잠금을 구현했다. 신규 합성 41개에 목킹 추출→실제 엔진/독립 검증/표 연결을 포함한다. 실제 첫 실행 ollama-extraction-20261020-001은 /api/version 연결 거부 1회·추론 0회에서 중단했다. 기존 manifest/잠금을 보존하고 서버 시작/새 비교를 질문했다. 답변 전 새 HTTP/모델 실행 없음. 실제 결과/모델 선정을 완료로 표시하지 않는다. 자세한 해시/제한은 ollama-extraction-comparison.md. 전체 검사/최신 head CI·병합은 실제 결과를 확인한다.
 
 현재 R4 코드의 전체 pytest 1,233개·Ruff 린트/포맷·환경 import·pip check가 통과했다. master의 develop 밖 커밋 두 개는 과거 PR #4/#5 merge commit이며 별도 파일 차이는 없다. 실제 변경 없이 merge-tree로 현재 master/develop의 결합을 확인했고 결과 tree가 develop과 일치했다. master 병합/이력 재작성은 하지 않았다.
+
+## 기능 묶음 master PR·후속 정리 (2026-10-20)
+
+develop→master 기능 묶음 PR #65를 생성했고 master 병합/배포는 하지 않았다. master 밖 두 과거 merge commit은 추가 파일 차이가 없고 merge-tree가 develop과 같은 tree를 만들었다. master 대상 CI 자동 실행은 현재 설정에 없어 본문에 실제 develop 코드/CI 검증 SHA와 한계를 적었다.
+
+초기 보류 로컬 두 브랜치는 PR #53/#32의 최종 병합 커밋 자체이며 develop에 포함됨을 확인해 추가 삭제했다. 완료 PR #62/#63/#64 브랜치도 로컬·원격 정리해 현재 누계 로컬 58·원격 56이다. docs/web-agent-handoff는 원래 디렉터리 사용 중, feat/squad-web-ui는 별도 웹 담당이라 보존했다. 현재 문서 브랜치는 검증/병합 후 HEAD를 안전하게 분리한 뒤 삭제한다. 사용자 미추적 파일·Git 제외 자료·기존 이력은 보존한다. Ollama 서버 시작/새 비교 질문은 답변 전까지 대기하며 실제 추론/모델 선정 0을 유지한다.
+
+R4 PR #64는 head 2b67f93의 CI 39379359111(quality 118484649323) 성공 후 aeb23a4로 Squash 병합했다. 최종 메시지의 공동저자/생성 표기 부재와 develop 트리 일치를 확인하고 작업 브랜치도 정리했다. 현재 문서 PR은 기능 코드 변경 없이 Git 운영 후속 사실/공용 기록/설계도 로그를 동기화한다.

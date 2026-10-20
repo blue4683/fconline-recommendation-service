@@ -19,7 +19,7 @@
 | 이 문서 작성 시작 기준 | develop ec6ff24, 강화 설계 PR #55 병합 결과. 이후 작업자는 실제 최신 develop을 다시 확인 |
 | 사용자 확정 스택 | Vue 3 + Vite + TypeScript 독립 프론트엔드 |
 | 사용자 확정 분담 | 웹: 화면·통신 클라이언트·모의 테스트. 통합: 엔진·Agent·API·실제 연결 |
-| 현재 작업 | R0~R4 코드 병합·새 비교 완료/두 모델 채택 보류. 후보 구간·ID 선택은 사용자 결정으로 설계만, 실제 Agent API 미구현 |
+| 현재 작업 | 후보 선택 C1~C3 구현/합성 검증 완료·CI 대기. 직접 구간 모델 채택 보류, 실제 ID 선택 모델/C4·Agent API 미구현 |
 | 통합 담당 | 현재 대화. 엔진/Agent/API와 공유 계약 및 PR 병합 전담 |
 | 웹 담당 | 별도 담당의 웹 모의 앱 PR #61 병합. 사용 기준/도구/제안은 WEB-001/002 유지 |
 | 웹 계약 | web-agent.v0 제안, 모의 응답용. 실제 API와 일치 확인/계약 확정 전 live 연결 대기 |
@@ -43,6 +43,17 @@
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-017 — 후보 선택 C1~C3 코드
+
+- 날짜/담당: 2026-10-20 KST / 통합. 상태: 구현·로컬 합성 검증 완료, 원격 CI 대기.
+- 기준: develop 88a1b28(PR #69), feat/controlled-candidate-selection. C0는 head 47c9f3c/CI39383810778 성공 후 88a1b28로 Squash 병합, 최종 메시지/트리 확인 후 완료 브랜치 로컬·원격 삭제. 구현 브랜치에 계약을 통합.
+- 변경: candidates/selection/wrapper의 순수 준비·불변 registry·엄격 ID·전체 출현 커버리지·SourceSpan 복원→기존 요청별 그래프. 준비 사유·선택 오류는 별도 결과로 종료하고 정상 입력만 기존 AgentRunResult에 위임.
+- 검증: 신규 84개/전체 pytest 1,317개·Ruff·환경/pip 통과. 3클럽×3포메이션 실제 CP/독립 검증/표·순서120개·값/구간/ID/변조·상한/Unicode/중첩·미호출/만료/외부 tracing 비활성화를 확인. 실제 모델 호출 0회. 상세 controlled-candidate-selection.md.
+- 호환: 기존 Ollama JSON 함수를 공통 모듈로 이동/재노출하고 회귀 확인. core/기존 graph/presentation/API/frontend·WEB-* 변경 없음. 새 wrapper는 HTTP/v0가 아니며 입력 사유 직렬화는 후속.
+- 다음: 최신 head CI/병합/브랜치 정리 후 기능 묶음 develop→master PR 생성. 실제 Ollama ID 선택 C4는 모델/범위·새 호출 승인 필요. 두 직접 구간 모델은 여전히 채택 보류.
+
+
 
 ### INT-016 — 후보 선택 구현 계약 확정
 

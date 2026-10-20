@@ -11,6 +11,7 @@ import httpx2
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from FRS.agent.extraction import ExtractionError
+from FRS.agent.json_contract import strict_json as strict_json
 from FRS.core.request_normalization import ExtractedConditions
 from FRS.core.request_normalization.amounts import MAX_SOURCE_LENGTH, SourceSpan
 
@@ -45,22 +46,6 @@ class OllamaExtractionError(ExtractionError):
     def __init__(self, code, *, stop=False, content=None):
         self.code, self.stop, self.content = code, stop, content
         super().__init__("로컬 조건 추출에 실패했습니다.")
-
-
-def _pairs(pairs):
-    result = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("duplicate_key")
-        result[key] = value
-    return result
-
-
-def strict_json(text):
-    def reject(value):
-        raise ValueError("non_finite")
-
-    return json.loads(text, object_pairs_hook=_pairs, parse_constant=reject)
 
 
 def extraction_spec():

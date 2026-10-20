@@ -16,3 +16,7 @@ uvicorn==0.54.0
 
 # Stage 3-B CP-SAT 탐색기의 Python 3.11 호환 안정 버전
 ortools==9.15.6755
+
+# Stage 4/W1 그래프와 요청별 추적 비활성화 SDK (외부 전송 꺼짐)
+langgraph==1.2.16
+langsmith==0.14.11

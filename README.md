@@ -4,7 +4,7 @@
 
 현재는 FRS 2.0의 데이터 스키마·현재 사이트 파서·명시 배치 후보 검색·수동 갱신 도구와 **Stage 2-0 모델 계약, 2-A 재학습, 2-B 평가 정정, 2-C 읽기 전용 API**을 구현했습니다. [MVP 범위·무기한 로컬 보관 정책](docs/mvp-scope.md)에 따라 실제 관측/모델은 Git에서 제외합니다. Stage 1-D 커버리지·팀컬러 발동 규칙, 1-F 실제 갱신과 스쿼드의 실데이터 통합은 미완료입니다. 제공자의 수집 허용 여부도 미확정이며 종료한 수집 승인을 재사용하지 않습니다.
 
-AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 계획합니다. 현재는 재설계 문서이며 새 Agent 구현이나 실모델 실행 결과가 아닙니다.
+AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 진행합니다. [R2 주입 그래프](docs/injected-agent-graph.md)는 테스트 대역으로 기존 엔진까지 연결했고 실제 LLM·웹/API·MCP는 후속입니다.
 
 [강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)의 [R0 순수 계산기](docs/reinforcement-derivation-implementation.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산합니다. MVP 추천 범위는 5~11강을 유지하고 가격·급여 등은 별도 자료로 다룹니다. 기존 관측/모델 변환이나 실제 수집은 실행하지 않았으며 합성 자료 연결은 후속입니다.
 
@@ -64,7 +64,7 @@ python -m FRS --check-environment
 - Ruff·pytest 설정: `pyproject.toml`
 - CI: `.github/workflows/ci.yml`
 
-의존성 갱신은 `.in`의 직접 버전을 바꾸고 별도 깨끗한 가상환경에 `python -m pip install -r requirements-dev.in`으로 설치한 후, `pip freeze`와 패키지 의존성 메타데이터를 대조해 두 설치용 고정 파일을 갱신합니다. macOS의 freeze에 없는 Linux 전용 `nvidia-nccl-cu12` 조건부 고정도 유지·검증해야 합니다. 고정 파일 설치, `pip check`, 아래 검증까지 수행한 변경만 반영합니다. FastAPI·Uvicorn과 개발 테스트용 HTTPX2를 고정했습니다. LangGraph는 아직 추가하지 않았습니다.
+의존성 갱신은 `.in`의 직접 버전을 바꾸고 별도 깨끗한 가상환경에 `python -m pip install -r requirements-dev.in`으로 설치한 후, `pip freeze`와 패키지 의존성 메타데이터를 대조해 두 설치용 고정 파일을 갱신합니다. macOS의 freeze에 없는 Linux 전용 `nvidia-nccl-cu12` 조건부 고정도 유지·검증해야 합니다. 고정 파일 설치, `pip check`, 아래 검증까지 수행한 변경만 반영합니다. FastAPI·Uvicorn·개발 테스트용 HTTPX2와 LangGraph 1.2.16/LangSmith SDK 0.14.11을 고정했습니다. 외부 추적 전송은 비활성화합니다.
 
 ## 검증
 

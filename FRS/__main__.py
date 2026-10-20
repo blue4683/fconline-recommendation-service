@@ -18,6 +18,7 @@ def main(argv=None):
             "FRS.utils.db.save_data",
             "FRS.core.position_recommend.model",
             "FRS.core.squad_recommend.recommend",
+            "FRS.agent.graph",
         ):
             importlib.import_module(module)
         print("기본 모듈 import 확인 완료 (수집·DB 접속·학습 미실행)")

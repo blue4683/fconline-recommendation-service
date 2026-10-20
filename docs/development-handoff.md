@@ -408,3 +408,9 @@ OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정�
 계약 PR #48은 최신 head109edef의 CI39345991794 성공 후837e9d5로 develop에 Squash 병합했고 최종 표기/트리 일치를 확인했다. feat/exact-amount-normalization은 그 최신 develop에서 분기했다. request_normalization/amounts.py에 SourceSpan·원문 검증·완전 토큰 소비·명시 단위/순서·Fraction 정확 정수BP·NormalizedAmount/사유 코드를 구현했다. 원문4000/금액100 코드포인트·상한34자리·원문 보존·불일치/생략/모호성 거부를 유지한다. 규칙버전23ed1cc794eb4e960fbf7ceb6054943c5bb14e0f27a04749d10cd3a71005d3d0, 상세 docs/stage-4-a-amount-implementation.md.
 
 합성92개 포함 전체pytest931개·Ruff·환경 import·pip check 통과. Unicode 근거/경계·큰수·소수/단위/쉼표·비허용 문법·한도·사양/원본 불변과 파일/네트워크 부재를 확인했다. LLM·전체 요청 조립·강화/별칭·DB/API·새수집은 없고 4-A 전체 완료는 아니다. 다음 범위와 강화/급여/정식값 문법을 추측하지 않는다. 1-D/F·공식 보너스·실데이터 추천·운영 성능은 미완료다. 실제 최신 head CI/병합을 확인한다.
+
+## Stage 4-A 필수 5조건 후속 승인 (2026-10-20)
+
+금액 PR #49는 head08e4d02의 CI39346385718 성공 후9942214로 develop에 Squash 병합했다. 최종 표기 부재와 트리 일치를 확인했다. 전체931개 테스트 통과는 금액 증분 결과다.
+
+사용자가 수동/합성 추출의 원문 근거를 검증해 필수5조건 정규화·누락/미지원/오류를 모으는 코드를 승인했다. 급여 비음수 정수/올바른 쉼표·기본값 없음, 강화 단일/포함 범위/목록·중복 집합·지원밖 값 버리지 않음, 클럽3종/하이픈 포메이션3종 정확 대응을 확정했다. AGENTS.md·설계도 §5/§11·docs/stage-4-a-conditions-contract.md에 먼저 기록한다. 이번 문서 PR은 코드 변경이 없으며 후속 구현은 최신 develop에서 분기한다. LLM·DB/API·새 수집·실제 스쿼드 실행·1-D/F 전체 완료는 아니다.

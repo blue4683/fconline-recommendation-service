@@ -414,3 +414,11 @@ OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정�
 금액 PR #49는 head08e4d02의 CI39346385718 성공 후9942214로 develop에 Squash 병합했다. 최종 표기 부재와 트리 일치를 확인했다. 전체931개 테스트 통과는 금액 증분 결과다.
 
 사용자가 수동/합성 추출의 원문 근거를 검증해 필수5조건 정규화·누락/미지원/오류를 모으는 코드를 승인했다. 급여 비음수 정수/올바른 쉼표·기본값 없음, 강화 단일/포함 범위/목록·중복 집합·지원밖 값 버리지 않음, 클럽3종/하이픈 포메이션3종 정확 대응을 확정했다. AGENTS.md·설계도 §5/§11·docs/stage-4-a-conditions-contract.md에 먼저 기록한다. 이번 문서 PR은 코드 변경이 없으며 후속 구현은 최신 develop에서 분기한다. LLM·DB/API·새 수집·실제 스쿼드 실행·1-D/F 전체 완료는 아니다.
+
+## Stage 4-A 5조건 코드 (2026-10-20)
+
+계약 PR #50은 최신 head53c49f5의 CI39346879650 성공 후0e279b9로 develop에 Squash 병합했고 최종 표기/트리 일치를 확인했다. feat/five-condition-normalization은 그 최신 develop에서 분기했다. request_normalization/conditions.py에 수동/합성 ExtractedConditions·급여/강화 파서·정식값 검증·전체 근거 선검증·사유 수집과 완성 조건/지원 목록/버전을 구현했다. 문제 하나라도 있으면 conditions=None이며 기본값/마지막 값/강화 필드 합집합으로 복구하지 않는다. 정상 반복은 모든 근거를 보존하고 같은 정규값으로 대응한다.
+
+규칙 버전 c83756caefaa6c33bee73d5b5c8b57ac1646187d6d4d5b446e93147054763e33. 새 합성120개 포함 전체pytest1051개·Ruff·환경 import·pip check 통과. 원문/결과 불변·큰 수·동시 오류·강화 집합·미지원 및 I/O 부재를 확인했다. README/설계도 §11·docs/stage-4-a-conditions-implementation.md에 결과를 기록했다. 실제 최신 head CI/병합은 별도 확인한다.
+
+원문 전체에서 조건을 추출하지 않으며 보고되지 않은 미지원 절/부정/필드 오분류 검출은 보장하지 않는다. LLM 공급자/모델/비용·실제 추출·build 연결·DB/API/새 수집/실제 스쿼드 실행은 미승인/미완료다. 1-D/F·공식 보너스·운영 성능도 유지한다. 다음 범위/미정 결정은 사용자에게 확인한다.

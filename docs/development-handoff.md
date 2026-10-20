@@ -482,3 +482,9 @@ docs/web-agent-blueprint.md에 역할/폴더 경계·단일 요청 화면·v0 �
 재개 계약 PR #57은 최신 head 8b2423b의 CI 39355228755 성공 후 101e2e8로 develop에 Squash 병합하고 최종 표기/트리 일치를 확인했다. feat/reinforcement-derivation은 이 최신 develop에서 분기했다. 전용 .venv에 Python 3.11.15/pip 26.2.1/기존 고정 의존성을 설치하고 pip check를 통과했다.
 
 R0는 1강 PlayerCard 재검증·34개 키·1~13 누적표·기존 OVR 절대값·출처/상태/시각 보존·canonical payload/규칙/결과 해시·불변 bytes/독립 복사만 구현한다. 공유 STAT_NAMES를 도입해 기존 학습 STAT_FEATURES의 순서/해시를 유지했다. 신규 합성 34개·전체 pytest 1,131개·Ruff·환경/pip 검사 통과다. CI/병합은 실제 결과를 확인한다. 웹 파일·실데이터·모델·수집/API는 변경하지 않았다. R1 합성 자료 연결과 승인된 모델 비교는 후속이다.
+
+## R1 합성 자료 공급기 (2026-10-20)
+
+R0 PR #58은 최신 head 1a451b6의 CI 39355861243 성공 후 a4c98ad로 develop에 Squash 병합하고 최종 메시지/트리 일치를 확인했다. feat/synthetic-agent-material은 이 최신 develop에서 분기했다. FRS/agent/material.py는 명시 seed/시각/run_id/계열 인원수의 가상 자료와 자료별 BatchSelection을 제공한다. 원본 1강·R0 파생 5강/강화 자료·독립 합성 가격/급여/자격·기존 D8 기한·생성/출처 해시를 고정하고 복사본만 반환한다.
+
+신규 합성 22개에서 세 클럽×세 포메이션 실제 CP-SAT/독립 검증·출처 재계산·재현·명시 배치·독립 복사·만료/실패를 확인했다. 전체 pytest 1,153개·Ruff·환경/pip 검사가 통과했고 최신 head CI와 병합은 실제 완료 후 확인한다. 3명/계열 fixture는 108개 카드·가격/급여 각 756·강화 차이 648·자격 108개이며 실제 선수/수치 관측이 아니다. 그래프/API/웹·분류 모델 입력/호출·새 수집/실데이터 변경은 없다. 다음 R2 테스트 대역 그래프와 승인된 두 로컬 모델 비교는 아직 미완료다.

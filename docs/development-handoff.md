@@ -498,3 +498,11 @@ R1 PR #59는 head 46a6518의 CI 39356577729 성공 후 2ce7ddb로 develop에 Squ
 ## 완료 브랜치·기능 묶음 PR 정책 (2026-10-20)
 
 사용자가 기존 완료분까지 로컬·원격 삭제, 동작 가능한 기능 묶음의 검증 완료 시 develop→master PR 생성을 승인했다. master 병합/배포 승인은 아니다. 1차로 PR head/병합 도달성을 확인한 53개 브랜치를 로컬·원격에서 정리했다. docs/web-agent-handoff는 원래 작업 디렉터리에서 사용 중이고 feat/squad-web-ui는 별도 담당 브랜치라 보존했다. docs/llm-candidate-comparison·feat/position-api는 정확히 일치하는 병합 PR이 없어 보존했다. 보호 브랜치도 유지한다. 자세한 기준과 이력 제한은 git-workflow-policy.md를 따른다.
+
+## R3 코드 출력 (2026-10-20)
+
+R2 PR #60은 head f5d5159의 CI 39357471708에서 새 의존성 설치/전체 검증 성공 후 4260a8d로 develop에 Squash 병합하고 최종 표기/트리를 확인했다. feat/validated-agent-presentation은 이 최신 develop에서 분기했다. presentation.py는 내부 결과의 정규화/build/스냅샷·합계를 재검증하고 합성 성공 11명만 정확한 문자열 수치/코드 템플릿으로 출력한다. 만료·비성공·변조·비합성 자료는 성공 표 없이 종료한다.
+
+신규 합성 16개·전체 pytest 1,192개·Ruff·환경/pip 검사가 통과했고 최신 CI는 완료 후 기록한다. 응답 clock은 표 구성/독립 검증 이후 확인한다. 모델 메타데이터 미제공을 명시하며 kind=code_presentation은 실제 웹 계약/HTTP 응답이 아니다. 실제 API에서 모델 출처/요청 ID·전송 직전 기한을 연결해야 한다. 웹 파일·실제 LLM 서술·실데이터/수집은 없고 승인된 R4 10회 추출 비교는 다음 단계다.
+
+R3 PR #62는 최신 head 58e0484의 CI 39378396213 성공 후 be2b720으로 Squash 병합했다. 최종 메시지의 표기 부재와 develop 트리 일치를 확인했다. 정책 문서와 새 R3 기록의 충돌은 양쪽 내용을 보존해 해결했다.

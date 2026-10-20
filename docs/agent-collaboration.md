@@ -44,6 +44,16 @@
 
 ## 진행·변경·질문 기록
 
+### INT-007 — R0 강화 계산기
+
+- 날짜/담당: 2026-10-20 KST / 통합.
+- 상태: 구현 / 로컬 검증 완료, 원격 CI 대기.
+- 기준: develop 101e2e8(PR #57). backend-agent-mvp 작업 디렉터리, feat/reinforcement-derivation.
+- 변경: FRS/core/reinforcement.py 순수 계산, 34개 키 공유 상수, 기존 학습 입력의 상수 재사용. 누적값·현재 40피처 해시·추천 5~11 범위 유지.
+- 검증: 신규 합성 34개·전체 pytest 1,131개·Ruff·환경/pip 검사 통과. 최신 head CI는 후속 확인. 가격·급여·메타데이터·원본 상태/기한·웹 파일 변경 없음.
+- 계약 영향: web-agent.v0/API는 바꾸지 않음. source payload 해시는 HTML/manifest 검증을 뜻하지 않으며 결과는 독립 파생 자료로만 반환.
+- 다음 조치: 전체 검증/PR 병합 후 R1 합성 MaterialProvider에서 현재 5강 계약에 연결.
+
 ### INT-006 — 백엔드 개발 재개
 
 - 날짜/담당: 2026-10-20 KST / 통합.

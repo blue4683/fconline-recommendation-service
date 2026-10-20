@@ -568,3 +568,9 @@ HTTP/SSE 운영3항목 후속 답변을 받았다. 별도 합성 앱/127.0.0.1:8
 ## 웹 경계 구현 재개 (2026-10-20)
 
 설계 #74는 headfc3ee61·CI39388108671 성공 후b82e1c9로 Squash 병합했고 원문/트리를 확인·완료 브랜치를 정리했다. #73은 별도 실행에서 master ee66118로 병합됐다. 사용자 다음 단계 요청과 HTTP 운영3항목 답변에 따라 순수 DTO/투영/요청·SSE 직렬화부터 합성 구현한다. origin2개·ID1~64ASCII·64KiB·150초 정책은 agent-http-sse-contract.md §8·INT-021에 확정 기록했다. 새 실제 요청/서버·웹 변경은 실행하지 않는다.
+
+## W4-1 순수 웹 경계 구현 (2026-10-20)
+
+정책 #76은 headebe7fe3·CI39390911643 성공 후53446d6로 Squash 병합·메시지/트리를 확인했다. feat/agent-web-contract는 최신 정책을 반영했다. agent_contract/projection/events의 엄격 DTO·원문/근거/정규화 투영·불변 출력/최종 만료·64KiB 요청·SSE 직렬화와 합성55개를 구현했다. 전체pytest1,409개·Ruff·환경/pip 통과, TypeScript parser12final/42envelope/추가필드12거부를 번들Node24.19.0으로 읽기 전용 대조했다. 시스템node 라이브러리 부재는 시스템 수정 없이 우회했다.
+
+사용자가 GET /health의 시작 시 검증 기록 기반 정책도 확정했다. 실제 상태 확인·서버 실행은 아직 없으며 다음 앱 연결은 대역 검증이다. 기존 core/graph/presentation·웹/사용자 파일·실데이터/과거실행은 보존한다. 최신 CI/병합·브랜치 정리·기능 묶음 PR은 실제 상태를 확인한다. 상세 agent-web-contract-implementation.md·INT-022.

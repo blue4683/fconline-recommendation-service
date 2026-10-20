@@ -21,6 +21,7 @@ def main(argv=None):
             "FRS.agent.graph",
             "FRS.agent.candidate_graph",
             "FRS.agent.ollama_selection",
+            "FRS.api.agent_events",
         ):
             importlib.import_module(module)
         print("기본 모듈 import 확인 완료 (수집·DB 접속·학습 미실행)")

@@ -428,3 +428,11 @@ OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정�
 5조건 PR #51은 최신 headd1b2b63의 CI39347355826 성공 후d7c8645로 develop에 Squash 병합했고 최종 표기/트리 일치를 확인했다. 전체1051개 테스트는 이 정규화 증분 결과다.
 
 사용자가 4-B 합성 연결을 선택했다. 원문+수동/합성 근거 → 정규화 → 명시 배치/시각 메모리 스냅샷 → 기존 CP-SAT·독립 검증을 연결하고 정규화 문제 시 자료/엔진 접근을 막는다. 기존 제약·설정·만료를 유지하며 DB/API·새수집·실데이터 실행·LLM은 제외한다. AGENTS.md·설계도 §5/§11·docs/stage-4-b-build-contract.md에 먼저 기록한다. 이번 문서 PR은 코드가 없으며 후속 기능은 최신 develop에서 분기한다. 1-D/F·4-A 실제 추출·4-C/D는 미완료다.
+
+## Stage 4-B 합성 연결 코드 (2026-10-20)
+
+범위 PR #52는 최신 head7a4d4b1의 CI39347587424 성공 후3b7be21로 develop에 Squash 병합했고 최종 표기/트리 일치를 확인했다. feat/synthetic-squad-build는 그 최신 develop에서 분기했다. squad_recommend/build.py의 build_squad_request는 normalize_conditions를 먼저 실행하고 문제 시 자료/시계/스냅샷/엔진을 사용하지 않는다. 정상일 때 명시 BatchSelection·시간대 있는 t0·응답 clock을 기존 스냅샷/CP-SAT에 전달한다. 기본10초/1스레드/시드123·독립 검증/상태/만료를 유지하고 재시도/탐욕 대체/최신 선택/표 생성이 없다.
+
+연결 정책 버전 fa18eb9e97dd2d789d9afc4f4e8566852b2e08cc00945638863252eae9feafa0. 새 합성46개 포함 전체pytest1097개·Ruff·환경 import·pip check 통과. 세 클럽/포메이션·예산1BP/급여 경계·혼합 강화·명시 배치·충돌/미상/만료·독립 검증 실패·입력 보존/단일 순회/I/O 부재를 확인했다. 정상 경로는 실제 CP-SAT·독립 검증이며 unknown 등 일부 상태 전달은 합성 대역으로 구분했다. README·설계도 §11·docs/stage-4-b-build-implementation.md에 결과를 기록했다. 실제 최신 head CI/병합은 별도 확인한다.
+
+LLM 추출/공급자/모델/비용·4-C 표/서술·4-D 의미/E2E·DB/API/새수집/실데이터 실행은 미완료다. 1-D/F·공식 보너스·운영 성능도 미완료로 유지한다. 다음 미정 결정/범위는 사용자에게 확인하며 종료된 수집 승인을 재사용하지 않는다.

@@ -312,6 +312,34 @@
 - 검증(로컬, 4ff544d 기준): typecheck 통과, Vitest 6개 파일 87개 통과, build 통과. headless Chromium으로 1360px·390px 화면을 확인했다(정형 조건문 아닌 요청·조건 추출 모델 오류·최적 결과, 그리고 409를 돌려주는 로컬 대역 서버로 실제 연결 모드). 가로 넘침은 없었다. 루트 pytest 1,409개 통과, `ruff check`·`ruff format --check` 통과(Python 3.11.17). 미실행: 실제 8001 HTTP 앱 연결(미구현), 웹 CI(INT-004 대기).
 - 다음 담당: 통합 담당. 8001 HTTP 앱이 병합되면 기준 SHA를 INT-*에 남겨 주면 된다. 웹은 그 SHA로 fixture를 다시 만들고 live 연결을 확인한다.
 
+### WEB-005 — 서버 상태 표시·HTTP 거절 안내·8001 앱 기준 대조
+
+- 날짜/담당/ID: 2026-10-21 / 웹 / WEB-005. 구분: 진행. 상태: 구현·로컬 검증. 상주 서버 운영이나 새 실제 모델 호출은 아니다.
+- 기준: develop `c0c47be`(PR #79 `00623ba` + 문서). INT-023~025, synthetic-agent-api.md, agent-browser-e2e.md, FRS/api/agent_app.py·agent_runtime.py를 읽기 전용으로 확인했다. INT-025의 "새 웹 소스 변경 요청 없음"에 따라 계약(web-agent.v0)은 바꾸지 않고, 후속으로 열어 둔 fixture 재생성과 웹 기능만 다룬다.
+- 변경(frontend/만):
+  1. 서버 상태: 실제 연결을 고르면 `GET {base}/health`(agent-health.v1)를 한 번 읽는다. ready면 모델·digest 앞자리·시작 시 확인 시각·자료 기준·유효 기한을 보인다. unavailable(data_expired·model_unverified·not_configured)이나 연결 실패면 사유를 보이고 보내기를 막는다.
+     - 다시 조회하는 경우는 세 가지뿐이다: "다시 확인" 버튼, 연결 방식 재선택, 실제 요청 종료 직후. 주기 조회·재시도는 없다.
+     - 브라우저 시계로 기한이 지났으면 안내만 한다. busy는 조회 시점 정보로 안내만 하고 막지 않는다.
+  2. health 검사(`contracts/agentHealth.ts`): 정확한 필드, 스키마 버전, 사유 집합을 검사한다. HTTP 200⇔ready·503⇔unavailable도 대조한다. ready에는 모델 확인 기록과 자료 정보가 필수다.
+  3. 스트림 전 거절 안내 추가: 403 origin_not_allowed, 408, 415. 서버 연결 실패 문구에는 8001 실행 여부와 5173 개발 서버로 열었는지를 안내한다.
+  4. 대조 fixture를 `backend-agent-app.json`으로 교체했다. 실제 `create_agent_app()`을 TestClient와 테스트 대역 selector로 호출해 기록했으며, 출력은 실행할 때마다 같다.
+     - SSE 7건: 성공 3, 준비 사유 2, 정규화 사유 1, 모델 오류 1
+     - 스트림 전 거절 5건: 403, 415, 413, 422, 503
+     - /health 4건
+     - 409(busy)는 TestClient로 동시 요청을 재현하지 않아 웹 단위 테스트로만 확인한다.
+- 영향 경로·호환성: frontend/ 하위와 이 WEB-005 항목만 바꿨다. 백엔드 wire·FRS/·tests/·scripts/·CI·Docker·설계 문서 변경 없음. 기존 모의 모드 동작은 같다.
+- 사용자 결정 필요 여부: 없음.
+- 검증(로컬, c0c47be 기준):
+  - typecheck 통과, Vitest 6개 파일 108개 통과, build 통과.
+  - 루트 pytest 1,440개·`ruff check`·`ruff format --check` 통과(Python 3.11.17).
+  - 실제 8001 앱 코드를 테스트 대역 selector와 현재 시각 합성 자료로 127.0.0.1:8001에 임시로 띄웠다. Vite 5173 실제 연결 모드의 headless Chromium에서 다음을 확인했다.
+    - 정상: optimal 11명, 진행 `agent`·`render`
+    - 급여 누락·형식 오류: 되묻기
+    - 서버 상태: 준비됨, 모델 미확인(보내기 막힘), 서버 꺼짐(연결 실패 안내·보내기 막힘)
+  - Ollama·실제 모델·외부 요청은 0회이고, 띄운 임시 서버는 확인 뒤 종료했다.
+  - 미실행: 실제 qwen3:8b 연결(통합 담당 승인 범위), 웹 CI(INT-004).
+- 다음 담당: 통합 담당. 필요하면 상주 데모 실행 시 이 상태 표시를 같이 확인한다. 백엔드 wire나 health가 바뀌면 생성기로 fixture를 다시 만든다.
+
 ### INT-018 — C4 실제 ID 선택 어댑터·새 비교 승인 (2026-10-20)
 
 - 담당: 통합 / 상태: 사용자 승인·계약. 기준 develop e234567 (#70), docs/candidate-ollama-contract.

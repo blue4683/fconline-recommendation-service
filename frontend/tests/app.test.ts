@@ -4,9 +4,17 @@ import App from '../src/App.vue';
 import { REQUEST_EXAMPLES } from '../src/contracts/requestFormat';
 import { finalFor, optimalWithNames, type ScenarioId } from '../src/mocks/fixtures';
 import { createMockTransport } from '../src/mocks/mockTransport';
+import { parseHealth } from '../src/contracts/agentHealth';
+import type { HealthCheck } from '../src/services/health';
 import { createLiveTransport } from '../src/services/liveTransport';
+import fixture from './fixtures/backend-agent-app.json';
 import type { Transport } from '../src/services/transport';
 import { controlledTransport, envelope, FIXED_NOW, sse } from './helpers';
+
+const READY_HEALTH: HealthCheck = {
+  kind: 'ready',
+  health: parseHealth(JSON.parse(JSON.stringify(fixture.health[0]!.body)), fixture.health[0]!.status),
+};
 
 const mounted: ReturnType<typeof mount>[] = [];
 afterEach(() => {
@@ -264,9 +272,11 @@ describe('App', () => {
     const fetchImpl = vi.fn(async () => new Response('{"code":"x"}', { status, headers: { 'content-type': 'application/json' } }));
     const w = mountApp({
       liveBaseUrl: 'http://127.0.0.1:8001',
+      checkHealth: async () => READY_HEALTH,
       makeTransport: (m: string) => (m === 'live' ? createLiveTransport('http://127.0.0.1:8001', fetchImpl) : null),
     });
     await w.get('input[value=live]').setValue(true);
+    await flushPromises();
     await submit(w);
     await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));
     expect(w.get('[data-testid=result-title]').text()).toBe(title);

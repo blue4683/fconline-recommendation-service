@@ -57,27 +57,12 @@ export interface Conditions {
   allowed_reinforcements: number[];
 }
 
-/** 서버가 준 원문 근거. start/end는 Python 코드포인트·end 미포함이며 브라우저는 text만 표시한다. */
-export interface SourceSpan {
-  start: number;
-  end: number;
-  text: string;
-}
-
 export interface ConditionIssue {
   field: string;
   kind: 'missing' | 'invalid' | 'unsupported' | 'ambiguous';
   code: string;
   message: string;
   occurrence: number | null;
-  /** WEB-003 제안(선택): 후보 준비 단계가 문제 절을 알려 줄 때의 원문 구간. */
-  span?: SourceSpan | null;
-}
-
-/** WEB-003 제안(선택): 포메이션 슬롯별 스냅샷 후보 수. 백엔드 CodePresentation.coverage와 같은 모양. */
-export interface SlotCoverage {
-  slot: string;
-  count: number;
 }
 
 export interface Supported {
@@ -127,12 +112,6 @@ export interface FinalResult {
   answer: string | null;
   narration_source: NarrationSource;
   data_mode: 'synthetic';
-  /** WEB-003 제안(선택): 실패·기술 오류의 세부 사유 코드(예: selection_provider_error). */
-  code?: string | null;
-  /** WEB-003 제안(선택): 해 없음·미확정 설명에 쓰는 슬롯별 후보 수. */
-  coverage?: SlotCoverage[] | null;
-  /** WEB-003 제안(선택): 서버가 출력 직전 기한을 확인한 시각. */
-  evaluated_at?: string | null;
 }
 
 export interface StartedPayload {
@@ -265,23 +244,9 @@ function parseConditions(value: unknown, path: string): Conditions {
   };
 }
 
-function parseSpan(value: unknown, path: string): SourceSpan {
-  const o = obj(value, path);
-  exactKeys(o, path, ['start', 'end', 'text']);
-  const start = int(o.start, `${path}.start`, 0, MAX_MESSAGE_CODE_POINTS);
-  const end = int(o.end, `${path}.end`, 1, MAX_MESSAGE_CODE_POINTS);
-  if (end <= start) fail(`${path}.end`, 'start보다 뒤여야 합니다');
-  const text = str(o.text, `${path}.text`, { nonEmpty: true });
-  return { start, end, text };
-}
-
-function optional<T>(o: Obj, key: string, parse: (v: unknown) => T): T | null {
-  return !Object.prototype.hasOwnProperty.call(o, key) || o[key] === null ? null : parse(o[key]);
-}
-
 function parseIssue(value: unknown, path: string): ConditionIssue {
   const o = obj(value, path);
-  exactKeys(o, path, ['field', 'kind', 'code', 'message', 'occurrence'], ['span']);
+  exactKeys(o, path, ['field', 'kind', 'code', 'message', 'occurrence']);
   const occurrence = o.occurrence === null ? null : int(o.occurrence, `${path}.occurrence`, 0, Number.MAX_SAFE_INTEGER);
   return {
     field: str(o.field, `${path}.field`, { nonEmpty: true }),
@@ -289,34 +254,7 @@ function parseIssue(value: unknown, path: string): ConditionIssue {
     code: str(o.code, `${path}.code`, { nonEmpty: true }),
     message: str(o.message, `${path}.message`, { nonEmpty: true }),
     occurrence,
-    span: optional(o, 'span', (v) => parseSpan(v, `${path}.span`)),
   };
-}
-
-const REASON_CODE = /^[a-z][a-z0-9_:.-]{0,63}$/;
-
-function parseCode(value: unknown, path: string): string {
-  const s = str(value, path, { nonEmpty: true });
-  if (!REASON_CODE.test(s)) fail(path, '소문자·숫자·_ 로 된 64자 이하 코드가 필요합니다');
-  return s;
-}
-
-function parseCoverage(value: unknown, path: string, conditions: Conditions | null): SlotCoverage[] {
-  const rows = arr(value, path).map((v, i) => {
-    const o = obj(v, `${path}[${i}]`);
-    exactKeys(o, `${path}[${i}]`, ['slot', 'count']);
-    return {
-      slot: str(o.slot, `${path}[${i}].slot`, { nonEmpty: true }),
-      count: int(o.count, `${path}[${i}].count`, 0, Number.MAX_SAFE_INTEGER),
-    };
-  });
-  const slots = rows.map((r) => r.slot);
-  if (new Set(slots).size !== slots.length) fail(path, '같은 자리가 중복되었습니다');
-  if (conditions !== null) {
-    const expected = FORMATION_SLOTS[conditions.formation]!;
-    if (slots.join() !== expected.join()) fail(path, '포메이션 자리 순서와 일치하지 않습니다');
-  }
-  return rows;
 }
 
 function strList(value: unknown, path: string): string[] {
@@ -434,7 +372,7 @@ export function parseFinal(value: unknown): FinalResult {
     'answer',
     'narration_source',
     'data_mode',
-  ], ['code', 'coverage', 'evaluated_at']);
+  ]);
   const status = oneOf(o.status, FINAL_STATUSES, `${path}.status`);
   if (o.data_mode !== 'synthetic') fail(`${path}.data_mode`, 'synthetic이 필요합니다');
   const conditions = o.conditions === null ? null : parseConditions(o.conditions, `${path}.conditions`);
@@ -469,9 +407,6 @@ export function parseFinal(value: unknown): FinalResult {
     answer,
     narration_source,
     data_mode: 'synthetic',
-    code: optional(o, 'code', (v) => parseCode(v, `${path}.code`)),
-    coverage: optional(o, 'coverage', (v) => parseCoverage(v, `${path}.coverage`, conditions)),
-    evaluated_at: optional(o, 'evaluated_at', (v) => isoTime(v, `${path}.evaluated_at`)),
   };
 }
 

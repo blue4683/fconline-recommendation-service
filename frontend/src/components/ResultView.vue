@@ -18,7 +18,6 @@ const FIELD_LABELS: Record<string, string> = {
   allowed_reinforcements: '허용 강화',
   unsupported: '미지원 조건',
   original: '원문',
-  extraction: '추출 결과',
 };
 
 const STATUS_COPY: Record<FinalStatus, { title: string; note: string | null; tone: Tone }> = {
@@ -64,6 +63,45 @@ const STATUS_COPY: Record<FinalStatus, { title: string; note: string | null; ton
   },
 };
 
+/** 스트림 error 이벤트의 공개 코드별 제목. 안내 문장은 서버가 보낸 message를 그대로 쓴다. */
+const SELECTION_CHECK = '모델의 조건 선택을 검증하지 못해 추천하지 않았습니다';
+const ERROR_TITLES: Record<string, string> = {
+  selection_provider_error: '조건 추출 모델을 사용할 수 없어 요청을 처리하지 못했습니다',
+  request_deadline: '응답 기한 안에 추천을 끝내지 못했습니다',
+  invalid_selection: SELECTION_CHECK,
+  candidate_set_mismatch: SELECTION_CHECK,
+  invalid_context_selection: SELECTION_CHECK,
+  unknown_candidate: SELECTION_CHECK,
+  duplicate_candidate: SELECTION_CHECK,
+  field_mismatch: SELECTION_CHECK,
+  incomplete_coverage: SELECTION_CHECK,
+  invalid_registry: SELECTION_CHECK,
+};
+
+/** 스트림을 열기 전 HTTP 거절. 본문은 해석하지 않고 상태 코드만으로 안내한다(INT-020/021). */
+const HTTP_COPY: Record<number, { title: string; note: string; tone: Tone }> = {
+  409: {
+    title: '다른 추천 요청이 진행 중입니다',
+    note: '서버는 한 번에 한 요청만 처리합니다. 진행 중인 요청이 끝난 뒤 다시 보내 주세요. 자동으로 다시 보내지 않습니다.',
+    tone: 'warn',
+  },
+  413: {
+    title: '요청 본문이 서버 한도를 넘었습니다',
+    note: '요청 문장을 줄여 다시 보내 주세요.',
+    tone: 'warn',
+  },
+  422: {
+    title: '서버가 요청 형식을 받지 않았습니다',
+    note: '조건 해석 결과가 아니라 요청 자체가 거절된 것입니다. 새로고침 뒤에도 반복되면 웹과 서버의 계약 버전을 확인해야 합니다.',
+    tone: 'bad',
+  },
+  503: {
+    title: '추천 서버가 아직 준비되지 않았습니다',
+    note: '모델 확인이 끝나지 않았거나 합성 자료 기한이 지난 상태일 수 있습니다. 서버 준비 뒤 다시 보내 주세요.',
+    tone: 'bad',
+  },
+};
+
 const final = computed<FinalResult | null>(() => (props.outcome.kind === 'final' ? props.outcome.result : null));
 const showSquad = computed(() => final.value?.squad != null && !props.expired);
 
@@ -79,11 +117,9 @@ const header = computed<{ title: string; note: string | null; tone: Tone; detail
           detail: o.result.snapshot?.valid_until ? `유효 기한 ${formatTime(o.result.snapshot.valid_until)}` : undefined,
         };
       }
-      return o.result.code
-        ? { ...STATUS_COPY[o.result.status], detail: `사유 코드 ${o.result.code}` }
-        : STATUS_COPY[o.result.status];
+      return STATUS_COPY[o.result.status];
     case 'server_error':
-      return { title: '추천 중 오류가 발생했습니다', note: o.message, tone: 'bad', detail: `오류 코드 ${o.code}` };
+      return { title: ERROR_TITLES[o.code] ?? '추천 중 오류가 발생했습니다', note: o.message, tone: 'bad', detail: `오류 코드 ${o.code}` };
     case 'protocol_error':
       return {
         title: '서버 응답이 약속한 형식과 달라 결과를 표시하지 않습니다',
@@ -91,21 +127,16 @@ const header = computed<{ title: string; note: string | null; tone: Tone; detail
         tone: 'bad',
         detail: o.detail,
       };
-    case 'transport_error':
+    case 'transport_error': {
+      const http = o.status === undefined ? undefined : HTTP_COPY[o.status];
+      if (http) return { ...http, detail: `HTTP ${o.status}` };
       return { title: '서버와 통신하지 못했습니다', note: o.detail, tone: 'bad' };
+    }
     case 'aborted':
       return { title: '요청 읽기를 멈췄습니다', note: '서버 계산이 함께 취소되었는지는 알 수 없습니다.', tone: 'warn' };
   }
   return { title: '', note: null, tone: 'info' };
 });
-
-/** 해 없음·미확정일 때만 자리별 후보 수를 보여 준다. 성공 결과에는 표가 이미 있다. */
-const coverage = computed(() => {
-  const f = final.value;
-  if (!f || !f.coverage || (f.status !== 'infeasible' && f.status !== 'unknown')) return null;
-  return f.coverage;
-});
-const emptySlots = computed(() => coverage.value?.filter((c) => c.count === 0).map((c) => c.slot) ?? []);
 
 function conditionLines(c: Conditions) {
   return [
@@ -134,10 +165,7 @@ function versionText(v: Record<string, string>): string {
       <ul v-if="final.issues.length" class="issues" data-testid="issues">
         <li v-for="(issue, i) in final.issues" :key="i">
           <span class="issue-field">{{ FIELD_LABELS[issue.field] ?? issue.field }}</span>
-          <span class="issue-body">
-            <span v-if="issue.span" class="issue-span" data-testid="issue-span">“{{ issue.span.text }}”</span>
-            <span>{{ issue.message }}</span>
-          </span>
+          <span>{{ issue.message }}</span>
         </li>
       </ul>
 
@@ -183,19 +211,6 @@ function versionText(v: Record<string, string>): string {
         </div>
       </dl>
 
-      <div v-if="coverage" class="coverage" data-testid="coverage">
-        <h3>자리별 후보 수</h3>
-        <p v-if="emptySlots.length" class="coverage-note">
-          후보가 없는 자리: {{ emptySlots.join(', ') }}. 자료에서 이 자리에 놓을 수 있는 후보 카드를 찾지 못했습니다.
-        </p>
-        <ul>
-          <li v-for="c in coverage" :key="c.slot" :class="{ empty: c.count === 0 }">
-            <span class="slot">{{ c.slot }}</span>
-            <span class="count">{{ c.count.toLocaleString('ko-KR') }}</span>
-          </li>
-        </ul>
-      </div>
-
       <SquadTable v-if="showSquad && final.squad" :squad="final.squad" />
 
       <div v-if="final.answer" class="answer">
@@ -210,7 +225,6 @@ function versionText(v: Record<string, string>): string {
         <p v-if="final.snapshot">
           자료 기준 {{ formatTime(final.snapshot.t0) }}<template v-if="final.snapshot.valid_until">, 유효 기한 {{ formatTime(final.snapshot.valid_until) }}</template>
         </p>
-        <p v-if="final.evaluated_at">확인 시각 {{ formatTime(final.evaluated_at) }}</p>
         <p>적용 버전: {{ versionText(final.versions) }}</p>
       </footer>
     </template>
@@ -267,56 +281,6 @@ function versionText(v: Record<string, string>): string {
 }
 .issue-field {
   font-weight: 700;
-  color: var(--warn);
-}
-.issue-body {
-  display: grid;
-  gap: 0.125rem;
-}
-.issue-span {
-  font-weight: 500;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-.coverage h3 {
-  font-size: var(--step-0);
-  margin-bottom: 0.25rem;
-}
-.coverage-note {
-  font-size: var(--step--1);
-  color: var(--warn);
-  margin-bottom: 0.5rem;
-  max-width: 60ch;
-}
-.coverage ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
-  gap: 0.25rem;
-  max-width: 36rem;
-}
-.coverage li {
-  display: grid;
-  gap: 0.125rem;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  font-size: var(--step--1);
-}
-.coverage .slot {
-  color: var(--ink-3);
-}
-.coverage .count {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.coverage li.empty {
-  border-color: var(--warn);
-  color: var(--warn);
-}
-.coverage li.empty .slot {
   color: var(--warn);
 }
 .supported {

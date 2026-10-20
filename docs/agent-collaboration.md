@@ -277,6 +277,24 @@
 - 사용자 결정 필요 여부: 없음(웹 범위). 계약 반영 여부는 통합 담당이 INT-001에서 정한다.
 - 검증(로컬, 7c56bbc 기준): `npm run typecheck` 통과, Vitest 5개 파일 74개 통과(신규 12), `npm run build` 통과. headless Chromium으로 1360px·390px 화면의 입력 안내·input_format·infeasible·llm_unavailable·optimal 상태를 확인했고, 가로 넘침은 없었다. 루트 pytest 1,354개 통과, `ruff check`·`ruff format --check` 통과(Python 3.11.17). 미실행: 실제 Agent API 연결(경로 없음), 웹 CI(INT-004 대기).
 - 다음 담당: 통합 담당. 선택 필드 4개와 어댑터 매핑을 INT-001에 수락/수정해 기록한다. 다르게 정하면 웹이 맞춘다.
+- 후속(2026-10-20): 계약 제안 부분(선택 필드 4개·어댑터 매핑)은 INT-020 §4에 맞춰 WEB-004에서 철회했다. 입력 안내 변경은 유지한다.
+
+### WEB-004 — 백엔드 W4-1 투영에 웹 맞춤·WEB-003 계약 제안 철회
+
+- 날짜/담당/ID: 2026-10-20 / 웹 / WEB-004. 구분: 진행 + 철회. 상태: 구현·로컬 검증. live 연결 완료는 아니다.
+- 기준: develop `4ff544d`(#75 병합). INT-020~022, agent-http-sse-contract.md §2~§8, agent-web-contract-implementation.md, FRS/api/agent_{contract,projection,events}.py를 읽기 전용으로 확인했다.
+- 철회: INT-020 §4는 v0 final에 내부 kind·code·coverage·evaluated_at을 추가하지 않고, 준비 사유의 span·context_id를 내부에 둔다. 새 필드는 계약 버전과 양쪽 검사를 함께 바꾸는 방식이다. #75의 웹 파서는 그중 4개를 선택 필드로 받아서, INT-022의 "추가 필드 거부" 대조와 어긋났다. 그래서 파서를 #72 시점의 엄격한 v0로 되돌리고 관련 표시도 걷어냈다. 문제 절 구간 표시는 필요하면 다음 계약 버전 제안으로 다시 올린다.
+- 변경 전 → 후(웹, frontend/만):
+  1. 모의 응답을 실제 투영 모양으로 바꿨다: 준비 사유 `prepare.*`·occurrence null·field `original`, 정규화 누락 `missing_condition`, 템플릿 안내 문장, versions 13개 키, 진행 단계 `agent`·`render`만.
+  2. 선택 실패와 기한 초과는 final이 아니라 `error` 이벤트(`selection_provider_error`·`request_deadline`)로 재생한다. v0의 llm_unavailable은 예약 상태로 화면 처리만 유지하고, 모의 목록에서는 뺐다.
+  3. 공개 error 코드별 제목을 붙이고, 안내 문장은 서버 message를 그대로 쓴다.
+  4. 스트림 전 HTTP 409·413·422·503을 상태 코드로만 구분해 안내한다. 본문은 해석하지 않고 다시 보내지 않는다.
+  5. 개발 서버를 5173 포트로 고정했다(`strictPort`, INT-021 origin 두 개와 일치). `.env.example`에 8001 설계값을 적었다. 단, HTTP 앱은 아직 구현 전이다.
+- 백엔드 대조: `frontend/tests/fixtures/generate_backend_fixture.py`가 백엔드 순수 투영/SSE 코드와 기존 테스트 대역(selection·OBSERVED·합성 config)을 읽기 전용으로 호출한다. 이것으로 `backend-w4-1.json`(성공 3·준비 사유 2·정규화 사유 1·error 2, 결정적)을 만들었다. 웹 테스트는 이 SSE 바이트를 1·7바이트 청크로 세션에 통과시키고, 파싱 결과가 payload와 같은지, 화면의 표·합계·만료 처리가 맞는지 확인한다. 모델·네트워크·DB·서버 호출은 없다.
+- 영향 경로·호환성: frontend/ 하위와 WEB-003·WEB-004 항목만 바꿨다. FRS/·tests/·scripts/·CI·Docker·설계 문서 변경 없음. 서버가 v0를 그대로 보내면 웹 쪽 추가 조정은 필요 없다.
+- 사용자 결정 필요 여부: 없음.
+- 검증(로컬, 4ff544d 기준): typecheck 통과, Vitest 6개 파일 87개 통과, build 통과. headless Chromium으로 1360px·390px 화면을 확인했다(정형 조건문 아닌 요청·조건 추출 모델 오류·최적 결과, 그리고 409를 돌려주는 로컬 대역 서버로 실제 연결 모드). 가로 넘침은 없었다. 루트 pytest 1,409개 통과, `ruff check`·`ruff format --check` 통과(Python 3.11.17). 미실행: 실제 8001 HTTP 앱 연결(미구현), 웹 CI(INT-004 대기).
+- 다음 담당: 통합 담당. 8001 HTTP 앱이 병합되면 기준 SHA를 INT-*에 남겨 주면 된다. 웹은 그 SHA로 fixture를 다시 만들고 live 연결을 확인한다.
 
 ### INT-018 — C4 실제 ID 선택 어댑터·새 비교 승인 (2026-10-20)
 

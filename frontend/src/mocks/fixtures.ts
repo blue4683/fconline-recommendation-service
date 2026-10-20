@@ -11,7 +11,6 @@ import {
   type FinalResult,
   type FinalStatus,
   type ConditionIssue,
-  type SlotCoverage,
   type SquadRow,
   type Supported,
 } from '../contracts/webAgentV0';
@@ -23,12 +22,36 @@ export const SUPPORTED: Supported = {
   reinforcements: [...SUPPORTED_REINFORCEMENTS],
 };
 
-const VERSIONS = {
+/** 백엔드 W4-1 투영(develop 4ff544d)과 같은 키. 값은 모의 표기이며 실제 해시가 아니다. */
+const VERSIONS: Record<string, string> = {
   web_contract: CONTRACT_VERSION,
+  projection: 'mock-projection',
+  preparation: 'mock-preparation',
+  selection: 'mock-selection',
+  adapter: 'mock-adapter',
   normalizer: 'mock-normalizer',
+  graph: 'mock-graph',
   engine: 'mock-engine',
+  presentation: 'mock-presentation',
+  material: 'mock-material',
   model: 'unused',
+  model_digest: 'unused',
+  selector: 'unused',
 };
+
+/** 준비 단계에서 막혀 선택·정규화·엔진을 실행하지 않은 경우의 versions. */
+const PREPARE_VERSIONS: Record<string, string> = {
+  ...VERSIONS,
+  selection: 'unused',
+  normalizer: 'unused',
+  graph: 'unused',
+  engine: 'unused',
+  presentation: 'unused',
+  material: 'unused',
+};
+
+/** 백엔드 템플릿 안내(FRS/api/agent_projection.py CLARIFY). */
+const CLARIFY_ANSWER = '필수 조건과 안내된 사유를 확인하고 완전한 요청을 다시 입력해 주세요.';
 
 /** 가상 이름. 실존 선수와 무관하게 지어낸 이름이다. */
 const NAMES = [
@@ -112,9 +135,9 @@ export type ScenarioId =
   | 'unknown'
   | 'data_expired'
   | 'internal_error'
-  | 'llm_unavailable'
   | 'expiring_soon'
-  | 'server_error'
+  | 'selection_error'
+  | 'request_deadline'
   | 'protocol_error'
   | 'disconnect';
 
@@ -129,14 +152,14 @@ export const SCENARIOS: ScenarioInfo[] = [
   { id: 'feasible', label: '가능 스쿼드 (최적성 미확인)' },
   { id: 'huge_numbers', label: '큰 금액 (34자리 BP·2^53 초과 급여)' },
   { id: 'expiring_soon', label: '곧 만료되는 결과 (30초)' },
-  { id: 'needs_clarification', label: '조건 누락·미지원' },
+  { id: 'needs_clarification', label: '조건 누락 (급여 상한 없음)' },
   { id: 'input_format', label: '정형 조건문이 아닌 요청' },
   { id: 'infeasible', label: '해 없음' },
   { id: 'unknown', label: '시간 내 미확정' },
   { id: 'data_expired', label: '자료 만료' },
-  { id: 'llm_unavailable', label: '모델 사용 불가' },
   { id: 'internal_error', label: '내부 오류' },
-  { id: 'server_error', label: '스트림 오류 이벤트' },
+  { id: 'selection_error', label: '조건 추출 모델 사용 불가' },
+  { id: 'request_deadline', label: '응답 기한 초과' },
   { id: 'protocol_error', label: '잘못된 이벤트 순서' },
   { id: 'disconnect', label: '결과 전 연결 끊김' },
 ];
@@ -179,61 +202,46 @@ function snapshot(now: number, validForMs: number, id: string) {
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/** 선택 뒤 정규화가 급여 상한 누락을 찾은 경우. 백엔드 정규화 사유를 그대로 옮겼다. */
 const CLARIFY_ISSUES: ConditionIssue[] = [
   {
     field: 'salary_cap',
     kind: 'missing',
-    code: 'missing_salary_cap',
-    message: '급여 상한이 원문에 없습니다. 급여 상한을 숫자로 함께 적어 주세요.',
+    code: 'missing_condition',
+    message: '필수 조건을 원문에 명시해야 합니다.',
     occurrence: null,
-  },
-  {
-    field: 'unsupported',
-    kind: 'unsupported',
-    code: 'unsupported_condition',
-    message: '국적 조건은 아직 지원하지 않습니다. 해당 조건을 빼고 다시 요청해 주세요.',
-    occurrence: 0,
   },
 ];
 
 /**
- * 백엔드 후보 준비(prepare_candidates, develop 7c56bbc)가
- * '리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강으로 구성해줘'에 실제로 낸 사유를
- * WEB-003 제안 모양(kind·occurrence 추가, context_id 제외)으로 옮긴 것.
+ * 준비 단계 사유. 백엔드 투영은 code에 prepare. 접두어를 붙이고 occurrence는 null이며 원문 구간은 보내지 않는다.
+ * '리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강으로 구성해줘'의 실제 투영 결과와 같다.
  */
 const FORMAT_ISSUES: ConditionIssue[] = [
   {
     field: 'original',
     kind: 'invalid',
-    code: 'unrecognized_context',
+    code: 'prepare.unrecognized_context',
     message: '해석되지 않은 절이 있습니다. 정형 조건문으로 다시 입력해 주세요.',
-    occurrence: 0,
-    span: { start: 0, end: 11, text: '리버풀 4-2-3-1' },
+    occurrence: null,
   },
   {
     field: 'price_cap',
     kind: 'invalid',
-    code: 'missing_coefficient',
+    code: 'prepare.missing_coefficient',
     message: '단위 앞의 숫자를 명시해야 합니다.',
-    occurrence: 0,
-    span: { start: 16, end: 21, text: '6조 BP' },
+    occurrence: null,
   },
   {
     field: 'salary_cap',
     kind: 'invalid',
-    code: 'invalid_salary',
+    code: 'prepare.invalid_salary',
     message: '급여는 올바른 쉼표를 쓰는 비음수 정수여야 합니다.',
-    occurrence: 0,
-    span: { start: 26, end: 32, text: '210 이하' },
+    occurrence: null,
   },
 ];
 
-/** 포메이션 자리 순서의 후보 수. zero에 든 자리는 0으로 둔다. */
-function coverageOf(formation: string, base: number, zero: readonly string[] = []): SlotCoverage[] {
-  return FORMATION_SLOTS[formation]!.map((slot, i) => ({ slot, count: zero.includes(slot) ? 0 : base + ((i * 7) % 13) }));
-}
-
-/** 시나리오의 final payload. 'server_error'·'protocol_error'·'disconnect'는 final이 없다. */
+/** 시나리오의 final payload. 'selection_error'·'request_deadline'·'protocol_error'·'disconnect'는 final이 없다. */
 export function finalFor(id: ScenarioId, now: number): FinalResult | null {
   switch (id) {
     case 'optimal': {
@@ -243,8 +251,6 @@ export function finalFor(id: ScenarioId, now: number): FinalResult | null {
         conditions: LIVERPOOL,
         squad: squadOf(r),
         snapshot: snapshot(now, DAY, 'mock-snap-optimal'),
-        coverage: coverageOf(LIVERPOOL.formation, 24),
-        evaluated_at: new Date(now).toISOString(),
         answer:
           '리버풀 4-2-3-1, 5~8강 조건에서 예산과 급여 상한을 지키는 조합 중 OVR 합이 가장 높은 스쿼드입니다. 수치는 표와 같습니다.',
         narration_source: 'llm_checked',
@@ -268,8 +274,6 @@ export function finalFor(id: ScenarioId, now: number): FinalResult | null {
         conditions: CHELSEA,
         squad: squadOf(r),
         snapshot: snapshot(now, DAY, 'mock-snap-feasible'),
-        coverage: coverageOf(CHELSEA.formation, 31),
-        evaluated_at: new Date(now).toISOString(),
         answer: '조건을 모두 지키는 스쿼드를 찾았지만 제한 시간 안에 최적인지 확인하지 못했습니다.',
         narration_source: 'template',
       };
@@ -289,20 +293,22 @@ export function finalFor(id: ScenarioId, now: number): FinalResult | null {
       return {
         ...base('needs_clarification'),
         issues: CLARIFY_ISSUES,
+        versions: { ...VERSIONS, engine: 'unused', material: 'unused' },
         conditions: null,
         squad: null,
         snapshot: null,
-        answer: '필수 조건 중 일부가 없거나 지원하지 않는 조건이 있어 추천을 시작하지 않았습니다.',
+        answer: CLARIFY_ANSWER,
         narration_source: 'template',
       };
     case 'input_format':
       return {
         ...base('needs_clarification'),
         issues: FORMAT_ISSUES,
+        versions: { ...PREPARE_VERSIONS },
         conditions: null,
         squad: null,
         snapshot: null,
-        answer: '해석하지 못한 조건 절이 있어 추천을 시작하지 않았습니다. 표시된 부분을 정형 조건문으로 고쳐 주세요.',
+        answer: CLARIFY_ANSWER,
         narration_source: 'template',
       };
     case 'infeasible':
@@ -311,8 +317,6 @@ export function finalFor(id: ScenarioId, now: number): FinalResult | null {
         conditions: { ...CHELSEA, price_cap: '150000000000' },
         squad: null,
         snapshot: snapshot(now, DAY, 'mock-snap-infeasible'),
-        coverage: coverageOf(CHELSEA.formation, 3, ['LCB', 'RCB']),
-        evaluated_at: new Date(now).toISOString(),
         answer: '보유한 합성 자료 안에서는 이 예산과 급여 상한을 함께 만족하는 11명을 찾지 못했습니다.',
         narration_source: 'template',
       };
@@ -322,8 +326,6 @@ export function finalFor(id: ScenarioId, now: number): FinalResult | null {
         conditions: LIVERPOOL,
         squad: null,
         snapshot: snapshot(now, DAY, 'mock-snap-unknown'),
-        coverage: coverageOf(LIVERPOOL.formation, 412),
-        evaluated_at: new Date(now).toISOString(),
         answer: null,
         narration_source: 'none',
       };
@@ -344,19 +346,9 @@ export function finalFor(id: ScenarioId, now: number): FinalResult | null {
         snapshot: null,
         answer: null,
         narration_source: 'none',
-        code: 'invalid_selection',
       };
-    case 'llm_unavailable':
-      return {
-        ...base('llm_unavailable'),
-        conditions: null,
-        squad: null,
-        snapshot: null,
-        answer: null,
-        narration_source: 'none',
-        code: 'selection_provider_error',
-      };
-    case 'server_error':
+    case 'selection_error':
+    case 'request_deadline':
     case 'protocol_error':
     case 'disconnect':
       return null;

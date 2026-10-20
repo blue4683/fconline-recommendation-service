@@ -19,7 +19,7 @@
 | 이 문서 작성 시작 기준 | develop ec6ff24, 강화 설계 PR #55 병합 결과. 이후 작업자는 실제 최신 develop을 다시 확인 |
 | 사용자 확정 스택 | Vue 3 + Vite + TypeScript 독립 프론트엔드 |
 | 사용자 확정 분담 | 웹: 화면·통신 클라이언트·모의 테스트. 통합: 엔진·Agent·API·실제 연결 |
-| 현재 작업 | W5 로컬 stdio MCP 계약 확정·구현 준비(INT-026). W4-3 실제3사례 완료·서버 종료 |
+| 현재 작업 | W5 로컬 stdio MCP 구현·직접/프로토콜 대조 완료(INT-027). 기존 웹은 HTTP 경로 유지 |
 | 통합 담당 | 현재 대화. 엔진/Agent/API와 공유 계약 및 PR 병합 전담 |
 | 웹 담당 | 별도 담당의 웹 모의 앱 PR #61 병합. 사용 기준/도구/제안은 WEB-001/002 유지 |
 | 웹 계약 | web-agent.v0 구현/검증: agent-http-sse-contract.md·INT-022~025. 실제 브라우저3사례 확인·검증용 서버 종료 |
@@ -43,6 +43,14 @@
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-027 — W5 로컬 stdio 구현·합성 대조 (2026-10-21)
+
+- 통합 / 구현·합성 검증. 계약#82는 head7abfd24/CI39516249397 성공 후develop45d518a로 Squash 병합·메시지/트리 확인·완료 브랜치 정리. feat/local-mcp-tools는 최신 계약을 반영했다. #81은 별도 실행 주체가 masterf409db5로 병합한 사실을 확인했고 이 대화에서 master 병합을 실행하지 않았다.
+- FRS/mcp의 엄격 mcp-build.v1·ID/원문·고정 합성 context·Tool1/Resource/Prompt·단일 worker/lease·stdio CLI/단일 전송 client를 구현했다. 기존 HTTP/core/graph/presentation·웹/WEB-* 보존, 환경 import 목록과 고정 SDK/전이 의존성만 추가했다.
+- 신규50/전체pytest1,490·Ruff/환경/pip 통과. 실제stdio12개(정상9·누락/충돌2·미지원1)와 직접 결과 전체 일치·프로토콜2026-07-28·subprocess EOF 정상 종료. 취소/실제종료까지busy·마지막 만료·큰수/변조·SDK HEADER_MISMATCH 재전송 없음 확인. stage-w5-mcp-implementation.md에 실행/해시/한계를 기록했다.
+- 모델/HTTP/넥슨·호스트 등록/지속서버/외부tracing0. Prompt는 후보 제공이며 실제 LLM tool-use가 아니다. 웹은 기존 web-agent.v0 HTTP 그대로이며 주소/화면 변경 요청 없음. 실제 모델 정확도/일반 MCP host/운영 SLA·W6 완료 주장 없음.
+- 최신 기능 PR CI/develop Squash/완료 브랜치 정리·master 기능 묶음 PR은 실제 결과를 확인한다. 상대 수신/검증을 대신 주장하지 않는다.
 
 ### INT-026 — W5 로컬 MCP 계약 확정 (2026-10-21)
 

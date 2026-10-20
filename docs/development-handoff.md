@@ -601,3 +601,12 @@ API#79는 최신head09b744a/CI39514039395 성공 후00623baa로 develop Squash �
 ## W5 로컬 MCP 착수 (2026-10-21)
 
 #80 문서 PR의CI39514966847 성공·c0c47bef Squash/트리/메시지 확인·완료 브랜치 로컬/원격 정리, master 대상#81 생성까지 마쳤다. 사용자 다음 단계 요청으로 W5 로컬 MCP 계약을 설계했다. 후속 답변으로 stdio/SDK2.3.0 호환고정/Tool1·Resource·Prompt/원문+후보ID/고정 합성 context/mcp-build.v1/동시1·대기0·150초·재시도0·보수적 취소와 합성 비교 구현을 승인받았다. docs/stage-w5-mcp-contract.md·INT-026을 따른다. 실제 모델/웹/호스트 등록/HTTP MCP/배포/새 수집은 제외한다. 계약은 docs PR, 코드는 별도 기능 PR로 분리하며 기존 고정 패키지 충돌을 임의 업그레이드로 숨기지 않는다.
+
+
+## W5 로컬 stdio 구현·검증 (2026-10-21)
+
+계약#82는 head7abfd24/CI39516249397 성공 후45d518a로 Squash 병합·메시지/트리 확인·완료 브랜치 로컬/원격 삭제. 별도 실행 주체가 #81을 masterf409db5로 병합한 사실도 확인했으며 이 대화는 master 병합을 하지 않았다.
+
+feat/local-mcp-tools에서 원문+후보ID/엄격mcp-build.v1/고정 합성context·Tool/Resource/Prompt·단일전송client·stdioCLI를 구현했다. 신규50/전체pytest1,490·Ruff·환경/pip 통과, 실제stdio12개 직접 대조 전체 일치/프로토콜2026-07-28/EOF 종료 확인. SDK고수준 schema재전송은 사용하지 않고 공개ClientSession 단일 전송으로 retry0을 유지했다. 상세/해시/고정 과거시각/제한은 stage-w5-mcp-implementation.md·INT-027.
+
+실제 모델/HTTP/새수집/호스트등록/웹변경/지속서버0. 기존 엔진·그래프·HTTP/웹 계약/사용자 파일·과거 종료 실행을 보존했다. 이후 최신CI/develop Squash·완료브랜치 정리·새master 기능묶음 PR 생성까지 확인한다. 다음 W6의 평가셋/횟수/기준·실제모델/서술/외부관측·제출일은 사용자 확정 전 제안이다.

@@ -19,7 +19,7 @@
 | 이 문서 작성 시작 기준 | develop ec6ff24, 강화 설계 PR #55 병합 결과. 이후 작업자는 실제 최신 develop을 다시 확인 |
 | 사용자 확정 스택 | Vue 3 + Vite + TypeScript 독립 프론트엔드 |
 | 사용자 확정 분담 | 웹: 화면·통신 클라이언트·모의 테스트. 통합: 엔진·Agent·API·실제 연결 |
-| 현재 작업 | R0~R4 코드 병합·새 비교 완료/두 모델 채택 보류. 후보 구간·ID 선택은 사용자 결정으로 설계만, 실제 Agent API 미구현 |
+| 현재 작업 | 후보 선택 C1~C3 구현/합성 검증 완료·CI 대기. 직접 구간 모델 채택 보류, 실제 ID 선택 모델/C4·Agent API 미구현 |
 | 통합 담당 | 현재 대화. 엔진/Agent/API와 공유 계약 및 PR 병합 전담 |
 | 웹 담당 | 별도 담당의 웹 모의 앱 PR #61 병합. 사용 기준/도구/제안은 WEB-001/002 유지 |
 | 웹 계약 | web-agent.v0 제안, 모의 응답용. 실제 API와 일치 확인/계약 확정 전 live 연결 대기 |
@@ -43,6 +43,36 @@
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-019 — C4 코드·실제 소량 비교 결과 (2026-10-20)
+
+- 통합 / 상태: 구현·검증·실제 비교 완료. 기준 develop1f05b44(#71), feat/ollama-candidate-selection. INT-018/C4 계약을 구현.
+- ollama_selection·공통 ollama_transport·candidate_comparison을 추가하고 직접 구간 추출기 공개 계약을 보존. 기존 normalizer/core/graph/presentation/API·웹/WEB-* 변경 없음.
+- 신규37개/전체pytest1,354개·Ruff·환경/pip 통과. 실제 candidate-selection-20261020-001은 상태4회·추론12회 completed, 서버/연결/기한/재시도0.
+- 2b 전체근거/의미5/6·8b6/6. 2b의 순서/쉼표 사례 강화ID 누락은 incomplete_coverage로 거부. 두 모델 각 미지원1개 준비 차단/미호출. 중앙 지연4.59/9.00초(로드 포함). 스키마는 모두6/6.
+- 8b를 정형 데모 후보로 추천하되 모델 채택/HTTP·SSE 운영 정책은 사용자 확인 후 결정. 실제 비교에서 엔진/DB/수집/API/웹은 미실행. 웹 DTO 확정 아님·웹 담당 수정 요청 없음.
+- 결과/계획/manifest/모델 digest·해시는 ollama-candidate-selection-results.md. 기존 실행/잠금 보존, 새12회 소진·재실행 금지. 최신 head CI/PR/병합은 실제 완료 후 기록.
+
+### INT-017 — 후보 선택 C1~C3 코드
+
+- 날짜/담당: 2026-10-20 KST / 통합. 상태: 구현·로컬 합성 검증 완료, 원격 CI 대기.
+- 기준: develop 88a1b28(PR #69), feat/controlled-candidate-selection. C0는 head 47c9f3c/CI39383810778 성공 후 88a1b28로 Squash 병합, 최종 메시지/트리 확인 후 완료 브랜치 로컬·원격 삭제. 구현 브랜치에 계약을 통합.
+- 변경: candidates/selection/wrapper의 순수 준비·불변 registry·엄격 ID·전체 출현 커버리지·SourceSpan 복원→기존 요청별 그래프. 준비 사유·선택 오류는 별도 결과로 종료하고 정상 입력만 기존 AgentRunResult에 위임.
+- 검증: 신규 84개/전체 pytest 1,317개·Ruff·환경/pip 통과. 3클럽×3포메이션 실제 CP/독립 검증/표·순서120개·값/구간/ID/변조·상한/Unicode/중첩·미호출/만료/외부 tracing 비활성화를 확인. 실제 모델 호출 0회. 상세 controlled-candidate-selection.md.
+- 호환: 기존 Ollama JSON 함수를 공통 모듈로 이동/재노출하고 회귀 확인. core/기존 graph/presentation/API/frontend·WEB-* 변경 없음. 새 wrapper는 HTTP/v0가 아니며 입력 사유 직렬화는 후속.
+- 다음: 최신 head CI/병합/브랜치 정리 후 기능 묶음 develop→master PR 생성. 실제 Ollama ID 선택 C4는 모델/범위·새 호출 승인 필요. 두 직접 구간 모델은 여전히 채택 보류.
+
+
+
+### INT-016 — 후보 선택 구현 계약 확정
+
+- 날짜/담당: 2026-10-20 KST / 통합. 상태: 사용자 결정 반영·C0 계약.
+- 기준: develop 2aef28b(PR #68), docs/candidate-implementation-contract. master PR #65가 다른 실행 주체에 의해 790907b로 병합됐음을 읽기 전용 확인. 파일 내용은 당시 develop과 같고 이 대화에서 master를 병합하지 않음.
+- 사용자 결정: 정형 조건문 우선·순서 자유·누락/중복 보존, 미해결/부정/정정은 전체 명확화. 값 후보 128개/문맥 64개 상한·초과 전체 명확화, 잘못된 모델 ID/응답은 기술 오류·재시도/기본값 없음.
+- 구현 범위: 후보 생성/불변 registry·엄격 ID 선택/원문 복원·새 입력 준비/선택 결과 wrapper→기존 SquadAgent. 정상 문맥은 한 값씩이므로 전체 ID 커버리지로 대조, 미해결 문맥을 모델 filler 판정으로 무시하지 않음.
+- 경계: 실제 모델 호출/선정·새 수집·웹/기존 엔진/API·공개 정규화 의미 변경 없음. 상세 candidate-selection-implementation-contract.md. 코드/합성 검증은 후속 기능 PR에서 기록.
+
+
 
 ### INT-015 — 후보 구간·ID 선택 설계
 
@@ -191,6 +221,14 @@
   8. 종료 이벤트를 받은 읽기 단위의 뒤 이벤트는 프로토콜 오류로 처리하고, 종료 이벤트 뒤에는 서버의 연결 종료를 기다리지 않고 읽기를 멈춘다.
 - 영향: 백엔드 웹 어댑터(통합 담당 소유)의 직렬화 규칙. 기존 Python 도메인 모델 변경은 요청하지 않는다.
 - 다음 담당: 통합 담당. 받아들이거나 다르게 정한 항목을 INT-001에 적용 버전과 함께 기록.
+
+### INT-018 — C4 실제 ID 선택 어댑터·새 비교 승인 (2026-10-20)
+
+- 담당: 통합 / 상태: 사용자 승인·계약. 기준 develop e234567 (#70), docs/candidate-ollama-contract.
+- 의존: INT-017·candidate-ollama-comparison-contract.md. 기존 모델 제외 중 실제 어댑터/새 비교만 확대한다.
+- 두 모델×7사례·준비 차단 미호출·최대12추론, 로컬 순차/각120초/재시도·다운로드·외부 전송 없음/서버·연결 오류 즉시 중단. 기존 기록 보존.
+- 실제 비교는 정규화까지만, 엔진/DB/수집/API/웹 제외. 웹 DTO 변경 없음·웹 담당 조치 없음. 모델 운영 채택은 후속.
+- 계약 PR은 문서/링크/diff 검토, 코드 테스트 미실행(문서만). 실제 구현/결과는 후속 기능 PR에 기록한다.
 
 ### 기록 양식 — 실제 작업 시 새 WEB-* 또는 INT-* 항목으로 복사
 

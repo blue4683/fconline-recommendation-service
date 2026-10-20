@@ -534,3 +534,23 @@ R4 PR #64는 head 2b67f93의 CI 39379359111(quality 118484649323) 성공 후 aeb
 비교 기록 PR #67은 head 12cda58의 CI39381098614 성공 후 22b7073으로 Squash 병합하고 최종 메시지/트리를 확인, 해당 완료 브랜치를 로컬·원격 삭제했다. 사용자 후속 선택으로 코드 후보 구간/ID 선택 방향의 설계부터 진행한다. docs/candidate-selection-adapter-design.md·공용 INT-015에 원문/registry/선택·문맥 커버리지·기존 정규화 경계·합성 검증/후속 범위를 기록했다.
 
 이번에는 코드·추가 모델 호출을 하지 않았다. 128/64 후보 수·통제 문형/허용 표현·새 명확화 오류/출력 타입은 제안이며 확정값이 아니다. 기존 추출 인터페이스는 ExtractedConditions 또는 ExtractionError이므로 후보 초과/미해결 문맥을 명확화로 전달할 래퍼/준비 결과 계약이 후속 필요하다. 실패를 normalizer가 생성한 결과로 위장하거나 missing으로 숨기지 않는다. 현재 직접 구간 방식은 두 모델 모두 채택 보류, 새 호출 승인 없음, 서버는 사용자 승인으로 시작한 loopback/cloud 비활성 상태를 유지한다. 설계 PR 검증/병합 후 브랜치를 정리하고 master 대상 PR #65는 갱신만 한다.
+
+## 후보 선택 C0~C3 구현 결정 (2026-10-20)
+
+사용자가 계속 진행과 첫 정형 조건문·순서 자유·누락/중복 보존·미해결/부정/정정은 명확화, 값128/문맥64·초과 전체 명확화, 모델 ID/응답은 기술 오류·재시도/기본값 없음으로 답했다. candidate-selection-implementation-contract.md·공용 INT-016에 먼저 기록하고 C1~C3를 합성으로 구현한다. 기존 그래프는 원문 고정 추출기를 통해 재사용하고 새 준비 사유를 기존 normalizer 결과로 위장하지 않는다. 추가 모델 호출/새 수집·API/SSE·웹 변경 없음. PR #65는 다른 실행 주체의 병합으로 master 790907b가 됐고 당시 develop과 파일 차이가 없음을 확인했다.
+
+## 후보 선택 C1~C3 코드 (2026-10-20)
+
+C0 계약 PR #69는 head47c9f3c/CI39383810778 성공 후88a1b28로 Squash 병합하고 최종 메시지/트리를 확인, 완료 브랜치 로컬·원격 삭제했다. feat/controlled-candidate-selection은 최신 계약을 통합했다. candidates.py·candidate_selection.py·candidate_graph.py로 정형 준비/불변 registry·ID 전체 커버리지/원문 복원·기존 그래프 wrapper를 구현했다. 기존 Ollama의 엄격 JSON 함수는 공통 json_contract로 이동해 import를 유지했다. 기존 core·graph/presentation·API·웹은 변경하지 않았다.
+
+신규 합성84개/전체pytest1,317개·Ruff·환경/pip 검사가 통과했다. 정상 3클럽×3포메이션은 실제 CP/독립 검증/표까지 연결했고 문제 전 selector/자료/시계/그래프 차단·만료·추적 비활성화를 확인했다. 테스트는 ID selector 대역이며 실제 모델 정확도 향상이나 E2E를 주장하지 않는다. 이번 실제 추론0회, 과거 두 실행/잠금은 보존했다. controlled-candidate-selection.md·공용 INT-017에 결과/버전/한계를 기록한다. 최신 head CI/병합/브랜치 정리와 master 대상 기능 묶음 PR은 실제 완료 후 확인한다. C4 실제 ID 선택 transport/비교와 모델 선정·API/SSE/웹·운영 정책은 후속이다.
+
+## C4 승인·계약 (2026-10-20)
+
+C1~C3 PR #70은 head082cf37·CI39384956208 성공 후 e234567로 Squash 병합했고 최종 표기/트리 일치를 확인했다. 사용자 후속 승인으로 실제 ID 선택 어댑터와 두 모델×7사례/준비 차단 미호출/최대12추론 새 비교를 진행한다. candidate-ollama-comparison-contract.md·INT-018을 따른다. 이 문서 작성 시 새 추론0회, 기존 기록/잠금 보존. 실제 비교는 정규화까지이며 엔진/DB/수집/API/웹 제외다.
+
+## C4 실제 ID 선택·비교 완료 (2026-10-20)
+
+계약 PR #71은 heada70c556·CI39385836151 성공 후1f05b44로 Squash 병합, 최종 메시지/트리 확인 후 완료 브랜치를 로컬·원격 삭제했다. #70 완료 브랜치도 같은 기준으로 삭제했다. feat/ollama-candidate-selection은 계약을 통합했고 원문/ID 전용 어댑터·공통 전송·1회 비교기를 구현했다. 신규37개/전체pytest1,354개·Ruff·환경/pip 통과.
+
+새 승인12회는 candidate-selection-20261020-001에서 모두 소진됐다. 상태 확인4회·추론12회 completed, 서버/연결/기한/재시도0. 2b 근거/의미5/6·8b6/6, 양쪽 각 미지원1개 준비 차단이다. 2b는 순서/쉼표 사례에서 강화 후보를 누락해 거부했고 자동 보충하지 않았다. 8b 추천/모델 채택과 HTTP/SSE 설계 방향을 질문한 상태이며 답변 전 채택/새 API/추론 실행 없음. 실제 비교는 정규화까지이고 엔진/DB/수집/API/웹 미실행이다. ollama-candidate-selection-results.md·INT-019에 실제 지표/해시/한계를 기록했다. 이전 원본/잠금·이번 원본/잠금과 서버를 보존한다. 기능 PR의 최신 CI/병합·브랜치 정리·master 대상 PR 생성은 실제 결과를 확인한다.

@@ -1,0 +1,231 @@
+import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import App from '../src/App.vue';
+import { finalFor, optimalWithNames, type ScenarioId } from '../src/mocks/fixtures';
+import { createMockTransport } from '../src/mocks/mockTransport';
+import type { Transport } from '../src/services/transport';
+import { controlledTransport, envelope, FIXED_NOW, sse } from './helpers';
+
+const mounted: ReturnType<typeof mount>[] = [];
+afterEach(() => {
+  mounted.splice(0).forEach((w) => w.unmount());
+  vi.useRealTimers();
+});
+
+function mountApp(props: Record<string, unknown> = {}) {
+  const w = mount(App, { props: { liveBaseUrl: '', mockDelayMs: 0, now: () => FIXED_NOW, ...props }, attachTo: document.body });
+  mounted.push(w);
+  return w;
+}
+
+async function chooseMock(w: ReturnType<typeof mount>, scenario?: ScenarioId) {
+  await w.get('input[value=mock]').setValue(true);
+  if (scenario) await w.get('#scenario').setValue(scenario);
+}
+
+async function submit(w: ReturnType<typeof mount>, text = '리버풀 4-2-3-1 예산 6조 BP 급여 210 5~8강') {
+  await w.get('textarea').setValue(text);
+  await w.get('form').trigger('submit');
+}
+
+describe('App', () => {
+  it('합성 자료 안내를 항상 보이고, 연결 방식을 고르기 전에는 보내지 않는다', async () => {
+    const w = mountApp();
+    expect(w.get('[data-testid=data-note]').text()).toContain('합성 가상');
+    await w.get('textarea').setValue('리버풀');
+    expect(w.get('button.send').attributes('disabled')).toBeDefined();
+    expect(w.text()).toContain('연결 방식을 먼저 고르세요');
+    // 서버 주소가 없으면 실제 연결을 고를 수 없다.
+    expect(w.get('input[value=live]').attributes('disabled')).toBeDefined();
+  });
+
+  it('모의 모드를 화면에 표시하고 정상 결과의 표와 합계를 그대로 보인다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'optimal');
+    expect(w.get('[data-testid=mode-banner]').text()).toContain('모의 응답 모드');
+    await submit(w);
+    await flushPromises();
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    const expected = finalFor('optimal', FIXED_NOW)!.squad!;
+    expect(w.get('[data-testid=total-price]').text()).toBe('5,630,700,000,000');
+    expect(expected.total_price).toBe('5630700000000');
+    expect(w.get('[data-testid=result-title]').text()).toContain('최적');
+  });
+
+  it('34자리 BP와 2^53 초과 급여를 손실 없이 표시한다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'huge_numbers');
+    await submit(w);
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    const prices = w.findAll('[data-testid=row-price]').map((c) => c.text());
+    expect(prices[0]).toBe('900,000,000,000,000,000,000,000,000,000,001');
+    expect(w.findAll('[data-testid=row-salary]')[1]!.text()).toBe('9,007,199,254,740,993');
+  });
+
+  it.each([
+    ['needs_clarification', '조건을 보완'],
+    ['infeasible', '스쿼드가 없습니다'],
+    ['unknown', '결론을 내지 못했습니다'],
+    ['data_expired', '자료 기한'],
+    ['internal_error', '내부 오류'],
+    ['llm_unavailable', '언어 모델'],
+    ['server_error', '오류가 발생했습니다'],
+    ['protocol_error', '형식과 달라'],
+    ['disconnect', '통신하지 못했습니다'],
+  ] as [ScenarioId, string][])('%s 상태는 표 없이 구분된 안내를 보인다', async (scenario, title) => {
+    const w = mountApp();
+    await chooseMock(w, scenario);
+    await submit(w);
+    await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));
+    expect(w.get('[data-testid=result-title]').text()).toContain(title);
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+    if (scenario === 'needs_clarification') expect(w.get('[data-testid=issues]').text()).toContain('급여 상한');
+  });
+
+  it('final 전에는 진행 단계만 보이고 표·설명을 공개하지 않는다', async () => {
+    const { transport, opened } = controlledTransport();
+    const w = mountApp({ makeTransport: () => transport });
+    await chooseMock(w);
+    await submit(w);
+    await flushPromises();
+    const s = opened[0]!;
+    s.push(sse('started', envelope(s.requestId, 0, 'started', { data_mode: 'synthetic' })));
+    s.push(sse('progress', envelope(s.requestId, 1, 'progress', { stage: 'build', message: '탐색 중' })));
+    await flushPromises();
+    expect(w.text()).toContain('탐색 중');
+    expect(w.find('[data-testid=pending]').exists()).toBe(true);
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+    expect(w.find('[data-testid=answer]').exists()).toBe(false);
+    // 진행 중에는 중복 전송을 막는다.
+    expect(w.get('button.send').attributes('disabled')).toBeDefined();
+    await w.get('form').trigger('submit');
+    expect(opened).toHaveLength(1);
+
+    s.push(sse('final', envelope(s.requestId, 2, 'final', finalFor('optimal', FIXED_NOW))));
+    s.close();
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+  });
+
+  it('새 요청이 실패하면 이전 성공 표가 남지 않고, 자동 재전송하지 않는다', async () => {
+    let scenario: ScenarioId = 'optimal';
+    let opens = 0;
+    const makeTransport = (): Transport => {
+      const inner = createMockTransport({ scenario: () => scenario, now: () => FIXED_NOW });
+      return { mode: 'mock', open: (r, s) => (opens++, inner.open(r, s)) };
+    };
+    const w = mountApp({ makeTransport });
+    await chooseMock(w);
+    await submit(w);
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    scenario = 'disconnect';
+    await submit(w, '다른 요청');
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+    await vi.waitFor(() => expect(w.get('[data-testid=result-title]').text()).toContain('통신하지 못했습니다'));
+    await flushPromises();
+    expect(opens).toBe(2);
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+  });
+
+  it('HTML처럼 생긴 이름과 설명을 실행하지 않고 텍스트로 보인다', async () => {
+    const payload = optimalWithNames(
+      ['<img src=x onerror=alert(1)>', '<b>굵게</b>', ...Array.from({ length: 9 }, (_, i) => `가상${i}`)],
+      FIXED_NOW,
+    );
+    const { transport, opened } = controlledTransport();
+    const w = mountApp({ makeTransport: () => transport });
+    await chooseMock(w);
+    await submit(w);
+    await flushPromises();
+    const s = opened[0]!;
+    s.push(sse('started', envelope(s.requestId, 0, 'started', { data_mode: 'synthetic' })));
+    s.push(sse('final', envelope(s.requestId, 1, 'final', payload)));
+    s.close();
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    expect(w.find('img').exists()).toBe(false);
+    expect(w.find('.name b').exists()).toBe(false);
+    expect(w.get('[data-testid=answer]').text()).toBe('<img src=x onerror=alert(1)>');
+  });
+
+  it('표시한 결과도 기한이 지나면 만료로 바꾸고 표를 거둔다', async () => {
+    let clock = FIXED_NOW;
+    const w = mountApp({ now: () => clock });
+    await chooseMock(w, 'expiring_soon');
+    await submit(w);
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    clock = FIXED_NOW + 31_000;
+    document.dispatchEvent(new Event('visibilitychange'));
+    await flushPromises();
+    expect(w.get('[data-testid=result-title]').text()).toContain('기한이 지났습니다');
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+    // 시계를 되돌려도 만료를 되돌리지 않는다.
+    clock = FIXED_NOW;
+    document.dispatchEvent(new Event('visibilitychange'));
+    await flushPromises();
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+  });
+
+  it('받는 순간 이미 기한이 지난 성공 결과는 표시하지 않는다', async () => {
+    const w = mountApp({
+      now: () => FIXED_NOW + 2 * 24 * 60 * 60 * 1000,
+      makeTransport: (_m: unknown, sc: () => ScenarioId) =>
+        createMockTransport({ scenario: sc, now: () => FIXED_NOW }),
+    });
+    await chooseMock(w, 'optimal');
+    await submit(w);
+    await vi.waitFor(() => expect(w.get('[data-testid=result-title]').text()).toContain('기한이 지났습니다'));
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+  });
+
+  it('공백뿐인 원문과 4,000 코드포인트 초과 원문은 보내지 않고 자르지 않는다', async () => {
+    const { transport, opened } = controlledTransport();
+    const w = mountApp({ makeTransport: () => transport });
+    await chooseMock(w);
+    await submit(w, '   \n ');
+    expect(opened).toHaveLength(0);
+
+    const over = '😀'.repeat(4001);
+    await submit(w, over);
+    expect(opened).toHaveLength(0);
+    expect((w.get('textarea').element as HTMLTextAreaElement).value).toBe(over);
+    expect(w.text()).toContain('4,001 / 4,000자');
+
+    await submit(w, '😀'.repeat(4000));
+    await flushPromises();
+    expect(opened).toHaveLength(1);
+  });
+
+  it('Ctrl+Enter로 보내고, 예시 선택은 입력란만 채운다', async () => {
+    const { transport, opened } = controlledTransport();
+    const w = mountApp({ makeTransport: () => transport });
+    await chooseMock(w);
+    await w.findAll('.example')[0]!.trigger('click');
+    expect(opened).toHaveLength(0);
+    expect((w.get('textarea').element as HTMLTextAreaElement).value).toContain('리버풀');
+    await w.get('textarea').trigger('keydown', { key: 'Enter', ctrlKey: true });
+    await flushPromises();
+    expect(opened).toHaveLength(1);
+  });
+
+  it('이전 요청의 늦은 이벤트는 현재 화면을 바꾸지 못한다', async () => {
+    const { transport, opened } = controlledTransport();
+    const w = mountApp({ makeTransport: () => transport });
+    await chooseMock(w);
+    await submit(w);
+    await flushPromises();
+    const first = opened[0]!;
+    first.push(sse('started', envelope(first.requestId, 0, 'started', { data_mode: 'synthetic' })));
+    first.push(sse('error', envelope(first.requestId, 1, 'error', { code: 'x', message: '첫 요청 실패' })));
+    first.close();
+    await vi.waitFor(() => expect(w.get('[data-testid=result-title]').text()).toContain('오류'));
+
+    await submit(w, '두 번째 요청');
+    await flushPromises();
+    const second = opened[1]!;
+    second.push(sse('started', envelope(second.requestId, 0, 'started', { data_mode: 'synthetic' })));
+    // 첫 요청 ID로 된 final이 두 번째 스트림에 섞여 오면 성공으로 보이지 않는다.
+    second.push(sse('final', envelope(first.requestId, 1, 'final', finalFor('optimal', FIXED_NOW))));
+    second.close();
+    await vi.waitFor(() => expect(w.get('[data-testid=result-title]').text()).toContain('형식과 달라'));
+    expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
+  });
+});

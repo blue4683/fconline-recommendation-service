@@ -247,6 +247,28 @@
 - 영향: 백엔드 웹 어댑터(통합 담당 소유)의 직렬화 규칙. 기존 Python 도메인 모델 변경은 요청하지 않는다.
 - 다음 담당: 통합 담당. 받아들이거나 다르게 정한 항목을 INT-001에 적용 버전과 함께 기록.
 
+### WEB-003 — 정형 조건문 입력 안내와 v0 선택 필드 제안
+
+- 날짜/담당/ID: 2026-10-20 / 웹 / WEB-003. 구분: 진행 + 설계 차이·변경 요청. 상태: 구현·로컬 검증(웹), 계약 부분은 제안. 통합 담당의 확인 전이다.
+- 기준: develop `7c56bbc`(#72). INT-015~019, FRS/agent/candidates.py·candidate_graph.py·presentation.py를 읽기 전용으로 확인했다. 백엔드 파일은 바꾸지 않았다.
+- 설계 차이 1 — 입력 예시: 웹 예시(`리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강 카드로 스쿼드 짜줘` 등 3개)는 7c56bbc의 `prepare_candidates`에서 모두 needs_clarification이 된다. 최소 재현 `리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강으로 구성해줘` → `unrecognized_context`("리버풀 4-2-3-1", 클럽·포메이션 한 절), `missing_coefficient`("6조 BP"), `invalid_salary`("210 이하").
+- 변경 전 → 후(웹): 예시와 입력 안내를 쉼표로 나눈 정형 조건문(`예산 X, 급여 N, 클럽, 포메이션, N강|N~M강|N강,M강` + 선택 접미사 `(으)로 구성해줘`)으로 바꿨다. 새 예시 3개(`frontend/src/contracts/requestFormat.ts`)는 같은 기준에서 `prepare_candidates` issues 0개, 선택 ID를 모두 고른 뒤 `normalize_conditions` 통과를 확인했다. 브라우저는 여전히 원문을 검사·수정하지 않는다.
+- 설계 차이 2 — 결과 필드: CodePresentation·후보 준비 결과에는 v0 final에 없는 `coverage`, 오류 사유 코드, 확인 시각, 문제 절의 원문 구간이 있다. 웹 v0 파서는 모르는 필드를 프로토콜 오류로 처리하므로 그대로 보내면 표시가 거부된다.
+- 변경 요청(제안) — v0 final에 선택 필드 추가. 모두 생략 또는 null 허용, 그 밖의 모르는 필드는 계속 거부:
+  1. `code`: `^[a-z][a-z0-9_:.-]{0,63}$`. 예: provider_error의 `selection_provider_error`·`invalid_selection`.
+  2. `coverage`: `[{slot, count}]`. count는 0 이상 정수, slot 중복 금지, conditions가 있으면 FORMATION_SLOTS 순서와 같아야 한다.
+  3. `evaluated_at`: 오프셋이 있는 ISO 8601.
+  4. `issues[].span`: `{start, end, text}`. 0 ≤ start < end ≤ 4,000(Python 코드포인트, end 미포함), text는 비어 있지 않다. 웹은 text만 표시하고 위치로 원문을 자르지 않는다.
+- 어댑터 매핑 요청(통합 담당 소유, 제안):
+  1. `input_issues` → `needs_clarification`. PreparationIssue는 `{field, kind, code, message, occurrence, span}`으로 보낸다. 웹 모의 값은 field `original`이면 kind `invalid`, 값 파싱 실패도 `invalid`, occurrence 0이다. `context_id`는 보내지 않는다.
+  2. `provider_error` → `llm_unavailable`(선택 호출 실패) 또는 `internal_error`(선택 결과 검증 실패)이며, `code`에 RunResult.error를 담는다.
+  3. `agent_result` → CodePresentation의 status·conditions·squad·snapshot·coverage·evaluated_at을 그대로 옮긴다. kind·presentation_version·model_metadata는 `versions` 문자열 값으로 접어 넣거나 보내지 않는다. 템플릿 설명은 `narration_source: "template"`이다.
+- 웹 표시: 되묻기 사유 옆에 원문 구간, infeasible·unknown에 자리별 후보 수(0인 자리 강조), 오류에 사유 코드, 출처 영역에 확인 시각을 보인다. 성공 결과에는 coverage를 따로 보이지 않는다. 모의 시나리오 `input_format`을 추가했고, infeasible·unknown·optimal·feasible에 coverage·evaluated_at, internal_error·llm_unavailable에 code를 넣었다.
+- 영향 경로·호환성: frontend/ 하위와 이 WEB-003 항목만 변경했다. 새 필드가 없는 기존 v0 payload도 그대로 통과한다. FRS/·tests/·scripts/·CI·Docker·설계 문서 변경 없음.
+- 사용자 결정 필요 여부: 없음(웹 범위). 계약 반영 여부는 통합 담당이 INT-001에서 정한다.
+- 검증(로컬, 7c56bbc 기준): `npm run typecheck` 통과, Vitest 5개 파일 74개 통과(신규 12), `npm run build` 통과. headless Chromium으로 1360px·390px 화면의 입력 안내·input_format·infeasible·llm_unavailable·optimal 상태를 확인했고, 가로 넘침은 없었다. 루트 pytest 1,354개 통과, `ruff check`·`ruff format --check` 통과(Python 3.11.17). 미실행: 실제 Agent API 연결(경로 없음), 웹 CI(INT-004 대기).
+- 다음 담당: 통합 담당. 선택 필드 4개와 어댑터 매핑을 INT-001에 수락/수정해 기록한다. 다르게 정하면 웹이 맞춘다.
+
 ### INT-018 — C4 실제 ID 선택 어댑터·새 비교 승인 (2026-10-20)
 
 - 담당: 통합 / 상태: 사용자 승인·계약. 기준 develop e234567 (#70), docs/candidate-ollama-contract.

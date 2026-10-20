@@ -382,3 +382,10 @@ OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정�
 최초 stage-3-e-20261020-001은 전체 pytest와 CPU 부하가 겹쳐 원래 report.json과 별도 measurement-context.md를 보존했다. 테스트 종료 후002를 단독 실행했으며 같은 코드/문제 집합 해시를 확인했다. 최종문제 해시95cab9dccdec060fc4f9d01ff29ac330e5aa3eeb54636a9462286396cea39b88, 로컬 artifacts/benchmarks/stage-3-e-20261020-002/report.json. optimal45/infeasible15, 유효해45/45·제약107/107·전수15/15·상태180/180·탐욕대비 개선45/동점17/악화0(62회)으로 D6 기능 기준 통과다. CP-SAT 스냅샷 포함 p50/p95는27.1/206.5ms, 지연 목표는 아직 미정이다. README와 docs/stage-3-e-benchmark-results.md에 분모·재현·측정 범위를 기록했다.
 
 새 넥슨 요청·DB/실데이터·학습·API 연결은 없다. 1-D/1-F·공식 발동/보너스·지연 목표/운영 성능과 전체 Stage 3는 미완료다. 최신 head CI/병합은 실제 원격에서 확인하고 지연 기준이나 다음 선행 범위를 추측하지 않는다.
+
+
+## 지연 기준·Stage 4-A 설계 (2026-10-20)
+
+벤치마크 PR #45는 최신 head2cef0c8의 CI39344714150 성공 후879d4da로 develop에 Squash 병합했고 최종 표기/트리 일치를 확인했다. 이번 docs/normalization-and-latency-contract는 그 최신 develop에서 분기했다. 사용자는 같은 로컬 합성60문제 CP-SAT 스냅샷 포함 p95≤1초를 확정했으며 이후 집계에 반영할 정책이다. 기존002 보고서/수치를 소급 변경하지 않는다.
+
+4-A 계약 설계만 선행을 승인했다. 필수5조건 모두 원문 명시·누락되묻기, 정수BP 정확 금액 문법/소수 허용·약/내외/범위/충돌 되묻기, 미지원조건 명시를 확정했다. docs/stage-4-a-normalization-contract.md에 원문 구간/추출-정규화 경계/필드 매핑과 남은 세부 문법·별칭·검증 한계를 기록했다. 코드/LLM/비용·새 수집·DB/API 실행은 없고 공급자/모델을 추측하지 않는다. 1-D/F·공식 보너스·운영 성능은 미완료다.

@@ -9,44 +9,9 @@ from typing import Annotated, Iterable
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from FRS.schema.abilities import STAT_NAMES as STAT_FEATURES
 from FRS.schema.models import CardId, PlayerCard, Position, ReinforceLevel, Text
 
-STAT_FEATURES = (
-    "speed",
-    "accelartion",
-    "goal_determination",
-    "shooting_power",
-    "mid-distance_shot",
-    "positioning",
-    "volley_shot",
-    "penalty_kick",
-    "short_pass",
-    "field_of_vision",
-    "cross",
-    "long_pass",
-    "free_kick",
-    "curve",
-    "dribble",
-    "ball_control",
-    "agility",
-    "balance",
-    "reaction_speed",
-    "man-to-man_defense",
-    "tackle",
-    "intercept",
-    "header",
-    "sliding_tackle",
-    "struggle",
-    "stamina",
-    "positiveness",
-    "jump",
-    "composure",
-    "gk_diving",
-    "gk_handling",
-    "gk_kick",
-    "gk_reaction_speed",
-    "gk_positioning",
-)
 EXTRA_FEATURES = (
     "height",
     "weight",

@@ -6,7 +6,7 @@
 
 AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 계획합니다. 현재는 재설계 문서이며 새 Agent 구현이나 실모델 실행 결과가 아닙니다.
 
-[강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산하는 방향입니다. MVP 추천 범위는 5~11강을 유지하고, 가격·급여 등은 별도 자료로 다룹니다. 현재는 문서 반영/기존 자료 대조 단계입니다.
+[강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)의 [R0 순수 계산기](docs/reinforcement-derivation-implementation.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산합니다. MVP 추천 범위는 5~11강을 유지하고 가격·급여 등은 별도 자료로 다룹니다. 기존 관측/모델 변환이나 실제 수집은 실행하지 않았으며 합성 자료 연결은 후속입니다.
 
 웹 작업 인계는 [웹 담당 설계도](docs/web-agent-blueprint.md)와 [에이전트 공용 기록](docs/agent-collaboration.md)을 사용합니다. Vue 3·Vite·TypeScript의 화면/통신 클라이언트는 웹 담당이, 엔진·Agent·API와 실제 연결은 통합 담당이 맡습니다. 현재는 문서만 있으며 웹 앱/채팅 API는 미구현입니다.
 

@@ -229,6 +229,8 @@ Git 운영 후속 결정 (2026-10-20): 사용자 승인으로 기존 완료 작�
 
 웹 경계 구현 재개·HTTP 정책 (2026-10-20): 사용자가 다음 단계 구현을 요청하고 로컬 origin2개/credentials=false·request_id ASCII 영숫자/-/_ 1~64자·본문64KiB·전체 응답150초를 확정했다. 기존 코드/웹 소유권·추가 실제 요청 제한과 실행 중 작업의 슬롯 보유를 유지한다. 순수 DTO/투영/직렬화부터 구현하며 실제 HTTP 서버/웹 연결은 별도로 검증한다. [계약 §8](agent-http-sse-contract.md)·INT-021.
 
+Agent 준비 상태 결정 (2026-10-20): 별도8001 GET /health는 설정·합성 유효기간·시작 시 모델명/digest/검증 시각을 표시한다. 검증 미완료·만료503, 조회마다 추가 모델 요청 없음. 실제 시작/검증 호출은 별도 범위 확인·구현은 대역 검증.
+
 ## 6. 목표 아키텍처
 
 ```
@@ -720,6 +722,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 
 | ID | 항목 | 상태 | 결과·메모 | 날짜 |
 |---|---|---|---|---|
+| W4-1 웹 경계 | DTO/준비 사유·결과 투영/요청·SSE 직렬화 | 구현·합성 검증 | 신규55개·전체pytest1,409개/Ruff·환경/pip 통과. 큰 정수·원문/근거/상태·최종 만료·안전한 오류. TS파서12final/42envelope·추가필드12거부 확인(Node24.19.0). 실제 HTTP/모델/웹 E2E 없음. agent-web-contract-implementation.md·INT-022 | 2026-10-20 |
 | W4 웹 경계 재개 | HTTP 세부 정책·구현 순서 | 사용자 결정·계약 | origin2개/credentials=false·ID1~64 ASCII·64KiB·응답150초 확정. DTO/투영/직렬화 합성 구현 재개, 새 실제 요청/서버/웹 변경 없음. agent-http-sse-contract.md §8·INT-021 | 2026-10-20 |
 | W4 HTTP/SSE 설계 | 웹 v0·후보 wrapper/출력·기존 API 대조 | 사용자 결정·설계 | qwen3:8b 데모 추출 채택. strict DTO 투영·준비 사유 출처·기술 오류/terminal·최종 만료·진행/동시성 간극 설계. 운영값 미정/별도 확인. 문서만·새 호출/API/웹 코드0. agent-http-sse-contract.md·INT-020 | 2026-10-20 |
 | 후보 선택 C4 코드/실행 | 실제 로컬 ID 선택·정규화 | 구현·합성/소량 검증 | 신규37개/전체pytest1,354개·Ruff·환경/pip 통과. 상태4/추론12 완료, 2b 근거/의미5/6(강화ID 누락 거부)·8b6/6·각1개 준비 차단. 엔진/DB/API/웹 실연결 없음. 승인 소진·재실행 금지. ollama-candidate-selection-results.md·INT-019 | 2026-10-20 |

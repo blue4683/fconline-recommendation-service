@@ -19,7 +19,7 @@
 | 이 문서 작성 시작 기준 | develop ec6ff24, 강화 설계 PR #55 병합 결과. 이후 작업자는 실제 최신 develop을 다시 확인 |
 | 사용자 확정 스택 | Vue 3 + Vite + TypeScript 독립 프론트엔드 |
 | 사용자 확정 분담 | 웹: 화면·통신 클라이언트·모의 테스트. 통합: 엔진·Agent·API·실제 연결 |
-| 현재 작업 | C1~C4 구현·실모델 소량 비교/develop 병합 완료(#70/#72). qwen3:8b 정형 데모 추출 채택. HTTP/SSE 문서 설계, API/SSE 코드·웹 실연결 미구현 |
+| 현재 작업 | qwen3:8b 데모 추출 채택·W4-1 순수 DTO/투영/직렬화 합성 검증. 실제 HTTP 앱·웹 live 연결은 후속(INT-022) |
 | 통합 담당 | 현재 대화. 엔진/Agent/API와 공유 계약 및 PR 병합 전담 |
 | 웹 담당 | 별도 담당의 웹 모의 앱 PR #61 병합. 사용 기준/도구/제안은 WEB-001/002 유지 |
 | 웹 계약 | web-agent.v0 모의 wire 기반 HTTP/SSE 설계안: agent-http-sse-contract.md·INT-020. 운영값/코드·계약 검증 전 live 연결 대기 |
@@ -43,6 +43,14 @@
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-022 — W4-1 웹 경계 순수 코드 (2026-10-20)
+
+- 통합 / 구현·합성 검증. 기준 develop53446d6(#76), feat/agent-web-contract. 정책 #76은 headebe7fe3/CI39390911643 성공 후53446d6로 Squash 병합·메시지/트리 확인.
+- DTO/원문·준비/정규화 투영·안전한 선택 오류·명시 버전/모델 출처·불변 bytes/최종 만료·64KiB 엄격 요청·요청별 SSE를 추가. 기존 core/graph/presentation·웹/WEB-* 변경 없음.
+- 신규55개/전체pytest1,409개·Ruff·환경/pip 통과. TS parser 읽기 전용 대조는12final/42envelope·추가필드12거부 통과(번들Node24.19.0). 전체 웹 빌드/브라우저/실제 HTTP·모델 E2E 아님.
+- 후속 사용자 확정: 8001 GET /health는 설정/합성 유효기간/시작 시 모델명·digest·검증 시각을 표시, 미검증·만료503·조회마다 모델 HTTP 없음. 실제 상태 확인/서버 실행은 별도 범위.
+- 다음: 최신 head CI/develop 병합 후 HTTP 앱 수명주기/동시성·기한/연결 종료를 대역으로 구현. 실제주소 준비·웹 live 연결 완료 아님. 상세 agent-web-contract-implementation.md.
 
 ### INT-021 — 웹 경계 구현 재개·HTTP 정책 확정 (2026-10-20)
 

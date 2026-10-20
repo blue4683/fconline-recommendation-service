@@ -3,8 +3,8 @@ import { TransportError, type Transport } from './transport';
 
 /**
  * web-agent.v0 스트림 경로. INT-020 설계의 별도 합성 Agent 앱(127.0.0.1:8001) 경로와 같다.
- * develop 4ff544d 기준 이 HTTP 앱은 아직 구현되지 않았으므로 서버가 있다고 가정하지 않는다.
- * 스트림 전 거절(409·413·422·503)은 상태 코드만 전달하고 본문은 해석하지 않는다.
+ * 서버(FRS.api.agent_app)는 develop 00623ba부터 있다. 상주 서버가 켜져 있다고 가정하지 않으며, 화면은 GET /health로 먼저 확인한다.
+ * 스트림 전 거절(403·408·409·413·415·422·503)은 상태 코드만 전달하고 본문은 해석하지 않는다.
  */
 export const PROPOSED_STREAM_PATH = '/recommend/squad/stream';
 
@@ -43,7 +43,10 @@ export function createLiveTransport(baseUrl: string, fetchImpl: FetchLike = (i, 
         });
       } catch (error) {
         if (signal.aborted) throw error;
-        throw new TransportError('network', '서버에 연결하지 못했습니다.');
+        throw new TransportError(
+          'network',
+          '서버에 연결하지 못했습니다. 서버가 켜져 있는지, 이 화면을 허용된 주소(5173 개발 서버)에서 열었는지 확인해 주세요.',
+        );
       }
       if (!response.ok) {
         throw new TransportError('http', `서버가 요청을 처리하지 못했습니다 (HTTP ${response.status}).`, response.status);

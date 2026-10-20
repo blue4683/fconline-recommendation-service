@@ -143,18 +143,18 @@ export class ContractError extends Error {
 // ---------------------------------------------------------------------------
 // 원시 검사 도우미
 
-type Obj = Record<string, unknown>;
+export type Obj = Record<string, unknown>;
 
-function fail(path: string, reason: string): never {
+export function fail(path: string, reason: string): never {
   throw new ContractError(`${path}: ${reason}`);
 }
 
-function obj(value: unknown, path: string): Obj {
+export function obj(value: unknown, path: string): Obj {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) fail(path, '객체가 필요합니다');
   return value as Obj;
 }
 
-function exactKeys(o: Obj, path: string, required: readonly string[], optional: readonly string[] = []): void {
+export function exactKeys(o: Obj, path: string, required: readonly string[], optional: readonly string[] = []): void {
   for (const key of required) {
     if (!Object.prototype.hasOwnProperty.call(o, key)) fail(`${path}.${key}`, '필수 필드가 없습니다');
   }
@@ -164,7 +164,7 @@ function exactKeys(o: Obj, path: string, required: readonly string[], optional: 
   }
 }
 
-function str(value: unknown, path: string, { nonEmpty = false } = {}): string {
+export function str(value: unknown, path: string, { nonEmpty = false } = {}): string {
   if (typeof value !== 'string') fail(path, '문자열이 필요합니다');
   if (nonEmpty && value.length === 0) fail(path, '빈 문자열은 허용되지 않습니다');
   return value;
@@ -206,7 +206,7 @@ export function isoTime(value: unknown, path: string): string {
   return s;
 }
 
-function oneOf<T extends string>(value: unknown, allowed: readonly T[], path: string): T {
+export function oneOf<T extends string>(value: unknown, allowed: readonly T[], path: string): T {
   if (typeof value !== 'string' || !(allowed as readonly string[]).includes(value)) {
     fail(path, `허용 값(${allowed.join(', ')})이 아닙니다`);
   }

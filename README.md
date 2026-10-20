@@ -20,6 +20,8 @@
 
 성능 점수는 별도의 [3-A 성능 계약 코드](docs/stage-3-a-performance-implementation.md)에서 포지션별 OVR÷2로 계산합니다. [등록 계열 기본 배치 계약](docs/stage-3-a-placement-implementation.md)도 합성 검증으로 구현했고 모델 확장은 꺼두었습니다. [요청별 순수 스냅샷](docs/stage-3-0-snapshot-implementation.md)은 후보 검색·성능·기본 배치를 결합하며 허용 강화 집합과 전체 만료 정책을 합성 자료로 검증했습니다. [CP-SAT·탐욕 비교·독립 검증기](docs/stage-3-b-c-engine-implementation.md)도 합성 자료로 구현했습니다. 동일 인물 최대 1명·전원 클럽 자격·정확한 BP/급여 합계와 응답 만료를 검증하며, [합성60문제 벤치마크](docs/stage-3-e-benchmark-results.md)의 D6 기능 기준도 통과했습니다. 합성 지연 p95≤1초 기준도 통과했으며 DB/API 연결·실데이터·운영 성능은 후속입니다.
 
+Stage 4-A의 [원문 구간·정확 금액 검증기](docs/stage-4-a-amount-implementation.md)도 구현했습니다. 원문 근거/길이·명시 단위·소수의 정수 BP 정확성을 확인하며 전체 조건 조립·LLM·API 연결은 후속입니다.
+
 ## 합성 스쿼드 벤치마크
 
 2026-10-20, 포메이션3종·후보3/10/30·생성시드123·CP-SAT10초/1스레드/시드123으로 측정했습니다. 해 존재45개(정규30+작은15), 해 없음15개입니다.

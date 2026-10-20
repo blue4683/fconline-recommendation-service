@@ -506,3 +506,11 @@ R2 PR #60은 head f5d5159의 CI 39357471708에서 새 의존성 설치/전체 �
 신규 합성 16개·전체 pytest 1,192개·Ruff·환경/pip 검사가 통과했고 최신 CI는 완료 후 기록한다. 응답 clock은 표 구성/독립 검증 이후 확인한다. 모델 메타데이터 미제공을 명시하며 kind=code_presentation은 실제 웹 계약/HTTP 응답이 아니다. 실제 API에서 모델 출처/요청 ID·전송 직전 기한을 연결해야 한다. 웹 파일·실제 LLM 서술·실데이터/수집은 없고 승인된 R4 10회 추출 비교는 다음 단계다.
 
 R3 PR #62는 최신 head 58e0484의 CI 39378396213 성공 후 be2b720으로 Squash 병합했다. 최종 메시지의 표기 부재와 develop 트리 일치를 확인했다. 정책 문서와 새 R3 기록의 충돌은 양쪽 내용을 보존해 해결했다.
+
+## R4 로컬 추출 구현·사전 점검 중단 (2026-10-20)
+
+PR #62는 head 58e0484/CI39378396213 성공 후 be2b720, 정책 PR #63은 head 546f979/CI39378812926 성공 후 7604585로 Squash 병합했다. 최종 표기/트리 확인 후 두 완료 브랜치도 로컬·원격 삭제했다(최초 53개 정리와 별도). 현재 feat/local-condition-extraction은 최신 develop을 반영했다.
+
+Ollama 어댑터/1회 비교 실행기·고정 5문장/정답·엄격 JSON/원문 구간·120초 전체 기한·재시도 없음·pending 선기록/승인 잠금을 구현했다. 신규 합성 41개에 목킹 추출→실제 엔진/독립 검증/표 연결을 포함한다. 실제 첫 실행 ollama-extraction-20261020-001은 /api/version 연결 거부 1회·추론 0회에서 중단했다. 기존 manifest/잠금을 보존하고 서버 시작/새 비교를 질문했다. 답변 전 새 HTTP/모델 실행 없음. 실제 결과/모델 선정을 완료로 표시하지 않는다. 자세한 해시/제한은 ollama-extraction-comparison.md. 전체 검사/최신 head CI·병합은 실제 결과를 확인한다.
+
+현재 R4 코드의 전체 pytest 1,233개·Ruff 린트/포맷·환경 import·pip check가 통과했다. master의 develop 밖 커밋 두 개는 과거 PR #4/#5 merge commit이며 별도 파일 차이는 없다. 실제 변경 없이 merge-tree로 현재 master/develop의 결합을 확인했고 결과 tree가 develop과 일치했다. master 병합/이력 재작성은 하지 않았다.

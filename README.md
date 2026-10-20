@@ -129,3 +129,5 @@ GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/positi
 
 <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white">
 <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+
+로컬 추출 어댑터와 1회 비교의 범위·사전 점검 중단 결과: [Ollama 비교 기록](docs/ollama-extraction-comparison.md). 실제 모델 비교/선정은 아직 미완료다.

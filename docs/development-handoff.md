@@ -562,3 +562,5 @@ C4 PR #72는 headc0cadee·CI39386783038/quality118508408121 성공 후7c56bbc로
 사용자는 qwen3:8b를 정형 데모 추출 모델로 채택하고 HTTP/SSE 계약 설계를 선택했다. docs/agent-http-sse-contract.md·INT-020에 실제 웹 strict DTO/내부 wrapper와 출력/기존 Mongo API의 간극과 연결안을 정리했다. API 코드/새 호출/웹 파일 수정은 없으며 서버 실행 구성·동시성/끊김·합성 배치/시각·origin/운영 한도는 미정이다. 과거 모델 채택 보류 기록 중 이 데모 범위는 새 결정을 우선한다. 계약 구현/실제 웹 E2E가 완료된 것은 아니다. 새 비교12회는 모두 사용했으며 자동 재실행하지 않는다. 이 문서 PR과 기능 묶음 develop→master PR은 실제 CI/PR 상태를 확인하고 master는 별도 요청 없이 병합하지 않는다.
 
 C4 기능 묶음의 develop→master PR #73을 생성했다. master790907b 대비7c56bbc의 merge-tree가 develop tree와 같고 충돌 없음을 읽기 전용 확인했다. master는 미병합이며 CI의 master 대상 자동 실행 부재는 PR에 명시했다. HTTP/SSE 운영3항목(앱 구성·실행/끊김·합성 배치)은 질문 대기 중이고 답변을 확정값으로 추측하지 않는다.
+
+HTTP/SSE 운영3항목 후속 답변을 받았다. 별도 합성 앱/127.0.0.1:8001·동시1/대기0/초과409/끊김 뒤 보수적 종료·seed123/members_per_family3/명시 배치·관측 시각 고정을 확정했다. 문서/INT-020에 반영하고 origin/본문/총 기한 등의 미정과 구분했다. API 코드·서버/자료 생성·모델 호출은 아직 승인 범위가 아니다.

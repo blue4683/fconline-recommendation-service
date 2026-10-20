@@ -7,6 +7,9 @@ defineProps<{
   steps: ProgressPayload[];
   running: boolean;
 }>();
+
+/** 백엔드가 보내는 단계 이름의 화면 표기. 모르는 단계는 받은 이름을 그대로 보인다. */
+const STAGE_LABELS: Record<string, string> = { agent: '조건·구성', render: '결과 확인' };
 </script>
 
 <template>
@@ -19,7 +22,7 @@ defineProps<{
         :key="i"
         :class="{ current: running && i === steps.length - 1 }"
       >
-        <span class="stage">{{ step.stage }}</span>
+        <span class="stage" :data-stage="step.stage">{{ STAGE_LABELS[step.stage] ?? step.stage }}</span>
         <span class="message">{{ step.message }}</span>
       </li>
     </ol>

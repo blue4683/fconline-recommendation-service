@@ -2,8 +2,9 @@ import type { StreamRequest } from '../contracts/webAgentV0';
 import { TransportError, type Transport } from './transport';
 
 /**
- * web-agent.v0 제안 경로. 실제 서버에 이 경로가 있다고 가정하지 않는다.
- * 통합 담당이 INT-001/INT-002로 경로·base URL을 확정하기 전에는 실제 연결 모드를 쓸 수 없다.
+ * web-agent.v0 스트림 경로. INT-020 설계의 별도 합성 Agent 앱(127.0.0.1:8001) 경로와 같다.
+ * develop 4ff544d 기준 이 HTTP 앱은 아직 구현되지 않았으므로 서버가 있다고 가정하지 않는다.
+ * 스트림 전 거절(409·413·422·503)은 상태 코드만 전달하고 본문은 해석하지 않는다.
  */
 export const PROPOSED_STREAM_PATH = '/recommend/squad/stream';
 

@@ -1,8 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App.vue';
+import { REQUEST_EXAMPLES } from '../src/contracts/requestFormat';
 import { finalFor, optimalWithNames, type ScenarioId } from '../src/mocks/fixtures';
 import { createMockTransport } from '../src/mocks/mockTransport';
+import { createLiveTransport } from '../src/services/liveTransport';
 import type { Transport } from '../src/services/transport';
 import { controlledTransport, envelope, FIXED_NOW, sse } from './helpers';
 
@@ -23,7 +25,7 @@ async function chooseMock(w: ReturnType<typeof mount>, scenario?: ScenarioId) {
   if (scenario) await w.get('#scenario').setValue(scenario);
 }
 
-async function submit(w: ReturnType<typeof mount>, text = '리버풀 4-2-3-1 예산 6조 BP 급여 210 5~8강') {
+async function submit(w: ReturnType<typeof mount>, text = REQUEST_EXAMPLES[0]!) {
   await w.get('textarea').setValue(text);
   await w.get('form').trigger('submit');
 }
@@ -68,8 +70,8 @@ describe('App', () => {
     ['unknown', '결론을 내지 못했습니다'],
     ['data_expired', '자료 기한'],
     ['internal_error', '내부 오류'],
-    ['llm_unavailable', '언어 모델'],
-    ['server_error', '오류가 발생했습니다'],
+    ['selection_error', '조건 추출 모델을 사용할 수 없어'],
+    ['request_deadline', '응답 기한 안에'],
     ['protocol_error', '형식과 달라'],
     ['disconnect', '통신하지 못했습니다'],
   ] as [ScenarioId, string][])('%s 상태는 표 없이 구분된 안내를 보인다', async (scenario, title) => {
@@ -204,6 +206,71 @@ describe('App', () => {
     await w.get('textarea').trigger('keydown', { key: 'Enter', ctrlKey: true });
     await flushPromises();
     expect(opened).toHaveLength(1);
+  });
+
+  it('입력 안내와 예시는 쉼표로 나눈 정형 조건문 형식이다', async () => {
+    const w = mountApp();
+    const help = w.get('#request-help').text();
+    expect(help).toContain('쉼표로 나눠');
+    for (const label of ['예산', '급여 상한', '클럽', '포메이션', '강화']) expect(help).toContain(label);
+    const shown = w.findAll('.example').map((b) => b.text());
+    expect(shown).toEqual([...REQUEST_EXAMPLES]);
+    for (const text of shown) {
+      // 백엔드 후보 준비가 되묻는 형태(BP 접미사, "이하", 클럽·포메이션 한 절)를 예시에 쓰지 않는다.
+      expect(text).not.toMatch(/BP|이하|짜줘/);
+      expect(text).toMatch(/^예산 [^,]+, 급여 [0-9]+, [^,]+, [0-9-]+, .+(으로|로) 구성해줘$/);
+    }
+  });
+
+  it('정형 조건문이 아닌 요청에는 준비 단계 사유를 항목별로 보인다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'input_format');
+    await submit(w, '리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강으로 구성해줘');
+    await vi.waitFor(() => expect(w.find('[data-testid=issues]').exists()).toBe(true));
+    expect(w.get('[data-testid=result-title]').text()).toContain('조건을 보완');
+    const items = w.findAll('[data-testid=issues] li').map((li) => li.find('.issue-field').text());
+    expect(items).toEqual(['원문', '예산', '급여 상한']);
+    expect(w.get('[data-testid=issues]').text()).toContain('정형 조건문으로 다시 입력');
+    expect(w.find('[data-testid=squad-row]').exists()).toBe(false);
+  });
+
+  it('진행 표시는 서버가 실제로 보낸 agent·render 단계만 보인다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'optimal');
+    await submit(w);
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    const stages = w.findAll('.steps .stage').map((s) => s.attributes('data-stage'));
+    expect(stages).toEqual(['agent', 'render']);
+    expect(w.findAll('.steps .stage').map((s) => s.text())).toEqual(['조건·구성', '결과 확인']);
+  });
+
+  it('error 이벤트는 공개 코드별 제목과 서버 안내를 보인다', async () => {
+    const w = mountApp();
+    await chooseMock(w, 'selection_error');
+    await submit(w);
+    await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));
+    expect(w.get('[data-testid=result-title]').text()).toBe('조건 추출 모델을 사용할 수 없어 요청을 처리하지 못했습니다');
+    expect(w.text()).toContain('조건 추출 모델을 사용할 수 없습니다. 잠시 후 새 요청을 보내 주세요.');
+    expect(w.get('.detail').text()).toBe('오류 코드 selection_provider_error');
+  });
+
+  it.each([
+    [409, '다른 추천 요청이 진행 중입니다'],
+    [413, '요청 본문이 서버 한도를 넘었습니다'],
+    [422, '서버가 요청 형식을 받지 않았습니다'],
+    [503, '추천 서버가 아직 준비되지 않았습니다'],
+    [500, '서버와 통신하지 못했습니다'],
+  ])('스트림 전 HTTP %i 거절을 구분해 안내하고 다시 보내지 않는다', async (status, title) => {
+    const fetchImpl = vi.fn(async () => new Response('{"code":"x"}', { status, headers: { 'content-type': 'application/json' } }));
+    const w = mountApp({
+      liveBaseUrl: 'http://127.0.0.1:8001',
+      makeTransport: (m: string) => (m === 'live' ? createLiveTransport('http://127.0.0.1:8001', fetchImpl) : null),
+    });
+    await w.get('input[value=live]').setValue(true);
+    await submit(w);
+    await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));
+    expect(w.get('[data-testid=result-title]').text()).toBe(title);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it('이전 요청의 늦은 이벤트는 현재 화면을 바꾸지 못한다', async () => {

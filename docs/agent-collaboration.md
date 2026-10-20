@@ -19,13 +19,13 @@
 | 이 문서 작성 시작 기준 | develop ec6ff24, 강화 설계 PR #55 병합 결과. 이후 작업자는 실제 최신 develop을 다시 확인 |
 | 사용자 확정 스택 | Vue 3 + Vite + TypeScript 독립 프론트엔드 |
 | 사용자 확정 분담 | 웹: 화면·통신 클라이언트·모의 테스트. 통합: 엔진·Agent·API·실제 연결 |
-| 현재 작업 | 후보 선택 C1~C3 구현/합성 검증 완료·CI 대기. 직접 구간 모델 채택 보류, 실제 ID 선택 모델/C4·Agent API 미구현 |
+| 현재 작업 | W4-3 실제 브라우저/모델/합성 엔진3사례 검증 완료(INT-025). 임시 서버/탭 종료·지속 운영 미실행 |
 | 통합 담당 | 현재 대화. 엔진/Agent/API와 공유 계약 및 PR 병합 전담 |
 | 웹 담당 | 별도 담당의 웹 모의 앱 PR #61 병합. 사용 기준/도구/제안은 WEB-001/002 유지 |
-| 웹 계약 | web-agent.v0 제안, 모의 응답용. 실제 API와 일치 확인/계약 확정 전 live 연결 대기 |
+| 웹 계약 | web-agent.v0 구현/검증: agent-http-sse-contract.md·INT-022~025. 실제 브라우저3사례 확인·검증용 서버 종료 |
 | 실제 기존 API | GET /health, GET /cards/{spid}, POST /recommend/position. 채팅/스쿼드 스트림 아님 |
 | 보호 경로 | 웹은 frontend/ 웹 파일과 자기 WEB-* 기록만 수정. frontend/AGENTS.md·FRS/·기존 tests/·공통 설정 등은 읽기 전용 |
-| 검증 기준 | 기존 Python 필수 검사 유지. 프론트엔드 타입/테스트/빌드 명령·CI는 도구 선정 후 확정 |
+| 검증 기준 | Python 필수 검사 유지. 웹 Node22/타입·87테스트·빌드 로컬 통과, 웹CI 미구축 |
 | 구현된 자동 보호 | Python CI만 존재. 경로 자동 차단/웹 CI·파일 권한 격리는 미구축 |
 | 데이터/실행 | 합성 Agent MVP 우선. 1-D/1-F 미완료, 새 수집·실모델 실행/비용·외부 tracing 승인 확대 없음 |
 
@@ -33,16 +33,66 @@
 
 | ID | 공유할 정보/의존성 | 담당 | 다음 조치 |
 |---|---|---|---|
-| INT-001 | v0 요청/응답/SSE 제안을 실제 계약으로 확정할지와 적용 버전 | 통합 | 웹의 DTO 피드백 반영, 기존 코드와 연결 검증. 현재 제안 상태 |
+| INT-001 | web-agent.v0 HTTP/SSE wire | 통합 | web-agent.v0 DTO/HTTP·실제 모델 ASGI·브라우저3사례 통과(INT-022~025). 기능 기준 develop00623baa·지속 서버 없음 |
 | WEB-001 | Node/npm·Vue/Vite/TypeScript·테스트 도구 버전과 설치/검증 명령 | 웹 | 구현. 버전 고정·명령은 아래 WEB-001과 frontend/README. 웹 CI 추가는 INT-004 대기 |
-| INT-002 | 실제 경로·base URL/origin·포트·CORS/proxy·서버 명령·Agent 준비 상태 | 통합 | 백엔드 구현 후 명시. /health로 추측하지 않음 |
-| INT-003 | 동시 실행·중복·취소·시간 상한/재시도 정책 | 통합 | 필요한 사용자 결정 확인. 웹은 단일 진행 요청·자동 재전송 없음 |
+| INT-002 | 경로·주소/origin·CORS·실행/준비 상태 | 통합 | 별도 합성 앱/8001·origin2개/readiness·임시 실제 연결 검증(INT-023~025). 검증용 서버 종료 |
+| INT-003 | 동시 실행·중복·취소·시간 상한/재시도 정책 | 통합 | 동시1/대기0/초과409·150초/보수적 종료 구현(INT-023). ID 상관관계만·중복 억제 없음·재시도0 |
 | INT-004 | mock/live 계약 검사·보호 경로 확인·웹 CI 구성 | 통합 | 웹 도구/스크립트 확정 후 별도 구현/검증. 현재 자동 차단 없음 |
 | INT-005 | 실제 합성 Agent 연결과 최종 만료/설명 검사 | 통합 | W1~W4 백엔드 구현 후 엔드포인트·PR·SHA·합성 대조 결과 공유 |
 
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-025 — 실제 브라우저3사례·임시 서버 종료 (2026-10-21)
+
+- 통합 / 실제 소량 검증. API#79는 head09b744a/CI39514039395 성공 후develop00623baa로 Squash 병합·원문/트리 확인·완료 브랜치 로컬/원격 삭제. 웹 PR#75/#78 포함·WEB-004 계약 유지. 웹/WEB-*·엔진/Agent 소스 수정 없음.
+- 사용자 승인001은 상태1회 연결 거부·추론0/브라우저0에서 중단. 이후 Ollama 시작/새002를 별도 승인받아 상태2/추론3·실제 브라우저POST3회 완료, 원래001/잠금 보존·재시도0. Node22.23.3/기존 lock npm ci·타입/87테스트/빌드 통과.
+- web-agent.v0/실제 연결127.0.0.1:5173→8001→qwen3:8b/명시 digest·새 합성 배치·시각에서 정상optimal11명·누락/충돌명확화·이전 표 제거를 확인했다. 실제 SSE 무호출3/3 검사와 실행 중 AX/PNG 수동 화면 확인을 구분한다. AX 저장본은 diff뿐인 한계도 agent-browser-e2e.md에 기록했다.
+- 검증 뒤 이번에 시작한 Ollama11434/Agent8001/Vite5173·임시 탭을 종료하고 listener 부재 확인. 모델/배치 자동 선택·다운로드/외부전송/넥슨0·두 승인 종료/재사용 금지. 지속 데모 서버 준비 완료가 아니다.
+- 웹 공유 기준은 develop00623baa/API#79 및 agent-browser-e2e.md다. 새 웹 소스 변경 요청 없음. fixture 재생성/웹 추가 기능/CI·경로 보호는 별도 후속이며 상대 수신/검증을 대신 주장하지 않는다. master에는 기능 묶음 PR만 생성·병합/배포하지 않는다.
+
+### INT-024 — W4-2 실제 모델 ASGI 결과와 재개 (2026-10-21)
+
+- 통합 / 실제 실행2026-10-20·재개 기록2026-10-21. 사용자 승인 agent-api-e2e-20261020-001, 상태2회·추론3회 사용·잠금/원본 보존·추가 호출0. 실제 모델qwen3:8b/고정digest와 합성 배치·관측 시각은 synthetic-agent-api.md에 기록했다.
+- 정상optimal11명·급여 누락/예산 충돌needs_clarification. 최초 검사기 급여 int/문자열 비교 실패 manifest 보존, 저장 응답만 계약 타입으로 검증해3/3 통과. 모델/제품 오류를 숨기기 위해 재시도하거나 결과를 고치지 않았다.
+- 최신 develop d337535의 WEB-004/PR#78 반영 후 저장 실제3스트림/12이벤트가 TS파서 통과(Node24.19.0). 웹 코드/WEB-* 변경 없이 읽기 전용 대조. 선택 issue.span/coverage 제안 철회는 WEB-004를 확인했으며 백엔드 wire 추가 없음.
+- 이번 PR은 HTTP 앱 구현과 실제 ASGI 검증까지다. 8001 상주 서버·브라우저 live 연결/신규 넥슨 수집0. VITE_FRS_API_BASE_URL=http://127.0.0.1:8001은 앱을 새 승인 범위로 실제 시작한 뒤 사용한다. 기존 mock을 live로 표시하지 않는다.
+- 합성/실모델 제한·검사기 오류·해시·후속은 synthetic-agent-api.md. 이전 INT-023의 실제 실행 대기 상태는 이 결과가 대체한다. 병합 SHA·CI는 PR의 실제 결과를 따른다. 상대 확인/메시지 전송 주장 없음.
+
+### INT-023 — W4-2 합성 Agent HTTP/SSE 앱 (2026-10-20)
+
+- 통합 / 구현·합성 검증. 기준 develop0d9f9a3(#77), feat/synthetic-agent-api. #77은 head3d0147c/CI39391464235 성공 후0d9f9a3로 Squash 병합·메시지/트리 확인·완료 브랜치 로컬/원격 삭제.
+- 구현: 별도 FRS.api.agent_app 앱, GET /health·POST /recommend/squad/stream. wire web-agent.v0, health agent-health.v1. origin2개/credentialsfalse·64KiB/ID/150초·단일실행/409·보수적 중단. 기존 core/graph/presentation/API8000/웹·WEB-* 보존.
+- 요청별 worker/lease·후속 검사와 실제 Future 완료 기반 슬롯 해제, 캐시한 시작 메타데이터 기반 health/미검증·만료503, 명시 설정/합성 배치·시각 고정. 실제 시작 시 상태 조회2회가 있으므로 별도 실행 범위 확인 필요.
+- 검증: 신규31개/전체pytest1,440개·Ruff·환경/pip 통과. ASGI2.4 끊김/기한 후409유지·후속 자료 차단·전송 전 만료/헤더 실패·모델 오류를 대역으로 검증. 실제 ASGI9스트림/36이벤트 TS파서 통과(Node24.19.0). 원문/큰수/단일terminal 유지.
+- 웹 공유: 백엔드 wire 구현/합성 대조 기준은 이 PR 병합 SHA부터다. VITE_FRS_API_BASE_URL 후보는 http://127.0.0.1:8001이나 아직 상주 서버/모델 E2E를 실행하지 않아 연결 준비 완료가 아니다. 기존 mock을 실제 성공으로 위장하지 않는다. 보호 코드 수정 요청 없음·상대 수신/검증 주장 없음.
+- 실제 Nexon/Ollama 요청0회. 정상/누락/충돌의 새 소량 실제 모델 E2E(최대2상태+3추론)는 별도 질문 대기이며 답변 전 실행하지 않는다. 상세 synthetic-agent-api.md.
+
+### INT-022 — W4-1 웹 경계 순수 코드 (2026-10-20)
+
+- 통합 / 구현·합성 검증. 기준 develop53446d6(#76), feat/agent-web-contract. 정책 #76은 headebe7fe3/CI39390911643 성공 후53446d6로 Squash 병합·메시지/트리 확인.
+- DTO/원문·준비/정규화 투영·안전한 선택 오류·명시 버전/모델 출처·불변 bytes/최종 만료·64KiB 엄격 요청·요청별 SSE를 추가. 기존 core/graph/presentation·웹/WEB-* 변경 없음.
+- 신규55개/전체pytest1,409개·Ruff·환경/pip 통과. TS parser 읽기 전용 대조는12final/42envelope·추가필드12거부 통과(번들Node24.19.0). 전체 웹 빌드/브라우저/실제 HTTP·모델 E2E 아님.
+- 후속 사용자 확정: 8001 GET /health는 설정/합성 유효기간/시작 시 모델명·digest·검증 시각을 표시, 미검증·만료503·조회마다 모델 HTTP 없음. 실제 상태 확인/서버 실행은 별도 범위.
+- 다음: 최신 head CI/develop 병합 후 HTTP 앱 수명주기/동시성·기한/연결 종료를 대역으로 구현. 실제주소 준비·웹 live 연결 완료 아님. 상세 agent-web-contract-implementation.md.
+
+### INT-021 — 웹 경계 구현 재개·HTTP 정책 확정 (2026-10-20)
+
+- 통합 / 상태: 사용자 결정·계약. 기준 develop b82e1c9(#74), docs/agent-http-runtime-policy.
+- 사용자 다음 단계 요청으로 DTO/준비 사유·결과 투영/요청·SSE 직렬화·합성 검증부터 구현. 기존 core/graph/presentation·웹/WEB-*는 보존한다.
+- 후속 확정: localhost:5173/127.0.0.1:5173 두 HTTP origin·credentials=false, ID ASCII 영숫자/-/_ 1~64자·64KiB, 전체 응답150초·진행 작업 종료까지 슬롯 보유. 새 실제 호출/서버 실행 승인은 아님.
+- 실제 HTTP 앱/취소·readiness/웹 합성 계약 검증은 후속. 기존 v0 strict 필드를 기준으로 구현하며 실행하지 않은 진행/모델·단계를 사용으로 표시하지 않는다.
+- 문서 내용/링크/diff 검토. 기능 테스트 재실행 없음(본 PR은 문서만). 모델/메타데이터·넥슨 요청0. 구현/검증 완료와 구분한다.
+
+### INT-020 — 모델 채택·HTTP/SSE 경계 설계 (2026-10-20)
+
+- 통합 / 상태: 사용자 결정·문서 설계. 기준 develop7c56bbc(#72), docs/agent-http-sse-contract. C4는 headc0cadee/CI39386783038 성공 후7c56bbc로 Squash 병합하고 최종 표기/트리 확인·완료 브랜치 로컬/원격 삭제.
+- 사용자 확정: qwen3:8b를 첫 정형 입력 데모 추출로 채택. 다음은 HTTP/SSE 설계만이며 API 코드/새 모델 호출/웹 수정 제외.
+- WEB-002의 strict v0/seq0/terminal/문자열 수치/상태 불변 조건을 실제 frontend 소스와 읽기 전용 대조했다. 내부 presentation 필드/모델 출처·준비 사유 투영·그래프 진행 hook 부재·기존 Mongo lifespan의 간극을 agent-http-sse-contract.md에 기록.
+- 설계안: 기존 도메인 보존·HTTP DTO/실행 계층만 추가, 준비 명확화/선택 기술 오류 구분, 원문/ID/기한/정밀도 유지. 실제 API/v0 호환성 통과·서버 주소 준비 완료 아님. 그래프 완료 목록을 실시간 진행으로 위장하지 않음.
+- 후속 사용자 확정: 별도 합성 앱/127.0.0.1:8001, 동시1/대기0/초과409/끊김 뒤 보수적 종료, seed123/members_per_family3/명시 배치·관측 시각 고정. 구현/서버/생성 실행 승인은 아님. origin/본문/총 기한 등은 미정. 웹은 live 연결/보호 코드 수정 대기, 상대 수신/동의/재검증을 주장하지 않음.
+- 문서/링크/diff 검토, 기능 테스트 재실행 없음(문서만). 이전 전체pytest1,354개·Ruff·실제12회 결과는 #72 기준. 이번 새 Nexon/Ollama 요청0회·기존 잠금/기록 보존.
 
 ### INT-019 — C4 코드·실제 소량 비교 결과 (2026-10-20)
 
@@ -221,6 +271,46 @@
   8. 종료 이벤트를 받은 읽기 단위의 뒤 이벤트는 프로토콜 오류로 처리하고, 종료 이벤트 뒤에는 서버의 연결 종료를 기다리지 않고 읽기를 멈춘다.
 - 영향: 백엔드 웹 어댑터(통합 담당 소유)의 직렬화 규칙. 기존 Python 도메인 모델 변경은 요청하지 않는다.
 - 다음 담당: 통합 담당. 받아들이거나 다르게 정한 항목을 INT-001에 적용 버전과 함께 기록.
+
+### WEB-003 — 정형 조건문 입력 안내와 v0 선택 필드 제안
+
+- 날짜/담당/ID: 2026-10-20 / 웹 / WEB-003. 구분: 진행 + 설계 차이·변경 요청. 상태: 구현·로컬 검증(웹), 계약 부분은 제안. 통합 담당의 확인 전이다.
+- 기준: develop `7c56bbc`(#72). INT-015~019, FRS/agent/candidates.py·candidate_graph.py·presentation.py를 읽기 전용으로 확인했다. 백엔드 파일은 바꾸지 않았다.
+- 설계 차이 1 — 입력 예시: 웹 예시(`리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강 카드로 스쿼드 짜줘` 등 3개)는 7c56bbc의 `prepare_candidates`에서 모두 needs_clarification이 된다. 최소 재현 `리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강으로 구성해줘` → `unrecognized_context`("리버풀 4-2-3-1", 클럽·포메이션 한 절), `missing_coefficient`("6조 BP"), `invalid_salary`("210 이하").
+- 변경 전 → 후(웹): 예시와 입력 안내를 쉼표로 나눈 정형 조건문(`예산 X, 급여 N, 클럽, 포메이션, N강|N~M강|N강,M강` + 선택 접미사 `(으)로 구성해줘`)으로 바꿨다. 새 예시 3개(`frontend/src/contracts/requestFormat.ts`)는 같은 기준에서 `prepare_candidates` issues 0개, 선택 ID를 모두 고른 뒤 `normalize_conditions` 통과를 확인했다. 브라우저는 여전히 원문을 검사·수정하지 않는다.
+- 설계 차이 2 — 결과 필드: CodePresentation·후보 준비 결과에는 v0 final에 없는 `coverage`, 오류 사유 코드, 확인 시각, 문제 절의 원문 구간이 있다. 웹 v0 파서는 모르는 필드를 프로토콜 오류로 처리하므로 그대로 보내면 표시가 거부된다.
+- 변경 요청(제안) — v0 final에 선택 필드 추가. 모두 생략 또는 null 허용, 그 밖의 모르는 필드는 계속 거부:
+  1. `code`: `^[a-z][a-z0-9_:.-]{0,63}$`. 예: provider_error의 `selection_provider_error`·`invalid_selection`.
+  2. `coverage`: `[{slot, count}]`. count는 0 이상 정수, slot 중복 금지, conditions가 있으면 FORMATION_SLOTS 순서와 같아야 한다.
+  3. `evaluated_at`: 오프셋이 있는 ISO 8601.
+  4. `issues[].span`: `{start, end, text}`. 0 ≤ start < end ≤ 4,000(Python 코드포인트, end 미포함), text는 비어 있지 않다. 웹은 text만 표시하고 위치로 원문을 자르지 않는다.
+- 어댑터 매핑 요청(통합 담당 소유, 제안):
+  1. `input_issues` → `needs_clarification`. PreparationIssue는 `{field, kind, code, message, occurrence, span}`으로 보낸다. 웹 모의 값은 field `original`이면 kind `invalid`, 값 파싱 실패도 `invalid`, occurrence 0이다. `context_id`는 보내지 않는다.
+  2. `provider_error` → `llm_unavailable`(선택 호출 실패) 또는 `internal_error`(선택 결과 검증 실패)이며, `code`에 RunResult.error를 담는다.
+  3. `agent_result` → CodePresentation의 status·conditions·squad·snapshot·coverage·evaluated_at을 그대로 옮긴다. kind·presentation_version·model_metadata는 `versions` 문자열 값으로 접어 넣거나 보내지 않는다. 템플릿 설명은 `narration_source: "template"`이다.
+- 웹 표시: 되묻기 사유 옆에 원문 구간, infeasible·unknown에 자리별 후보 수(0인 자리 강조), 오류에 사유 코드, 출처 영역에 확인 시각을 보인다. 성공 결과에는 coverage를 따로 보이지 않는다. 모의 시나리오 `input_format`을 추가했고, infeasible·unknown·optimal·feasible에 coverage·evaluated_at, internal_error·llm_unavailable에 code를 넣었다.
+- 영향 경로·호환성: frontend/ 하위와 이 WEB-003 항목만 변경했다. 새 필드가 없는 기존 v0 payload도 그대로 통과한다. FRS/·tests/·scripts/·CI·Docker·설계 문서 변경 없음.
+- 사용자 결정 필요 여부: 없음(웹 범위). 계약 반영 여부는 통합 담당이 INT-001에서 정한다.
+- 검증(로컬, 7c56bbc 기준): `npm run typecheck` 통과, Vitest 5개 파일 74개 통과(신규 12), `npm run build` 통과. headless Chromium으로 1360px·390px 화면의 입력 안내·input_format·infeasible·llm_unavailable·optimal 상태를 확인했고, 가로 넘침은 없었다. 루트 pytest 1,354개 통과, `ruff check`·`ruff format --check` 통과(Python 3.11.17). 미실행: 실제 Agent API 연결(경로 없음), 웹 CI(INT-004 대기).
+- 다음 담당: 통합 담당. 선택 필드 4개와 어댑터 매핑을 INT-001에 수락/수정해 기록한다. 다르게 정하면 웹이 맞춘다.
+- 후속(2026-10-20): 계약 제안 부분(선택 필드 4개·어댑터 매핑)은 INT-020 §4에 맞춰 WEB-004에서 철회했다. 입력 안내 변경은 유지한다.
+
+### WEB-004 — 백엔드 W4-1 투영에 웹 맞춤·WEB-003 계약 제안 철회
+
+- 날짜/담당/ID: 2026-10-20 / 웹 / WEB-004. 구분: 진행 + 철회. 상태: 구현·로컬 검증. live 연결 완료는 아니다.
+- 기준: develop `4ff544d`(#75 병합). INT-020~022, agent-http-sse-contract.md §2~§8, agent-web-contract-implementation.md, FRS/api/agent_{contract,projection,events}.py를 읽기 전용으로 확인했다.
+- 철회: INT-020 §4는 v0 final에 내부 kind·code·coverage·evaluated_at을 추가하지 않고, 준비 사유의 span·context_id를 내부에 둔다. 새 필드는 계약 버전과 양쪽 검사를 함께 바꾸는 방식이다. #75의 웹 파서는 그중 4개를 선택 필드로 받아서, INT-022의 "추가 필드 거부" 대조와 어긋났다. 그래서 파서를 #72 시점의 엄격한 v0로 되돌리고 관련 표시도 걷어냈다. 문제 절 구간 표시는 필요하면 다음 계약 버전 제안으로 다시 올린다.
+- 변경 전 → 후(웹, frontend/만):
+  1. 모의 응답을 실제 투영 모양으로 바꿨다: 준비 사유 `prepare.*`·occurrence null·field `original`, 정규화 누락 `missing_condition`, 템플릿 안내 문장, versions 13개 키, 진행 단계 `agent`·`render`만.
+  2. 선택 실패와 기한 초과는 final이 아니라 `error` 이벤트(`selection_provider_error`·`request_deadline`)로 재생한다. v0의 llm_unavailable은 예약 상태로 화면 처리만 유지하고, 모의 목록에서는 뺐다.
+  3. 공개 error 코드별 제목을 붙이고, 안내 문장은 서버 message를 그대로 쓴다.
+  4. 스트림 전 HTTP 409·413·422·503을 상태 코드로만 구분해 안내한다. 본문은 해석하지 않고 다시 보내지 않는다.
+  5. 개발 서버를 5173 포트로 고정했다(`strictPort`, INT-021 origin 두 개와 일치). `.env.example`에 8001 설계값을 적었다. 단, HTTP 앱은 아직 구현 전이다.
+- 백엔드 대조: `frontend/tests/fixtures/generate_backend_fixture.py`가 백엔드 순수 투영/SSE 코드와 기존 테스트 대역(selection·OBSERVED·합성 config)을 읽기 전용으로 호출한다. 이것으로 `backend-w4-1.json`(성공 3·준비 사유 2·정규화 사유 1·error 2, 결정적)을 만들었다. 웹 테스트는 이 SSE 바이트를 1·7바이트 청크로 세션에 통과시키고, 파싱 결과가 payload와 같은지, 화면의 표·합계·만료 처리가 맞는지 확인한다. 모델·네트워크·DB·서버 호출은 없다.
+- 영향 경로·호환성: frontend/ 하위와 WEB-003·WEB-004 항목만 바꿨다. FRS/·tests/·scripts/·CI·Docker·설계 문서 변경 없음. 서버가 v0를 그대로 보내면 웹 쪽 추가 조정은 필요 없다.
+- 사용자 결정 필요 여부: 없음.
+- 검증(로컬, 4ff544d 기준): typecheck 통과, Vitest 6개 파일 87개 통과, build 통과. headless Chromium으로 1360px·390px 화면을 확인했다(정형 조건문 아닌 요청·조건 추출 모델 오류·최적 결과, 그리고 409를 돌려주는 로컬 대역 서버로 실제 연결 모드). 가로 넘침은 없었다. 루트 pytest 1,409개 통과, `ruff check`·`ruff format --check` 통과(Python 3.11.17). 미실행: 실제 8001 HTTP 앱 연결(미구현), 웹 CI(INT-004 대기).
+- 다음 담당: 통합 담당. 8001 HTTP 앱이 병합되면 기준 SHA를 INT-*에 남겨 주면 된다. 웹은 그 SHA로 fixture를 다시 만들고 live 연결을 확인한다.
 
 ### INT-018 — C4 실제 ID 선택 어댑터·새 비교 승인 (2026-10-20)
 

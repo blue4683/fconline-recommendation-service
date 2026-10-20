@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { REQUEST_EXAMPLES, REQUEST_FORMAT } from '../contracts/requestFormat';
 import { MAX_MESSAGE_CODE_POINTS } from '../contracts/webAgentV0';
 import { codePointLength, isBlank } from '../utils/format';
 
@@ -14,11 +15,8 @@ const emit = defineEmits<{ submit: [message: string] }>();
 const message = ref('');
 
 /** 예시는 입력란만 채운다. 사용자가 확인하고 직접 보낸다. */
-const examples = [
-  '리버풀 4-2-3-1, 예산 6조 BP, 급여 210 이하, 5~8강 카드로 스쿼드 짜줘',
-  '첼시 4-1-2-3으로 예산 5조 8000억 BP, 급여 상한 205, 5강,7강만 써서 추천해줘',
-  '바이에른 뮌헨 4-2-2-2, 예산 3조 BP, 6~11강으로 맞춰줘',
-];
+const examples = REQUEST_EXAMPLES;
+const format = REQUEST_FORMAT;
 
 const length = computed(() => codePointLength(message.value));
 const tooLong = computed(() => length.value > MAX_MESSAGE_CODE_POINTS);
@@ -49,9 +47,15 @@ function onKeydown(event: KeyboardEvent): void {
 <template>
   <form class="composer" @submit.prevent="submit">
     <label class="label" for="request-message">요청</label>
-    <p id="request-help" class="help">
-      예산(BP), 급여 상한, 클럽, 포메이션, 허용 강화 다섯 가지를 한 문장에 모두 적어 주세요. 빠진 조건은 추측하지 않고 되묻습니다.
-    </p>
+    <div id="request-help" class="help">
+      <p>다섯 가지 조건을 쉼표로 나눠 적어 주세요. 순서는 자유이고, 빠지거나 해석할 수 없는 조건은 추측하지 않고 되묻습니다.</p>
+      <dl class="format">
+        <div v-for="item in format" :key="item.label">
+          <dt>{{ item.label }}</dt>
+          <dd>{{ item.example }}</dd>
+        </div>
+      </dl>
+    </div>
     <textarea
       id="request-message"
       v-model="message"
@@ -94,7 +98,28 @@ function onKeydown(event: KeyboardEvent): void {
 .help {
   color: var(--ink-2);
   font-size: var(--step--1);
-  max-width: 40ch;
+  display: grid;
+  gap: 0.5rem;
+}
+.help > p {
+  max-width: 44ch;
+}
+.format {
+  margin: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+.format div {
+  display: grid;
+  grid-template-columns: 4.75rem 1fr;
+  gap: 0.5rem;
+}
+.format dt {
+  color: var(--ink);
+  font-weight: 500;
+}
+.format dd {
+  margin: 0;
 }
 .input {
   width: 100%;

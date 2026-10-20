@@ -17,6 +17,7 @@ const FIELD_LABELS: Record<string, string> = {
   formation: '포메이션',
   allowed_reinforcements: '허용 강화',
   unsupported: '미지원 조건',
+  original: '원문',
 };
 
 const STATUS_COPY: Record<FinalStatus, { title: string; note: string | null; tone: Tone }> = {
@@ -62,6 +63,45 @@ const STATUS_COPY: Record<FinalStatus, { title: string; note: string | null; ton
   },
 };
 
+/** 스트림 error 이벤트의 공개 코드별 제목. 안내 문장은 서버가 보낸 message를 그대로 쓴다. */
+const SELECTION_CHECK = '모델의 조건 선택을 검증하지 못해 추천하지 않았습니다';
+const ERROR_TITLES: Record<string, string> = {
+  selection_provider_error: '조건 추출 모델을 사용할 수 없어 요청을 처리하지 못했습니다',
+  request_deadline: '응답 기한 안에 추천을 끝내지 못했습니다',
+  invalid_selection: SELECTION_CHECK,
+  candidate_set_mismatch: SELECTION_CHECK,
+  invalid_context_selection: SELECTION_CHECK,
+  unknown_candidate: SELECTION_CHECK,
+  duplicate_candidate: SELECTION_CHECK,
+  field_mismatch: SELECTION_CHECK,
+  incomplete_coverage: SELECTION_CHECK,
+  invalid_registry: SELECTION_CHECK,
+};
+
+/** 스트림을 열기 전 HTTP 거절. 본문은 해석하지 않고 상태 코드만으로 안내한다(INT-020/021). */
+const HTTP_COPY: Record<number, { title: string; note: string; tone: Tone }> = {
+  409: {
+    title: '다른 추천 요청이 진행 중입니다',
+    note: '서버는 한 번에 한 요청만 처리합니다. 진행 중인 요청이 끝난 뒤 다시 보내 주세요. 자동으로 다시 보내지 않습니다.',
+    tone: 'warn',
+  },
+  413: {
+    title: '요청 본문이 서버 한도를 넘었습니다',
+    note: '요청 문장을 줄여 다시 보내 주세요.',
+    tone: 'warn',
+  },
+  422: {
+    title: '서버가 요청 형식을 받지 않았습니다',
+    note: '조건 해석 결과가 아니라 요청 자체가 거절된 것입니다. 새로고침 뒤에도 반복되면 웹과 서버의 계약 버전을 확인해야 합니다.',
+    tone: 'bad',
+  },
+  503: {
+    title: '추천 서버가 아직 준비되지 않았습니다',
+    note: '모델 확인이 끝나지 않았거나 합성 자료 기한이 지난 상태일 수 있습니다. 서버 준비 뒤 다시 보내 주세요.',
+    tone: 'bad',
+  },
+};
+
 const final = computed<FinalResult | null>(() => (props.outcome.kind === 'final' ? props.outcome.result : null));
 const showSquad = computed(() => final.value?.squad != null && !props.expired);
 
@@ -79,7 +119,7 @@ const header = computed<{ title: string; note: string | null; tone: Tone; detail
       }
       return STATUS_COPY[o.result.status];
     case 'server_error':
-      return { title: '추천 중 오류가 발생했습니다', note: o.message, tone: 'bad', detail: `오류 코드 ${o.code}` };
+      return { title: ERROR_TITLES[o.code] ?? '추천 중 오류가 발생했습니다', note: o.message, tone: 'bad', detail: `오류 코드 ${o.code}` };
     case 'protocol_error':
       return {
         title: '서버 응답이 약속한 형식과 달라 결과를 표시하지 않습니다',
@@ -87,8 +127,11 @@ const header = computed<{ title: string; note: string | null; tone: Tone; detail
         tone: 'bad',
         detail: o.detail,
       };
-    case 'transport_error':
+    case 'transport_error': {
+      const http = o.status === undefined ? undefined : HTTP_COPY[o.status];
+      if (http) return { ...http, detail: `HTTP ${o.status}` };
       return { title: '서버와 통신하지 못했습니다', note: o.detail, tone: 'bad' };
+    }
     case 'aborted':
       return { title: '요청 읽기를 멈췄습니다', note: '서버 계산이 함께 취소되었는지는 알 수 없습니다.', tone: 'warn' };
   }

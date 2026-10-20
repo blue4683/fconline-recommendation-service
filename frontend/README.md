@@ -35,15 +35,27 @@ npm run build       # 타입 검사 후 dist/ 생성
 화면 위쪽에서 **모의 응답** 또는 **실제 연결**을 직접 고른다. 기본 선택은 없다.
 
 - 모의 응답: 서버에 요청하지 않는다. 원문을 해석하지 않고 고른 시나리오를 SSE 바이트로 재생한다. 불규칙한 청크·한글 분할·CRLF·여러 data 행·heartbeat를 섞어 실제 파서를 그대로 통과한다.
-- 실제 연결: `VITE_FRS_API_BASE_URL`(예시 `.env.example`)이 있을 때만 고를 수 있다. 제안 경로 `POST {base}/recommend/squad/stream`으로 보낸다. 경로·주소·CORS·포트는 통합 담당의 INT-001/INT-002 확정 전까지 미정이며, 개발 서버 proxy도 설정하지 않았다. 실패를 모의 성공으로 바꾸지 않는다.
+- 실제 연결: `VITE_FRS_API_BASE_URL`(예시 `.env.example`)이 있을 때만 고를 수 있다. `POST {base}/recommend/squad/stream`으로 보낸다. INT-020/021 설계의 서버는 별도 합성 Agent 앱 `http://127.0.0.1:8001`이고 허용 origin은 `http://localhost:5173`·`http://127.0.0.1:5173` 두 개다. 그래서 개발 서버는 5173 포트로 고정했고(`strictPort`), 미리보기(`npm run preview`, 4173)에서는 실제 연결이 CORS로 막힌다. develop `4ff544d` 기준 이 HTTP 앱은 아직 구현되지 않았다. proxy는 설정하지 않았고, 실패를 모의 성공으로 바꾸지 않는다.
+- 스트림 전 HTTP 거절은 상태 코드로만 구분한다: 409 다른 요청 진행 중(동시 1건·대기 없음), 413 본문 한도 초과(64KiB), 422 요청 형식 거절, 503 서버 미준비. 본문은 해석하지 않고 자동으로 다시 보내지 않는다.
 
 브라우저에 노출되는 설정이므로 API 키나 비밀값을 넣지 않는다.
+
+## 요청 형식
+
+백엔드 후보 준비(develop `7c56bbc`)는 쉼표로 나눈 정형 조건문만 받는다. 순서는 자유이고, 마지막에 `(으)로 구성해줘`를 붙일 수 있다.
+
+```
+예산 6조, 급여 210, 리버풀, 4-2-3-1, 5~8강으로 구성해줘
+```
+
+`예산 6조 BP`, `급여 210 이하`, `리버풀 4-2-3-1`처럼 단위·꾸밈말을 붙이거나 두 조건을 한 절에 쓰면 되묻는다. 화면의 안내와 예시는 `src/contracts/requestFormat.ts`에 있으며, 예시 3개는 위 기준에서 ready를 확인했다(WEB-003). 브라우저는 형식을 검사하거나 원문을 고치지 않는다.
 
 ## 구조
 
 ```
 src/
   contracts/webAgentV0.ts   v0 타입과 구조 검사 (금액은 10진 문자열, 상태별 불변 조건)
+  contracts/requestFormat.ts 입력 안내·예시 문장
   services/sse.ts           증분 SSE 파서
   services/agentSession.ts  요청 하나의 스트림 처리 (seq·request_id·종료 이벤트 검사)
   services/liveTransport.ts fetch 기반 POST 스트림. 재시도·재연결 없음
@@ -74,12 +86,15 @@ tests/                      Vitest 동작 테스트
 - SSE: 1바이트 청크의 한글 분할, CRLF/CR, 여러 data 행, 한 청크 여러 이벤트, heartbeat, 잘못된 JSON·버전·type, seq 누락/역전, started 누락/중복, 종료 후 이벤트, 다른 request_id, 빈 줄 없는 마지막 이벤트, 잘못된 UTF-8
 - final 전 표·설명 미노출, 실패 시 이전 표 제거, 자동 재전송 없음, 진행 중 중복 전송 차단, 기한 경과 감지와 비가역성
 - HTML처럼 생긴 이름·설명의 텍스트 표시, Ctrl/Cmd+Enter 전송, 예시는 입력만 채움
+- 백엔드 내부 필드(`code`·`coverage`·`evaluated_at`·`kind`, issue의 `span`·`context_id` 등) 거부 (WEB-004)
+- 백엔드 대조: `tests/fixtures/backend-w4-1.json`은 백엔드 W4-1 투영/SSE 코드(develop `4ff544d`)가 만든 합성 결과 8건(성공 3·준비 사유 2·정규화 사유 1·error 2)이다. SSE 바이트를 1·7바이트 청크로 세션에 통과시키고 화면 표시와 만료를 확인한다. 다시 만들 때는 저장소 루트에서 `PYTHONPATH=. python frontend/tests/fixtures/generate_backend_fixture.py > frontend/tests/fixtures/backend-w4-1.json`. 실제 HTTP 서버와의 연결 검증은 아니다.
+- 스트림 전 HTTP 409·413·422·503 구분 안내, 공개 error 코드별 제목
 - live transport: 본문 JSON 전송·query string 미사용·HTTP 비정상/비스트림 응답 구분·1회 호출
 
-화면은 빌드 결과를 headless Chromium으로 열어 데스크톱(1360px)·모바일(390px) 폭에서 정상·되묻기·큰 금액·프로토콜 오류 상태를 확인했다. 좁은 화면에서 표는 가로 스크롤된다.
+화면은 빌드 결과를 headless Chromium으로 열어 데스크톱(1360px)·모바일(390px) 폭에서 정상·되묻기·큰 금액·프로토콜 오류 상태와, 정형 조건문이 아닌 요청·조건 추출 모델 사용 불가·HTTP 409 상태를 확인했다. 좁은 화면에서 표는 가로 스크롤된다.
 
 ## 남은 일
 
-- INT-001/002/005: 실제 계약·경로·base URL·CORS가 확정되고 백엔드 PR이 develop에 병합되면 live transport를 맞추고 같은 모의 정답을 실제 합성 Agent 응답과 대조한다.
-- INT-003: 서버 동시 실행·취소·시간 상한 정책 확정 전까지 클라이언트는 단일 진행 요청만 허용한다.
+- INT-001/002/005: 8001 HTTP 앱이 develop에 병합되면 실제 합성 Agent 응답으로 live 연결을 확인하고, fixture를 그 기준으로 다시 만든다.
+- INT-003: 서버는 동시 1건·150초 기한으로 확정됐다. 클라이언트는 단일 진행 요청만 허용하고 409를 자동 재전송하지 않는다.
 - INT-004: 웹 CI(`npm ci`·typecheck·test·build)와 보호 경로 검사는 통합 담당이 추가한다.

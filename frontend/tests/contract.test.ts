@@ -120,6 +120,35 @@ describe('parseFinal', () => {
   });
 });
 
+describe('parseFinal — 백엔드 내부 필드', () => {
+  it('v0에 없는 내부 필드(code·coverage·evaluated_at·kind 등)는 최상위에서 거부한다', () => {
+    for (const key of ['code', 'coverage', 'evaluated_at', 'kind', 'presentation_version', 'model_metadata']) {
+      const raw = clone(finalFor('infeasible', FIXED_NOW)!) as unknown as Record<string, unknown>;
+      raw[key] = null;
+      expect(() => parseFinal(raw), key).toThrow(/알 수 없는 필드/);
+    }
+  });
+
+  it('사유의 원문 구간·문맥 ID는 v0 issue에서 거부한다', () => {
+    for (const key of ['span', 'context_id']) {
+      const raw = clone(finalFor('input_format', FIXED_NOW)!);
+      (raw.issues[0] as unknown as Record<string, unknown>)[key] = null;
+      expect(() => parseFinal(raw), key).toThrow(/알 수 없는 필드/);
+    }
+  });
+
+  it('준비 단계 사유(prepare.* 코드·occurrence null·field original)를 그대로 받는다', () => {
+    const result = parseFinal(clone(finalFor('input_format', FIXED_NOW)));
+    expect(result.issues.map((i) => i.code)).toEqual([
+      'prepare.unrecognized_context',
+      'prepare.missing_coefficient',
+      'prepare.invalid_salary',
+    ]);
+    expect(result.issues.every((i) => i.occurrence === null)).toBe(true);
+    expect(result.issues[0]!.field).toBe('original');
+  });
+});
+
 describe('parseEnvelope', () => {
   it('SSE 이벤트 이름과 type이 다르면 거부한다', () => {
     const data = envelope('r', 0, 'started', { data_mode: 'synthetic' });

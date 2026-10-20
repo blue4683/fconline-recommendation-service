@@ -554,3 +554,45 @@ C1~C3 PR #70은 head082cf37·CI39384956208 성공 후 e234567로 Squash 병합�
 계약 PR #71은 heada70c556·CI39385836151 성공 후1f05b44로 Squash 병합, 최종 메시지/트리 확인 후 완료 브랜치를 로컬·원격 삭제했다. #70 완료 브랜치도 같은 기준으로 삭제했다. feat/ollama-candidate-selection은 계약을 통합했고 원문/ID 전용 어댑터·공통 전송·1회 비교기를 구현했다. 신규37개/전체pytest1,354개·Ruff·환경/pip 통과.
 
 새 승인12회는 candidate-selection-20261020-001에서 모두 소진됐다. 상태 확인4회·추론12회 completed, 서버/연결/기한/재시도0. 2b 근거/의미5/6·8b6/6, 양쪽 각 미지원1개 준비 차단이다. 2b는 순서/쉼표 사례에서 강화 후보를 누락해 거부했고 자동 보충하지 않았다. 8b 추천/모델 채택과 HTTP/SSE 설계 방향을 질문한 상태이며 답변 전 채택/새 API/추론 실행 없음. 실제 비교는 정규화까지이고 엔진/DB/수집/API/웹 미실행이다. ollama-candidate-selection-results.md·INT-019에 실제 지표/해시/한계를 기록했다. 이전 원본/잠금·이번 원본/잠금과 서버를 보존한다. 기능 PR의 최신 CI/병합·브랜치 정리·master 대상 PR 생성은 실제 결과를 확인한다.
+
+## 데모 모델 확정·HTTP/SSE 설계 (2026-10-20)
+
+C4 PR #72는 headc0cadee·CI39386783038/quality118508408121 성공 후7c56bbc로 Squash 병합했다. 최종 메시지/트리를 확인하고 완료 브랜치 로컬·원격을 정리했다. 이번 연속 작업의 #69~#72 완료 브랜치4개도 모두 삭제해 이전 #68까지 누계와 합하면 로컬65·원격63개다. 보호/다른 담당 활성 브랜치는 보존했다.
+
+사용자는 qwen3:8b를 정형 데모 추출 모델로 채택하고 HTTP/SSE 계약 설계를 선택했다. docs/agent-http-sse-contract.md·INT-020에 실제 웹 strict DTO/내부 wrapper와 출력/기존 Mongo API의 간극과 연결안을 정리했다. API 코드/새 호출/웹 파일 수정은 없으며 서버 실행 구성·동시성/끊김·합성 배치/시각·origin/운영 한도는 미정이다. 과거 모델 채택 보류 기록 중 이 데모 범위는 새 결정을 우선한다. 계약 구현/실제 웹 E2E가 완료된 것은 아니다. 새 비교12회는 모두 사용했으며 자동 재실행하지 않는다. 이 문서 PR과 기능 묶음 develop→master PR은 실제 CI/PR 상태를 확인하고 master는 별도 요청 없이 병합하지 않는다.
+
+C4 기능 묶음의 develop→master PR #73을 생성했다. master790907b 대비7c56bbc의 merge-tree가 develop tree와 같고 충돌 없음을 읽기 전용 확인했다. master는 미병합이며 CI의 master 대상 자동 실행 부재는 PR에 명시했다. HTTP/SSE 운영3항목(앱 구성·실행/끊김·합성 배치)은 질문 대기 중이고 답변을 확정값으로 추측하지 않는다.
+
+HTTP/SSE 운영3항목 후속 답변을 받았다. 별도 합성 앱/127.0.0.1:8001·동시1/대기0/초과409/끊김 뒤 보수적 종료·seed123/members_per_family3/명시 배치·관측 시각 고정을 확정했다. 문서/INT-020에 반영하고 origin/본문/총 기한 등의 미정과 구분했다. API 코드·서버/자료 생성·모델 호출은 아직 승인 범위가 아니다.
+
+## 웹 경계 구현 재개 (2026-10-20)
+
+설계 #74는 headfc3ee61·CI39388108671 성공 후b82e1c9로 Squash 병합했고 원문/트리를 확인·완료 브랜치를 정리했다. #73은 별도 실행에서 master ee66118로 병합됐다. 사용자 다음 단계 요청과 HTTP 운영3항목 답변에 따라 순수 DTO/투영/요청·SSE 직렬화부터 합성 구현한다. origin2개·ID1~64ASCII·64KiB·150초 정책은 agent-http-sse-contract.md §8·INT-021에 확정 기록했다. 새 실제 요청/서버·웹 변경은 실행하지 않는다.
+
+## W4-1 순수 웹 경계 구현 (2026-10-20)
+
+정책 #76은 headebe7fe3·CI39390911643 성공 후53446d6로 Squash 병합·메시지/트리를 확인했다. feat/agent-web-contract는 최신 정책을 반영했다. agent_contract/projection/events의 엄격 DTO·원문/근거/정규화 투영·불변 출력/최종 만료·64KiB 요청·SSE 직렬화와 합성55개를 구현했다. 전체pytest1,409개·Ruff·환경/pip 통과, TypeScript parser12final/42envelope/추가필드12거부를 번들Node24.19.0으로 읽기 전용 대조했다. 시스템node 라이브러리 부재는 시스템 수정 없이 우회했다.
+
+사용자가 GET /health의 시작 시 검증 기록 기반 정책도 확정했다. 실제 상태 확인·서버 실행은 아직 없으며 다음 앱 연결은 대역 검증이다. 기존 core/graph/presentation·웹/사용자 파일·실데이터/과거실행은 보존한다. 최신 CI/병합·브랜치 정리·기능 묶음 PR은 실제 상태를 확인한다. 상세 agent-web-contract-implementation.md·INT-022.
+
+## W4-2 HTTP/SSE 앱 구현 (2026-10-20)
+
+#77은 head3d0147c·CI39391464235 성공 후0d9f9a3로 Squash 병합, 원문/트리를 확인·완료 브랜치 로컬/원격 삭제했다. 최신 develop 기반 feat/synthetic-agent-api에서 Agent 앱/시작 검증/health/단일 worker·lease/150초·64KiB/409·SSE를 구현했다. 신규31개/전체pytest1,440개·Ruff·환경/pip 통과, ASGI9스트림/36이벤트를 TS파서로 대조했다.
+
+실제 모델/metadata·넥슨 요청0회·상주서버/브라우저 실행 없음이다. 새 실제 ASGI E2E(상태2+추론3·정상/누락/충돌·오류중단/기록보존)를 질문했고 답변 전 실행하지 않는다. 명시 AGENT_RUN_ID/OBSERVED_AT/MODEL_DIGEST가 필요하며 시작 자동 시간갱신/다운로드/자료·모델 최신 선택은 없다. core/graph/presentation·웹/WEB-*·사용자 미추적파일은 보존했다. 최신CI/병합/완료브랜치·master PR은 실제 상태를 확인한다. synthetic-agent-api.md·INT-023.
+
+
+## W4-2 실제 E2E 종료·중단 후 재개 (2026-10-21)
+
+사용자 승인으로2026-10-20 agent-api-e2e-20261020-001을 실행해 상태2+추론3회를 사용했다. 정상optimal11명·급여 누락/예산 충돌명확화 응답이다. 최초 검사기의 salary_cap int/문자열 비교 실패를 원래 manifest에 보존하고 별도 저장 응답 검증으로3/3 통과했다. 계획/원본/잠금·오프라인 결과 해시는 synthetic-agent-api.md에 기록했다. 승인 소진이며 재개로 초기화하지 않는다. 상주8001/브라우저/넥슨/외부전송은0이다.
+
+현재 feat/synthetic-agent-api에서 웹 담당 PR#75/#78의 최신 develop d337535를 병합해 변경을 보존했다. 웹/WEB-*를 수정하지 않고 최신TS파서로 저장된 실제3스트림/12이벤트를 대조해 통과했다. 종료 실행 재호출 없이 전체pytest/Ruff/환경/pip·문서/경계 확인과 최신head CI·develop Squash 병합 후 완료 브랜치 정리·기능묶음 master PR 생성이 남았다. master 병합/배포는 하지 않는다. 사용자 중단 전 명시한 완료 브랜치 로컬/원격 정리와 master PR 생성 승인은 재승인 없이 적용하며 최신 AGENTS의 일반 금지를 새 권한으로 확대하지 않는다.
+
+
+## W4-3 실제 브라우저 연결 완료 (2026-10-21)
+
+API#79는 최신head09b744a/CI39514039395 성공 후00623baa로 develop Squash 병합했고 메시지/트리·표기 부재를 확인했다. 완료 브랜치를 로컬/원격 삭제했다. 최신 개발 기준은00623baa이며 사용자 파일/다른 담당 활성 브랜치는 보존했다.
+
+사용자 승인 agent-web-e2e-20261021-001은 상태1회 연결 거부·추론0에서 stopped_preflight. 새 승인으로 Ollama를 시작한002는 상태2회·추론3회/브라우저POST3회로 completed. 정상optimal11명/누락·충돌명확화·이전 표 제거를 확인했고 Node22.23.3의 lock설치·타입·87웹테스트·빌드도 통과했다. 제품/웹 소스 변경 없이 실행기/원본/SSE/PNG/해시/초기 진단 검사 한계는 docs/agent-browser-e2e.md·INT-025에 기록했다.
+
+이번에 시작한 Ollama/Agent/Vite·임시 탭은 종료하고 listener 부재를 확인했다. 001/002는 종료·승인 재사용/자동 재시작 금지. 추가 실제 요청/지속 서버·새 배치 정책·새 수집·배포 승인은 없다. 다음은 이 문서 PR의 최신CI/develop 병합·완료 브랜치 정리·동작 가능한 기능 묶음 develop→master PR 생성까지다. master 병합은 하지 않는다. 이후 실제 제출 일정/추가 과제 범위는 사용자 결정과 로드맵을 확인한다.

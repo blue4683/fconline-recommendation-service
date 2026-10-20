@@ -401,3 +401,10 @@ OR-Tools 9.15.6755·absl-py2.5.1·immutabledict4.3.1·protobuf6.33.6을 고정�
 ## Stage 4-A 구간·금액 코드 후속 승인 (2026-10-20)
 
 지연 PR #47은 최신 head3d9bb21의 CI39345466130 성공 후21121c2로 develop에 Squash 병합했고 최종 표기/트리 일치를 확인했다. docs/amount-parser-contract는 그 최신 develop에서 분기했다. 사용자 답변으로 원문 구간/금액 파서/합성 테스트 코드 범위만 승인했다. BP/큰단위 명시 필수·숫자단독/단위생략 되묻기 오류·단위내림차순/중복거부·한글숫자 제외·원문4000/금액100 코드포인트를 확정했다. docs/stage-4-a-amount-contract.md를 따른다. LLM/전체요청 조립·강화/별칭·DB/API·새수집은 미승인이며 1-D/F 미완료를 유지한다. 코드는 후속 기능 PR로 분리한다.
+
+
+## Stage 4-A 원문·금액 코드 (2026-10-20)
+
+계약 PR #48은 최신 head109edef의 CI39345991794 성공 후837e9d5로 develop에 Squash 병합했고 최종 표기/트리 일치를 확인했다. feat/exact-amount-normalization은 그 최신 develop에서 분기했다. request_normalization/amounts.py에 SourceSpan·원문 검증·완전 토큰 소비·명시 단위/순서·Fraction 정확 정수BP·NormalizedAmount/사유 코드를 구현했다. 원문4000/금액100 코드포인트·상한34자리·원문 보존·불일치/생략/모호성 거부를 유지한다. 규칙버전23ed1cc794eb4e960fbf7ceb6054943c5bb14e0f27a04749d10cd3a71005d3d0, 상세 docs/stage-4-a-amount-implementation.md.
+
+합성92개 포함 전체pytest931개·Ruff·환경 import·pip check 통과. Unicode 근거/경계·큰수·소수/단위/쉼표·비허용 문법·한도·사양/원본 불변과 파일/네트워크 부재를 확인했다. LLM·전체 요청 조립·강화/별칭·DB/API·새수집은 없고 4-A 전체 완료는 아니다. 다음 범위와 강화/급여/정식값 문법을 추측하지 않는다. 1-D/F·공식 보너스·실데이터 추천·운영 성능은 미완료다. 실제 최신 head CI/병합을 확인한다.

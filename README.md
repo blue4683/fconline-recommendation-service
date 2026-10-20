@@ -132,4 +132,4 @@ GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/positi
 
 로컬 추출 어댑터와 1회 비교의 범위·사전 점검 중단 결과: [Ollama 비교 기록](docs/ollama-extraction-comparison.md). 새 승인으로 두 모델×5회 비교를 완료했으며 현재 직접 구간 생성 방식은 두 모델 모두 의미 0/5로 채택 보류다.
 
-정형 조건문의 후보 생성·ID 검증·기존 엔진 연결(합성 검증): [C1~C3 구현 결과](docs/controlled-candidate-selection.md). [실제 ID 선택 소량 비교](docs/ollama-candidate-selection-results.md)에서는 8B 6/6·2B 5/6의 근거/정규화 일치를 확인했습니다. 정형 입력의 제한된 검증이며 Agent API/웹 실연결은 후속입니다.
+정형 조건문의 후보 생성·ID 검증·기존 엔진 연결(합성 검증): [C1~C3 구현 결과](docs/controlled-candidate-selection.md). [실제 ID 선택 소량 비교](docs/ollama-candidate-selection-results.md)에서는 8B 6/6·2B 5/6의 근거/정규화 일치를 확인했습니다. 정형 입력의 제한된 검증이며 사용자는 qwen3:8b를 데모 추출 모델로 채택했습니다. [HTTP/SSE 설계](docs/agent-http-sse-contract.md)를 정리했고 Agent API/웹 실연결은 후속입니다.

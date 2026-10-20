@@ -236,4 +236,4 @@ W3 C1~C3는 [구현 결과](controlled-candidate-selection.md)의 순수 후보/
 
 ## W4 HTTP/SSE 설계 선행 (2026-10-20 사용자 결정)
 
-사용자가 qwen3:8b를 정형 데모 추출 모델로 채택했다. [HTTP/SSE 경계 설계](agent-http-sse-contract.md)에서 웹 strict v0와 현재 wrapper/코드 출력/기존 API 시작 구조의 간극을 정리했다. 다음 구현은 DTO/합성 계약 → 주입 HTTP/SSE → 웹 대조 → 새 승인 실모델 E2E 순서의 안이다. 현재는 문서만 승인됐고 운영 구성·취소/동시성·합성 시각/배치·접속/요청 한도는 질문 후 확정한다. 새 호출/서버/API 코드·웹 파일 변경은 없다.
+사용자가 qwen3:8b를 정형 데모 추출 모델로 채택했다. [HTTP/SSE 경계 설계](agent-http-sse-contract.md)에서 웹 strict v0와 현재 wrapper/코드 출력/기존 API 시작 구조의 간극을 정리했다. 다음 구현은 DTO/합성 계약 → 주입 HTTP/SSE → 웹 대조 → 새 승인 실모델 E2E 순서의 안이다. 현재는 문서만 승인됐다. 후속 답변으로 별도 합성 앱/8001·동시1/대기0/보수적 종료·seed123/members_per_family3/명시 배치·시각 고정을 확정했으며 접속 origin/HTTP 세부 한도는 미정이다. 새 호출/서버/API 코드·웹 파일 변경은 없다.

@@ -44,6 +44,14 @@
 
 ## 진행·변경·질문 기록
 
+### INT-021 — 웹 경계 구현 재개·HTTP 정책 확정 (2026-10-20)
+
+- 통합 / 상태: 사용자 결정·계약. 기준 develop b82e1c9(#74), docs/agent-http-runtime-policy.
+- 사용자 다음 단계 요청으로 DTO/준비 사유·결과 투영/요청·SSE 직렬화·합성 검증부터 구현. 기존 core/graph/presentation·웹/WEB-*는 보존한다.
+- 후속 확정: localhost:5173/127.0.0.1:5173 두 HTTP origin·credentials=false, ID ASCII 영숫자/-/_ 1~64자·64KiB, 전체 응답150초·진행 작업 종료까지 슬롯 보유. 새 실제 호출/서버 실행 승인은 아님.
+- 실제 HTTP 앱/취소·readiness/웹 합성 계약 검증은 후속. 기존 v0 strict 필드를 기준으로 구현하며 실행하지 않은 진행/모델·단계를 사용으로 표시하지 않는다.
+- 문서 내용/링크/diff 검토. 기능 테스트 재실행 없음(본 PR은 문서만). 모델/메타데이터·넥슨 요청0. 구현/검증 완료와 구분한다.
+
 ### INT-020 — 모델 채택·HTTP/SSE 경계 설계 (2026-10-20)
 
 - 통합 / 상태: 사용자 결정·문서 설계. 기준 develop7c56bbc(#72), docs/agent-http-sse-contract. C4는 headc0cadee/CI39386783038 성공 후7c56bbc로 Squash 병합하고 최종 표기/트리 확인·완료 브랜치 로컬/원격 삭제.

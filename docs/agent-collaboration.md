@@ -34,7 +34,7 @@
 | ID | 공유할 정보/의존성 | 담당 | 다음 조치 |
 |---|---|---|---|
 | INT-001 | v0 요청/응답/SSE 제안을 실제 계약으로 확정할지와 적용 버전 | 통합 | 웹의 DTO 피드백 반영, 기존 코드와 연결 검증. 현재 제안 상태 |
-| WEB-001 | Node/npm·Vue/Vite/TypeScript·테스트 도구 버전과 설치/검증 명령 | 웹 | 호환성 근거와 고정 파일 계획을 기록. 아직 미선정 |
+| WEB-001 | Node/npm·Vue/Vite/TypeScript·테스트 도구 버전과 설치/검증 명령 | 웹 | 구현. 버전 고정·명령은 아래 WEB-001과 frontend/README. 웹 CI 추가는 INT-004 대기 |
 | INT-002 | 실제 경로·base URL/origin·포트·CORS/proxy·서버 명령·Agent 준비 상태 | 통합 | 백엔드 구현 후 명시. /health로 추측하지 않음 |
 | INT-003 | 동시 실행·중복·취소·시간 상한/재시도 정책 | 통합 | 필요한 사용자 결정 확인. 웹은 단일 진행 요청·자동 재전송 없음 |
 | INT-004 | mock/live 계약 검사·보호 경로 확인·웹 CI 구성 | 통합 | 웹 도구/스크립트 확정 후 별도 구현/검증. 현재 자동 차단 없음 |
@@ -106,6 +106,35 @@
 - 관련 문서: web-agent-blueprint.md, frontend/AGENTS.md, 루트 AGENTS.md, 로드맵, 기준 설계도 §5/§11.
 - PR/기준 SHA: 이 문서 PR은 최종 원격 상태에서 확인. 시작 기준 ec6ff24.
 - 다음 담당/차단: 웹 배정 시 WEB-*에 사용 기준 SHA·작업 브랜치·도구 버전 계획을 기록. 실제 연결은 INT-001/002/005 반영 대기.
+
+### WEB-001 — 웹 도구 버전 고정과 모의 클라이언트 구현
+
+- 날짜/시간(KST), 담당/역할, 고유 ID: 2026-10-20 / 웹 / WEB-001.
+- 구분: 진행. 상태: 구현·로컬 검증. 병합 아님.
+- 사용한 develop SHA·작업 브랜치·작업 디렉터리 식별: 작업 시작 develop `47c43f1`(PR #56) → PR 전 `2ce7ddb`(PR #59)로 재기준. 그 사이 INT-006~008을 읽었으며 web-agent.v0·웹 경계 변경 없음을 확인 / `feat/squad-web-ui` / 통합 담당과 다른 새 클론.
+- 적용한 설계도/계약 버전·의존 기록 ID: web-agent-blueprint.md, frontend/AGENTS.md, `web-agent.v0` 모의 제안. 의존 INT-001~005.
+- 변경 전 → 후: 프론트엔드 앱 없음 → frontend/에 Vue 3 + Vite + TypeScript 클라이언트, 모의 transport, 동작 테스트, README.
+- 고정 버전: Node 22.x(`>=22.12.0 <23`, `.nvmrc`, `engine-strict`), npm 10.9.x 이상, vue 3.5.44, vite 8.3.4, @vitejs/plugin-vue 6.0.10, typescript 5.9.3, vue-tsc 3.3.13, vitest 5.0.5, jsdom 27.4.0, @vue/test-utils 2.4.6, @types/node 22.20.5. 근거: Vite 8·Vitest 5의 Node 요구, TypeScript 7은 vue-tsc 호환 미확인, jsdom 30·test-utils 2.5는 Node `^22.22.2` 이상을 요구해 검증 환경 v22.22.0에서 설치 거부. lock 파일은 frontend/package-lock.json.
+- 웹 검증 명령: `cd frontend && npm ci && npm run typecheck && npm test && npm run build`. CI 통합(INT-004)은 통합 담당 결정 대기이며 스크립트 이름은 위와 같이 제안한다.
+- 영향 경로·호환성: frontend/ 하위와 이 기록의 WEB-* 항목만 변경. FRS/·tests/·scripts/·Python 의존성·Docker·CI·설계 문서 변경 없음. 실제 연결은 `VITE_FRS_API_BASE_URL`이 있을 때만 선택 가능하며 기본값 없음. 개발 서버 proxy·CORS 미설정.
+- 사용자 결정 필요 여부: 없음(확정 스택·분담 범위 안).
+- 검증 결과(재기준 2ce7ddb, 로컬): `npm ci` 후 typecheck 통과, Vitest 5개 파일 62개 통과, build 통과. headless Chromium으로 1360px·390px 화면의 정상·되묻기·큰 금액·프로토콜 오류 상태 확인. 루트 Python 필수 검사 pytest 1,153개 통과·ruff check·ruff format --check 통과(Python 3.11.17, 고정값 3.11.15와 패치 버전 차이). 미실행: 웹 CI(미구축), 실제 합성 Agent와의 대조(백엔드 경로 부재), 원격 CI는 PR에서 확인.
+- 다음 담당/해야 할 일: 통합 담당이 WEB-002의 DTO 피드백을 검토하고 INT-001에서 확정 버전을 기록. 확정·병합 SHA가 공유되면 웹이 live transport를 조정한다.
+
+### WEB-002 — v0 DTO 피드백 (웹 구현에서 정한 해석)
+
+- 날짜/담당/ID: 2026-10-20 / 웹 / WEB-002. 구분: 설계 차이·변경 요청. 상태: 제안. 통합 담당의 확인 전이며 확정 계약이 아니다.
+- 기준: develop `2ce7ddb`의 web-agent-blueprint.md §4~§5(47c43f1 이후 변경 없음). 아래는 설계도가 열어 둔 부분을 모의 구현에서 정한 해석이다. 백엔드 어댑터가 다르게 정하면 웹을 맞춘다.
+  1. envelope와 payload는 정의된 필드만 허용한다(알 수 없는 필드는 프로토콜 오류). 첫 이벤트는 seq 0의 started다.
+  2. `versions`는 문자열 값의 객체이며 `web_contract: "web-agent.v0"`를 필수로 본다. 모델 미사용은 `model: "unused"`로 표기했다.
+  3. `answer`는 `narration_source`가 none이면 null, 그 외에는 문자열이다.
+  4. 성공(optimal/feasible)은 `conditions`·`squad`·`snapshot.valid_until`이 필수이고 `issues`가 비어 있어야 한다. needs_clarification은 `conditions: null`, issues 1개 이상이다. 그 밖의 상태는 `squad: null`이다.
+  5. 행의 `spid`·`person_id`는 10진 정수 문자열, `price`는 최대 34자리, `salary`는 2^63-1 이하 문자열이다. `total_price`·`total_salary`도 문자열이다. `raw_ovr`·`total_ovr`는 정수, `performance`는 0.5 단위 number다.
+  6. 클라이언트는 행 11개·포메이션 자리 집합·인물/카드 중복·허용 강화·합계·상한을 대조하고 불일치 시 성공 표시를 거부한다. 보정은 하지 않는다. 포메이션 자리표는 FRS/schema/scope.py의 FORMATION_SLOTS를 읽기 전용으로 옮겨 적었다.
+  7. 시각은 `Z` 또는 `±HH:MM`이 있는 ISO 8601만 받는다.
+  8. 종료 이벤트를 받은 읽기 단위의 뒤 이벤트는 프로토콜 오류로 처리하고, 종료 이벤트 뒤에는 서버의 연결 종료를 기다리지 않고 읽기를 멈춘다.
+- 영향: 백엔드 웹 어댑터(통합 담당 소유)의 직렬화 규칙. 기존 Python 도메인 모델 변경은 요청하지 않는다.
+- 다음 담당: 통합 담당. 받아들이거나 다르게 정한 항목을 INT-001에 적용 버전과 함께 기록.
 
 ### 기록 양식 — 실제 작업 시 새 WEB-* 또는 INT-* 항목으로 복사
 

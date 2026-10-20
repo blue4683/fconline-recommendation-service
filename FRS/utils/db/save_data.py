@@ -1,41 +1,45 @@
+"""기존 형식의 선수 파일을 명시적으로 적재한다. import 시 실행하지 않는다."""
+
+import argparse
 import json
-import os
-import pymongo
-import time
+from pathlib import Path
 
-from client import Client
-from dotenv import load_dotenv
-from tqdm import tqdm
+from pymongo import ASCENDING
+from pymongo.errors import DuplicateKeyError
+
+from FRS.utils.db.client import Client
+
+DEFAULT_DATA_PATH = (
+    Path(__file__).resolve().parents[1] / "data/player_overall_data.json"
+)
 
 
-load_dotenv()
+def save_players(players, collection):
+    collection.create_index([("id", ASCENDING)], unique=True)
+    inserted, duplicates = 0, 0
+    for player_id, data in players.items():
+        document = {**data, "id": str(player_id)}
+        try:
+            collection.insert_one(document)
+        except DuplicateKeyError:
+            duplicates += 1
+        else:
+            inserted += 1
+    return {"inserted": inserted, "duplicates": duplicates}
 
-HOST = os.getenv('HOST')
-PORT = os.getenv('PORT')
-USERID = os.getenv('USERID')
-PASSWORD = os.getenv('PASSWORD')
 
-client = Client(HOST, PORT, USERID, PASSWORD, 'frs')
-db = client.db
-collection = db.player_data
-collection.create_index([('id', pymongo.ASCENDING)], unique=True)
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="기존 선수 파일을 MongoDB에 적재합니다."
+    )
+    parser.add_argument("--input", type=Path, default=DEFAULT_DATA_PATH)
+    args = parser.parse_args(argv)
+    with args.input.open(encoding="utf-8") as source:
+        players = json.load(source)
+    with Client() as client:
+        result = save_players(players, client.db.player_data)
+    print(f"저장 {result['inserted']}건, 중복 {result['duplicates']}건")
 
-file_path = 'FRS/utils/data/player_overall_data.json'
-with open(file_path, 'r', encoding='utf8') as f:
-    player_data = json.load(f)
 
-cnt = 0
-start = time.time()
-for id in tqdm(player_data):
-    data = player_data[id]
-    data['id'] = id
-
-    try:
-        collection.insert_one(data)
-        cnt += 1
-
-    except:
-        print(f'{id} - 이미 저장된 선수입니다.')
-
-end = time.time()
-print(f'{cnt}개의 플레이어 데이터를 DB에 저장했습니다. {(end - start) / 60}분 소요')
+if __name__ == "__main__":
+    main()

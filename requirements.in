@@ -1,0 +1,22 @@
+# Python 3.11 호환 비사전 릴리스를 PyPI에서 확인한 직접 의존성이다.
+beautifulsoup4==4.15.0
+numpy==2.4.6
+pandas==3.0.6
+pydantic==2.14.1
+pymongo==4.19.0
+python-dotenv==1.2.4
+requests==2.34.2
+scikit-learn==1.9.1
+tqdm==4.70.1
+xgboost==3.2.0
+
+# Stage 2-C HTTP API의 Python 3.11 호환 안정 버전
+fastapi==0.147.0
+uvicorn==0.54.0
+
+# Stage 3-B CP-SAT 탐색기의 Python 3.11 호환 안정 버전
+ortools==9.15.6755
+
+# Stage 4/W1 그래프와 요청별 추적 비활성화 SDK (외부 전송 꺼짐)
+langgraph==1.2.16
+langsmith==0.14.11

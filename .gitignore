@@ -163,3 +163,13 @@ cython_debug/
 
 FRS/utils/data/
 mongo-data/
+
+# 로컬 데이터·학습 산출물·도구 캐시
+data/
+artifacts/
+backups/
+*.pickle
+*.pkl
+*.joblib
+*.ubj
+.ruff_cache/

@@ -249,4 +249,4 @@ W3의 직접 구간 방식 채택 보류는 과거 실험 기록이다. 후속 �
 
 ## W5 로컬 stdio 구현 후 상태 (2026-10-21)
 
-[구현 기록](stage-w5-mcp-implementation.md)의 Tool/Resource/Prompt·단일전송client·합성 직접/stdio 대조를 완료했다. 신규50/전체pytest1,490·Ruff/환경/pip 통과, 실제stdio12개 결과 전체 일치·프로토콜2026-07-28·subprocess 종료를 확인했다. 모델/호스트/HTTP/웹 연결을 실행한 결과는 아니다. 기존 웹은 직접 HTTP를 유지하며 W6 평가셋/반복·최종 기준·추가 실제 모델 호출·서술 비교/외부 tracing은 별도 미확정으로 남긴다.
+[구현 기록](stage-w5-mcp-implementation.md)의 Tool/Resource/Prompt·단일전송client·합성 직접/stdio 대조를 완료했다. 신규52/전체pytest1,492·Ruff/환경/pip 통과, 실제stdio12개 결과 전체 일치·프로토콜2026-07-28·subprocess 종료를 확인했다. 모델/호스트/HTTP/웹 연결을 실행한 결과는 아니다. 기존 웹은 직접 HTTP를 유지하며 W6 평가셋/반복·최종 기준·추가 실제 모델 호출·서술 비교/외부 tracing은 별도 미확정으로 남긴다.

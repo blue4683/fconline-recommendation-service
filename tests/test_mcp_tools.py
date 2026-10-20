@@ -274,11 +274,13 @@ def test_slot_remains_until_physical_worker_ends_and_later_stages_never_run(
     entered, release = threading.Event(), threading.Event()
     clock = [0.0]
     service.monotonic = lambda: clock[0]
+    proceeded = Mock()
 
     def blocked(body, *, check):
         entered.set()
         assert release.wait(3)
         check()
+        proceeded()
         raise AssertionError("cancelled worker must not proceed")
 
     service.build = blocked
@@ -310,6 +312,7 @@ def test_slot_remains_until_physical_worker_ends_and_later_stages_never_run(
                 )
             release.set()
             await wait_until(lambda: not service.busy)
+            proceeded.assert_not_called()
             service.factory.assert_not_called()
         finally:
             release.set()
@@ -322,11 +325,13 @@ def test_slot_remains_until_physical_worker_ends_and_later_stages_never_run(
 
 def test_sdk_client_cancellation_does_not_free_the_real_worker_slot(service):
     entered, release = threading.Event(), threading.Event()
+    proceeded = Mock()
 
     def blocked(body, *, check):
         entered.set()
         assert release.wait(3)
         check()
+        proceeded()
         raise AssertionError("must stop before material")
 
     service.build = blocked
@@ -351,6 +356,7 @@ def test_sdk_client_cancellation_does_not_free_the_real_worker_slot(service):
                 )
                 release.set()
                 await wait_until(lambda: not service.busy)
+                proceeded.assert_not_called()
                 service.factory.assert_not_called()
             finally:
                 release.set()
@@ -548,3 +554,9 @@ def test_schema_mismatch_is_not_relisted_or_resent():
     once.assert_awaited_once()
     client.call_tool.assert_not_called()
     client.list_tools.assert_not_called()
+
+
+@pytest.mark.parametrize("changes", [{"seed": 124}, {"members_per_family": 4}])
+def test_library_server_context_cannot_expand_fixed_seed_or_family_scope(changes):
+    with pytest.raises(ValueError):
+        MCPService(config(**changes))

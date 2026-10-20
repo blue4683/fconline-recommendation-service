@@ -40,7 +40,11 @@ class MCPService:
         monotonic=time.monotonic,
         factory=generate_synthetic_material,
     ):
-        if type(spec) is not SyntheticLeagueSpec:
+        if (
+            type(spec) is not SyntheticLeagueSpec
+            or spec.seed != 123
+            or spec.members_per_family != 3
+        ):
             raise ValueError("명시 합성 설정이 필요합니다.")
         self.spec = SyntheticLeagueSpec.model_validate(spec.model_dump())
         self.clock, self.monotonic, self.factory = clock, monotonic, factory

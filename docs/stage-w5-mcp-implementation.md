@@ -22,13 +22,13 @@ seed123·계열당3명은 고정, 추천 강화5~11이다. 시각 자동 갱신/
 
 ## 검증 결과
 
-신규50개/전체pytest1,490개·Ruff lint/format·환경 import·pip check 통과. SDK 신규 의존성13개와 기존 사용 httpx2의 정확한 버전을 고정했고, 기존 고정 패키지는 변경하지 않았다. MCP 의존성 closure25개에 미고정 패키지가 없음을 확인했다. macOS arm64 설치/import와 Linux CPython3.11용 신규14개 wheel 확보를 확인했으며 Linux 실행 결과는 해당 PR의 CI로 따로 확인한다. CLI extra는 설치하지 않았다.
+신규52개/전체pytest1,492개·Ruff lint/format·환경 import·pip check 통과. SDK 신규 의존성13개와 기존 사용 httpx2의 정확한 버전을 고정했고, 기존 고정 패키지는 변경하지 않았다. MCP 의존성 closure25개에 미고정 패키지가 없음을 확인했다. macOS arm64 설치/import와 Linux CPython3.11용 신규14개 wheel 확보를 확인했으며 Linux 실행 결과는 해당 PR의 CI로 따로 확인한다. CLI extra는 설치하지 않았다.
 
 주요 검증은 다음과 같다.
 
 - 세 클럽×세 포메이션9개: 동일 원문/ID/배치/고정 시각에서 직접/MCP 결과 전체 일치·최적11명·자리/강화/조건·합계/모델 미호출 표시.
 - 준비·미지원·필수 누락·예산 충돌·변조 ID/누락/중복/잘못된 필드/set_id·형식/길이/UTF-8·64KiB 경계·안전 오류. 문제 입력에서 자료·시계·엔진 접근 차단.
-- 34자리 BP 문자열·해 없음/미확정·성공 뒤 만료로 표 제거·원래 기한/스냅샷 불변·합계/출처 변조·원래 snapshot 없는 성공 거부. 최초 구현의 마지막 만료 체크가 반환 상태를 읽지 못한 문제를 고쳐 회귀 테스트를 추가했다.
+- 34자리 BP 문자열·해 없음/미확정·성공 뒤 만료로 표 제거·원래 기한/스냅샷 불변·합계/출처 변조·원래 snapshot 없는 성공 거부·라이브러리 진입점의 고정 seed/계열당 인원 범위 유지. 최초 구현의 마지막 만료 체크가 반환 상태를 읽지 못한 문제를 고쳐 회귀 테스트를 추가했다.
 - Task 취소·150초 경과·서비스 종료 뒤 실제 worker가 끝나기 전 busy 유지·후속 단계 차단·정상 종료 후 슬롯 해제. SDK 클라이언트 취소도 실제 슬롯을 즉시 비우지 않는지 확인.
 - Resource/Prompt가 모델·자료를 읽지 않음, Prompt 원문/후보 hash/schema 바인딩, 서버 Tool 출력 스키마·text/structured 일치·메타데이터 표시.
 - 실제 stdio subprocess의 discovery/프로토콜2026-07-28·Tool/Resource/Prompt·고정 context 성공/직접 대조·EOF 정상 종료 marker·잘못된 CLI 설정의 stdout 오염 없음.
@@ -43,15 +43,15 @@ PYTHONPATH=. .venv/bin/python scripts/validate_mcp_stdio.py \
   --output artifacts/<새-결과-디렉터리>
 ```
 
-mcp-stdio-comparison-20261021-002에서 공식 SDK2.3.0/프로토콜2026-07-28로 정상9·누락/충돌2·준비 미지원1, 총12개 결과가 직접 호출과 전체 일치했다. source/plan/manifest와 스크립트·배치·고정 clock을 보존한다. 임시 subprocess 종료 marker도 확인했다. 첫001은 동일 대조를 고수준 클라이언트로 수행한 개발 중 기록이며 원본을 보존했다. 최종002는 단일 전송 client를 사용했고 실제 모델/HTTP 요청0·Tool fallback0이다.
+mcp-stdio-comparison-20261021-003에서 공식 SDK2.3.0/프로토콜2026-07-28로 정상9·누락/충돌2·준비 미지원1, 총12개 결과가 직접 호출과 전체 일치했다. source/plan/manifest와 스크립트·배치·고정 clock을 보존한다. 임시 subprocess 종료 marker도 확인했다. 첫001은 동일 대조를 고수준 클라이언트로 수행한 개발 중 기록이며 원본을 보존했다. 002의 단일 전송 검증 기록도 보존했다. 최종003은 단일 전송 client와 설정 범위 guard를 사용했고 실제 모델/HTTP 요청0·Tool fallback0이다.
 
-Git 제외 `artifacts/mcp-stdio-comparison-20261021-002/`의 해시:
+Git 제외 `artifacts/mcp-stdio-comparison-20261021-003/`의 해시:
 
 | 파일 | SHA256 |
 |---|---|
 | plan.json | d7c49d908db20a8a0ac489378618253e2d05baf7d0bcbfe5cd85fce90e7057e4 |
 | manifest.json | 97878e3da0d684bf7d5b2f3e6f18cfa972a21b232bd0ac038610d427bd120a53 |
-| sources.json | 98e6465abfc87d9ba56535ddf3f703a751d91024d464f895b65713decea43c7c |
+| sources.json | 891e3bc5412b8534f7f8a9517b22719dbeae8311f71133aee385d31a045074ca |
 
 mcp_policy_version=`68875a3efbd58301736159acfd5b82d30e18de6b94a7ec6d8c3850b573821136`이다. 모델/수집 원본·실행 결과·wheel은 커밋하지 않고 로컬 무기한 보관한다. 설치/검증 로그는 artifacts/mcp-* 경로다.
 
@@ -60,3 +60,6 @@ mcp_policy_version=`68875a3efbd58301736159acfd5b82d30e18de6b94a7ec6d8c3850b57382
 기존 브라우저는 직접 HTTP 경로를 사용하며 MCP를 쓰도록 변경하지 않았다. 호스트 등록·실제 LLM의 MCP 도구 선택·legacy host·HTTP MCP·다중 프로세스 슬롯/분산 중복방지·운영 SLA는 미검증이다. 64KiB 검사는 SDK가 읽고 파싱한 애플리케이션 인자 기준으로, stdio 전체 버퍼/DOS 방어가 아니다. Resource/Prompt의 정적 읽기와 solver 슬롯은 별개다. 프로세스 종료/손실 시 exactly-once·강제 취소를 보장하지 않는다. 합성 자료 밖 추천/공식 보너스·1-D/1-F 완료로 표시하지 않는다.
 
 다음 W6의 평가25문장·반복수/기준·실제 추가 모델 호출·서술 비교·외부 관측은 확정 전 제안이다. 실제 제출 일정도 사용자 결정이 필요하다. 공식 SDK/프로토콜 근거는 확정 계약 문서의 링크를 따른다.
+
+
+최종 통합 기준: develop8e4dee9의 웹 PR#83(Agent 준비 상태 표시)을 그대로 반영했다. 웹 소스/WEB-* 수정 없이 Node22의 타입 검사·웹108테스트·빌드와 Python1,492개/Ruff를 다시 통과했다. 해당 웹 변경은 upstream 소유이며 MCP에서 웹 연결 방식은 바꾸지 않았다.

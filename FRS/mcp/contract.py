@@ -135,6 +135,11 @@ class BuildEnvelope(WireModel):
             or self.versions.get("contract") != "mcp-build.v1"
         ):
             raise ValueError("MCP 실행 출처가 일치하지 않습니다.")
+        if self.context is not None and (
+            self.context.specification.seed != 123
+            or self.context.specification.members_per_family != 3
+        ):
+            raise ValueError("확정된 합성 생성 범위를 유지해야 합니다.")
         if self.outcome != "agent_result" and self.context is not None:
             raise ValueError("자료를 읽지 않은 경로에 context가 있으면 안 됩니다.")
         if (

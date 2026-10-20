@@ -47,8 +47,8 @@
 ### INT-027 — W5 로컬 stdio 구현·합성 대조 (2026-10-21)
 
 - 통합 / 구현·합성 검증. 계약#82는 head7abfd24/CI39516249397 성공 후develop45d518a로 Squash 병합·메시지/트리 확인·완료 브랜치 정리. feat/local-mcp-tools는 최신 계약을 반영했다. #81은 별도 실행 주체가 masterf409db5로 병합한 사실을 확인했고 이 대화에서 master 병합을 실행하지 않았다.
-- FRS/mcp의 엄격 mcp-build.v1·ID/원문·고정 합성 context·Tool1/Resource/Prompt·단일 worker/lease·stdio CLI/단일 전송 client를 구현했다. 기존 HTTP/core/graph/presentation·웹/WEB-* 보존, 환경 import 목록과 고정 SDK/전이 의존성만 추가했다.
-- 신규50/전체pytest1,490·Ruff/환경/pip 통과. 실제stdio12개(정상9·누락/충돌2·미지원1)와 직접 결과 전체 일치·프로토콜2026-07-28·subprocess EOF 정상 종료. 취소/실제종료까지busy·마지막 만료·큰수/변조·SDK HEADER_MISMATCH 재전송 없음 확인. stage-w5-mcp-implementation.md에 실행/해시/한계를 기록했다.
+- FRS/mcp의 엄격 mcp-build.v1·ID/원문·고정 합성 context·Tool1/Resource/Prompt·단일 worker/lease·stdio CLI/단일 전송 client를 구현했다. 기존 HTTP/core/graph/presentation·웹/WEB-* 보존, 환경 import 목록과 고정 SDK/전이 의존성만 추가했다. 이후 upstream develop8e4dee9/웹#83을 그대로 병합하고 Node22 타입/웹108테스트/빌드·Python1,492개를 통합 상태로 재검증했다.
+- 신규52/전체pytest1,492·Ruff/환경/pip 통과. 실제stdio12개(정상9·누락/충돌2·미지원1)와 직접 결과 전체 일치·프로토콜2026-07-28·subprocess EOF 정상 종료. 취소/실제종료까지busy·마지막 만료·큰수/변조·SDK HEADER_MISMATCH 재전송 없음 확인. stage-w5-mcp-implementation.md에 실행/해시/한계를 기록했다.
 - 모델/HTTP/넥슨·호스트 등록/지속서버/외부tracing0. Prompt는 후보 제공이며 실제 LLM tool-use가 아니다. 웹은 기존 web-agent.v0 HTTP 그대로이며 주소/화면 변경 요청 없음. 실제 모델 정확도/일반 MCP host/운영 SLA·W6 완료 주장 없음.
 - 최신 기능 PR CI/develop Squash/완료 브랜치 정리·master 기능 묶음 PR은 실제 결과를 확인한다. 상대 수신/검증을 대신 주장하지 않는다.
 

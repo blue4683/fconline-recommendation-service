@@ -227,3 +227,5 @@ PPT는 문제/기존 자산 → 신규 Agent 경계 → 실제 데모 → 같은
 W3 새 비교의 승인 범위·실제 실패/지연·해시·채택 보류는 [Ollama 비교 기록](ollama-extraction-comparison.md)을 따른다. 5문장 소량 진단을 실제 Agent E2E/전체 한국어 정확도 증명으로 확대하지 않는다.
 
 W3 후속 사용자 선택: [후보 구간·ID 선택 어댑터 설계](candidate-selection-adapter-design.md)부터 진행. 기존 정규화/엔진을 유지하고 새 문형·상한·준비 결과/오류 전달 계약과 구현 승인은 분리한다. 추가 모델 호출은 없다.
+
+W3 C1~C3는 [구현 결과](controlled-candidate-selection.md)의 순수 후보/ID/wrapper로 구현·합성 검증했다. 실제 ID 선택 모델 비교(C4)·모델 선정·API/SSE/웹은 미완료이며 대역 결과를 모델 개선율로 사용하지 않는다.

@@ -135,3 +135,5 @@ GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/positi
 정형 조건문의 후보 생성·ID 검증·기존 엔진 연결(합성 검증): [C1~C3 구현 결과](docs/controlled-candidate-selection.md). [실제 ID 선택 소량 비교](docs/ollama-candidate-selection-results.md)에서는 8B 6/6·2B 5/6의 근거/정규화 일치를 확인했습니다. 정형 입력의 제한된 검증이며 사용자는 qwen3:8b를 데모 추출 모델로 채택했습니다. [HTTP/SSE 설계](docs/agent-http-sse-contract.md)를 정리했고 Agent API/웹 실연결은 후속입니다.
 
 [W4-1 웹 경계 코드](docs/agent-web-contract-implementation.md)는 엄격 DTO·오류 투영·요청/SSE 직렬화를 합성 검증했습니다. 실제 Agent HTTP 앱/브라우저 연결은 후속입니다.
+
+[별도 합성 Agent HTTP/SSE 앱](docs/synthetic-agent-api.md)은 GET /health·POST /recommend/squad/stream과 단일실행/기한/중단을 합성 검증했습니다. 수동 실행은 명시한 합성 배치/관측 시각·모델 digest와 실제 모델 상태 확인 범위가 필요합니다. 현재 상주 서버·실제 모델/브라우저 E2E는 미실행입니다.

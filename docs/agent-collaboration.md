@@ -19,7 +19,7 @@
 | 이 문서 작성 시작 기준 | develop ec6ff24, 강화 설계 PR #55 병합 결과. 이후 작업자는 실제 최신 develop을 다시 확인 |
 | 사용자 확정 스택 | Vue 3 + Vite + TypeScript 독립 프론트엔드 |
 | 사용자 확정 분담 | 웹: 화면·통신 클라이언트·모의 테스트. 통합: 엔진·Agent·API·실제 연결 |
-| 현재 작업 | qwen3:8b 데모 추출 채택·W4-1 순수 DTO/투영/직렬화 합성 검증. 실제 HTTP 앱·웹 live 연결은 후속(INT-022) |
+| 현재 작업 | W4-1/2 DTO·별도 합성 Agent HTTP 앱 구현/합성 검증. 실제 모델 E2E·상주 서버/웹 live 연결은 미실행(INT-023) |
 | 통합 담당 | 현재 대화. 엔진/Agent/API와 공유 계약 및 PR 병합 전담 |
 | 웹 담당 | 별도 담당의 웹 모의 앱 PR #61 병합. 사용 기준/도구/제안은 WEB-001/002 유지 |
 | 웹 계약 | web-agent.v0 모의 wire 기반 HTTP/SSE 설계안: agent-http-sse-contract.md·INT-020. 운영값/코드·계약 검증 전 live 연결 대기 |
@@ -33,7 +33,7 @@
 
 | ID | 공유할 정보/의존성 | 담당 | 다음 조치 |
 |---|---|---|---|
-| INT-001 | v0 요청/응답/SSE 설계와 적용 버전 | 통합 | INT-020에 WEB-002·현재 내부 결과의 차이/직렬화안 반영. 실제 코드·합성 계약 검증 전 확정/연결 완료 아님 |
+| INT-001 | web-agent.v0 HTTP/SSE wire | 통합 | DTO/HTTP 구현과 TS파서 합성 대조 통과(INT-022/023). 실제 모델/브라우저 연결 완료 아님 |
 | WEB-001 | Node/npm·Vue/Vite/TypeScript·테스트 도구 버전과 설치/검증 명령 | 웹 | 구현. 버전 고정·명령은 아래 WEB-001과 frontend/README. 웹 CI 추가는 INT-004 대기 |
 | INT-002 | 경로·주소/origin·CORS·실행/준비 상태 | 통합 | 별도 합성 앱/127.0.0.1:8001 설계 확정(INT-020). origin·실제 서버/경로/readiness는 미구현/미정, 기존 /health로 추측하지 않음 |
 | INT-003 | 동시 실행·중복·취소·시간 상한/재시도 정책 | 통합 | 동시1/대기0/초과409/보수적 종료 확정(INT-020). 총 기한/세부 중복 정책은 후속. 웹 자동 재전송 없음 |
@@ -43,6 +43,15 @@
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-023 — W4-2 합성 Agent HTTP/SSE 앱 (2026-10-20)
+
+- 통합 / 구현·합성 검증. 기준 develop0d9f9a3(#77), feat/synthetic-agent-api. #77은 head3d0147c/CI39391464235 성공 후0d9f9a3로 Squash 병합·메시지/트리 확인·완료 브랜치 로컬/원격 삭제.
+- 구현: 별도 FRS.api.agent_app 앱, GET /health·POST /recommend/squad/stream. wire web-agent.v0, health agent-health.v1. origin2개/credentialsfalse·64KiB/ID/150초·단일실행/409·보수적 중단. 기존 core/graph/presentation/API8000/웹·WEB-* 보존.
+- 요청별 worker/lease·후속 검사와 실제 Future 완료 기반 슬롯 해제, 캐시한 시작 메타데이터 기반 health/미검증·만료503, 명시 설정/합성 배치·시각 고정. 실제 시작 시 상태 조회2회가 있으므로 별도 실행 범위 확인 필요.
+- 검증: 신규31개/전체pytest1,440개·Ruff·환경/pip 통과. ASGI2.4 끊김/기한 후409유지·후속 자료 차단·전송 전 만료/헤더 실패·모델 오류를 대역으로 검증. 실제 ASGI9스트림/36이벤트 TS파서 통과(Node24.19.0). 원문/큰수/단일terminal 유지.
+- 웹 공유: 백엔드 wire 구현/합성 대조 기준은 이 PR 병합 SHA부터다. VITE_FRS_API_BASE_URL 후보는 http://127.0.0.1:8001이나 아직 상주 서버/모델 E2E를 실행하지 않아 연결 준비 완료가 아니다. 기존 mock을 실제 성공으로 위장하지 않는다. 보호 코드 수정 요청 없음·상대 수신/검증 주장 없음.
+- 실제 Nexon/Ollama 요청0회. 정상/누락/충돌의 새 소량 실제 모델 E2E(최대2상태+3추론)는 별도 질문 대기이며 답변 전 실행하지 않는다. 상세 synthetic-agent-api.md.
 
 ### INT-022 — W4-1 웹 경계 순수 코드 (2026-10-20)
 

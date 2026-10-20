@@ -722,6 +722,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 
 | ID | 항목 | 상태 | 결과·메모 | 날짜 |
 |---|---|---|---|---|
+| W4-2 HTTP 앱 | 별도 합성 FastAPI/수명주기·상태·스트림 | 구현·합성 검증 | 신규31개/전체pytest1,440개·Ruff·환경/pip 통과. 단일실행/409·150초·중단 후 실제 작업종료까지 슬롯·시작검증 캐시·큰수/만료 유지. ASGI9스트림/36이벤트 TS검사 통과. 실제 모델/상주서버/브라우저 없음. synthetic-agent-api.md·INT-023 | 2026-10-20 |
 | W4-1 웹 경계 | DTO/준비 사유·결과 투영/요청·SSE 직렬화 | 구현·합성 검증 | 신규55개·전체pytest1,409개/Ruff·환경/pip 통과. 큰 정수·원문/근거/상태·최종 만료·안전한 오류. TS파서12final/42envelope·추가필드12거부 확인(Node24.19.0). 실제 HTTP/모델/웹 E2E 없음. agent-web-contract-implementation.md·INT-022 | 2026-10-20 |
 | W4 웹 경계 재개 | HTTP 세부 정책·구현 순서 | 사용자 결정·계약 | origin2개/credentials=false·ID1~64 ASCII·64KiB·응답150초 확정. DTO/투영/직렬화 합성 구현 재개, 새 실제 요청/서버/웹 변경 없음. agent-http-sse-contract.md §8·INT-021 | 2026-10-20 |
 | W4 HTTP/SSE 설계 | 웹 v0·후보 wrapper/출력·기존 API 대조 | 사용자 결정·설계 | qwen3:8b 데모 추출 채택. strict DTO 투영·준비 사유 출처·기술 오류/terminal·최종 만료·진행/동시성 간극 설계. 운영값 미정/별도 확인. 문서만·새 호출/API/웹 코드0. agent-http-sse-contract.md·INT-020 | 2026-10-20 |

@@ -596,3 +596,8 @@ API#79는 최신head09b744a/CI39514039395 성공 후00623baa로 develop Squash �
 사용자 승인 agent-web-e2e-20261021-001은 상태1회 연결 거부·추론0에서 stopped_preflight. 새 승인으로 Ollama를 시작한002는 상태2회·추론3회/브라우저POST3회로 completed. 정상optimal11명/누락·충돌명확화·이전 표 제거를 확인했고 Node22.23.3의 lock설치·타입·87웹테스트·빌드도 통과했다. 제품/웹 소스 변경 없이 실행기/원본/SSE/PNG/해시/초기 진단 검사 한계는 docs/agent-browser-e2e.md·INT-025에 기록했다.
 
 이번에 시작한 Ollama/Agent/Vite·임시 탭은 종료하고 listener 부재를 확인했다. 001/002는 종료·승인 재사용/자동 재시작 금지. 추가 실제 요청/지속 서버·새 배치 정책·새 수집·배포 승인은 없다. 다음은 이 문서 PR의 최신CI/develop 병합·완료 브랜치 정리·동작 가능한 기능 묶음 develop→master PR 생성까지다. master 병합은 하지 않는다. 이후 실제 제출 일정/추가 과제 범위는 사용자 결정과 로드맵을 확인한다.
+
+
+## W5 로컬 MCP 착수 (2026-10-21)
+
+#80 문서 PR의CI39514966847 성공·c0c47bef Squash/트리/메시지 확인·완료 브랜치 로컬/원격 정리, master 대상#81 생성까지 마쳤다. 사용자 다음 단계 요청으로 W5 로컬 MCP 계약을 설계했다. 후속 답변으로 stdio/SDK2.3.0 호환고정/Tool1·Resource·Prompt/원문+후보ID/고정 합성 context/mcp-build.v1/동시1·대기0·150초·재시도0·보수적 취소와 합성 비교 구현을 승인받았다. docs/stage-w5-mcp-contract.md·INT-026을 따른다. 실제 모델/웹/호스트 등록/HTTP MCP/배포/새 수집은 제외한다. 계약은 docs PR, 코드는 별도 기능 PR로 분리하며 기존 고정 패키지 충돌을 임의 업그레이드로 숨기지 않는다.

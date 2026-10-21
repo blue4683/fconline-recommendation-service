@@ -251,6 +251,8 @@ W8 구현 후속 (2026-10-21): [구현 기록](rag-langsmith-implementation.md)�
 
 W8 실제1회 결정·결과 (2026-10-21): 사용자가 w8-rag-20261021-001의7질문·상태최대2/추론최대7·미국LangSmith FRS POST최대28+GET1을 승인했다. 실제 상태2·추론6·POST26/GET1, 사전 검사5/7·K03/K05 실패 보존, 첫root200·ID일치·이번Ollama종료·승인소진이다. 원문/답변/검색본문 전송 없음. [실제 결과](rag-langsmith-results.md)·INT-035를 따르며 기존24/25와 별도다. 새 Q&A 웹/추천 tracing·Multi-Agent/실데이터 완료로 확대하지 않는다.
 
+인계 후 보완 재개 (2026-10-21 사용자 요청): 최신 Git/PR 확인 뒤 다음 단계로 M02·K03·K05의 생성 제약/프롬프트와 합성 회귀 검증을 보완한다. [출력 계약 보완](model-output-contract-hardening.md)·INT-036을 따르며 기존 실측24/25·5/7과 실패를 보존한다. 새 실제 모델/metadata·수집·LangSmith·웹 연결/배포 승인은 포함하지 않는다.
+
 ## 6. 목표 아키텍처
 
 ```
@@ -744,6 +746,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 
 | ID | 항목 | 상태 | 결과·메모 | 날짜 |
 |---|---|---|---|---|
+| W6/W8 출력 계약 보완 | M02·K03·K05 합성 회귀 | 확인됨(합성) | 필드별 ID/출현 수·Q&A 상태별 생성 형식과 규칙 질문 안내 보강. 새21/전체pytest1,683(55.70초)·Ruff239파일/환경/pip·Q&A대역7/7. 기존 사후 거부/실측/질문/정답/corpus 유지. 실제 모델/metadata·수집·trace0회. INT-036·model-output-contract-hardening.md | 2026-10-21 |
 | W8 실제 Q&A·관측 | 새 승인1회·고정7질문 | 실행 완료/품질5/7 | 소스baf6fab·상태2/추론6·정답출처검색4/4·답변3/4. K03누락/K05형식오류 보존. LangSmith POST26성공응답+첫rootGET200·ID일치. 본문미전송·이번서버종료·승인소진. INT-035·rag-langsmith-results.md | 2026-10-21 |
 | W8 Q&A·관측 구현 | 별도 RAG·LangSmith SDK·평가 | 확인됨(대역) | 허용문서3개/구간해시·TF-IDF상위3·단일생성/출처검증·독립HTTP/CLI·최소metadata trace/pending상한. 신규91/전체1,662·Ruff/환경/pip·대역7/7. 실제 모델/trace/브라우저0회. 기존추천/웹/실데이터 불변. INT-034·rag-langsmith-implementation.md | 2026-10-21 |
 | W7 발표 자료 | 5분 PPTX·노트 대본 | 사용자 결정·자료 준비 | 10/22(목)13:00 KST·5분 확정.7장/300초·저장N01/실제24/25/모델15/16/M02실패·합성한계.구조/글꼴/재가져오기·7장개별렌더 확인. 코드/웹/새모델/서버/수집/외부제출·발표·배포 없음. presentation-5min.md·INT-032 | 2026-10-21 |

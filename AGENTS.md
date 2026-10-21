@@ -364,7 +364,7 @@ Stage 1-0에서 확정·로컬 검증한 환경이다. 사용자 답변과 버�
 
 ## 실데이터 브랜치 실행·계약 v1 (2026-10-21 사용자 결정, `feat/real-data` 전용)
 
-사용자가 `real-data-20261021-a`(상한700·700회 stopped)와 `real-data-20261021-b`(상한1,700·1,656회 completed, 리버풀1,634장)를 승인했음을 확인했다. 두 승인은 소진됐고 재개·재시작·남은 횟수 재사용을 하지 않는다. 계약은 `web-agent.v1`·`agent-health.v2`·`data_mode=observed`를 채택하고 백엔드부터 바꾼다. 웹 파서·fixture는 웹 담당이 후속으로 맞춘다. master/develop의 v0는 유지한다. 첼시·바이에른 뮌헨 ID 확인/수집은 보류이며 새 요청은 별도 승인이 필요하다. 목록 가격의 단위는 미확정이다. 상세 docs/real-data-branch-design.md §12.
+사용자가 `real-data-20261021-a`(상한700·700회 stopped)와 `real-data-20261021-b`(상한1,700·1,656회 completed, 리버풀1,634장)를 승인했음을 확인했다. 두 승인은 소진됐고 재개·재시작·남은 횟수 재사용을 하지 않는다. 계약은 `web-agent.v1`·`agent-health.v2`·`data_mode=observed`를 채택하고 백엔드부터 바꾼다. 웹 파서·fixture는 웹 담당이 후속으로 맞춘다. master/develop의 v0는 유지한다. 첼시·바이에른 뮌헨 ID 확인/수집은 보류이며 새 요청은 별도 승인이 필요하다. 목록 가격은 절대 BP이며 게임 업데이트로 이전의 1/10000 규모가 된 현재 기준 값이다(사용자 확인). 환산하지 않는다. 상세 docs/real-data-branch-design.md §12.
 
 ## 후보 구간·ID 선택 어댑터 설계 (2026-10-20 사용자 결정)
 

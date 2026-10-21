@@ -480,7 +480,7 @@
 - 변경 전 → 후: 요청·SSE의 `contract_version`과 `versions.web_contract`가 `web-agent.v1`이다. v0 요청은 422 `invalid_request`다. `started.payload.data_mode`와 최종 `data_mode`가 `"observed"`일 수 있다. `/health`는 `schema_version: "agent-health.v2"`, `data_mode`는 `"synthetic"`/`"observed"`, 설정 실패 시 `null`이다. `material` 키는 같다. 관측 모드의 성공/해 없음 `answer` 문구와 `progress.agent` 문구가 바뀐다(설계 §12.2).
 - 웹 담당에게 필요한 작업(`feat/real-data`에서만): v1 파서(`data_mode` 두 값, 요청 `contract_version` v1), health v2 파서(`data_mode` null 허용), 자료 모드별 안내·관측 시각 표시(설계 §7), v1 앱 코드로 fixture 재생성. 실제 선수명은 fixture에 넣지 않는다. 이 브랜치의 현재 웹은 v0라 실제 연결 시 요청이 거절된다.
 - 검증: 신규11·전체 pytest1,706·Ruff 통과. 실데이터 run b 읽기 전용 대조는 선택기/모델 검증 대역·네트워크0(설계 §12.3). 실제 모델·브라우저 미실행.
-- 다음 담당: 웹(파서·표시). 통합은 가격 단위 확인(설계 §12.4)과 §9의 7 승인 대기.
+- 다음 담당: 웹(파서·표시). 통합은 §9의 7 승인 대기. 가격 단위는 현재 기준 절대 BP로 확인됨(설계 §12.4).
 
 ### 기록 양식 — 실제 작업 시 새 WEB-* 또는 INT-* 항목으로 복사
 

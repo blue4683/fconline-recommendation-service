@@ -544,6 +544,16 @@
 - 함께 검토한 보완 후보 중 관측 기준 해 없음 안내와 v0 요청 422 fixture는 WEB-008(#106)에 이미 있어 추가하지 않았다.
 - 검증: 웹 타입 검사·Vitest 125개(기존 테스트에 관측/합성 표시 단언 추가)·빌드, 루트 pytest·Ruff. 실제 서버·모델·브라우저 실행 없음.
 
+### INT-RD-006 — 로컬 DB 관측 공급기와 Agent 연결
+
+- 날짜/담당:2026-10-22 / 통합. 상태:구현·합성/실제 로컬 대역 대조 완료. 사용자 다음 단계 요청으로 DB 공급기 계약·구현/검증을 진행했다. 기준736dfde에서 별도 `feat/observed-db-provider`, 다클럽 PR#112의26d82bb를 병합해 보존했다. [계약·검증](observed-db-provider.md).
+- `FRS/agent/mongo_material.py`와 runtime의 명시 `AGENT_MATERIAL_SOURCE=file|mongodb` 선택. 기본 파일·합성 유지, DB는 관측 모드만·로컬 전용. 원본 보고서/가공해시·전체 typed 행 SHA/건수·적재 기록을 요청마다 대조하고 DB 행을 반환한다. 누락/변조/오류면 중단, fallback/쓰기/재시도/최신 선택 없음. shared Client는 명시 retry_reads=False 옵션만 추가, 기존 기본 동작 보존.
+- 시작 DB 무결성 실패는 모델 검증 전 not_configured, 만료는 data_expired. health는 기존 시작 스냅샷이며 실시간 DB ping을 추가하지 않는다. 실행 중 DB 오류는 기존 안전 error SSE/스쿼드 없음·슬롯 해제다. wire v1/health v2·엔진/웹 파일·다른 WEB 기록 불변.
+- 합성 경계·장애/변조·명확화·파일/DB 최종 wire 비교 검증. 실제 `observed-db-provider-20261022-002`는 기존b35,948행/unknown91/감사1건을 읽어3사례 HTTP 최종 응답·health 동일, 정상11명/37,220 BP/급여200/OVR1,174·독립검증. 누락/충돌 요청 DB0. 모델 검증/선택 대역, 실제 모델/metadata/수집/전송/DB쓰기/브라우저0.
+- 초기001 검사기 입력13만 BP의 준비차단/기대불일치 중단 기록 보존, 002는 기존 E2E 문장으로 별도 읽기 전용 검사. completed manifest SHA256 `91ebfda11ca6d9507fa126748e2c74ae382214560a2937eeca42662b0d88e8d7`. 원본 해시·DB 행/감사 전후 불변, 기한2026-10-22 17:03:29.357 KST 유지.
+- 검증:신규 합성30개·PR#112/113 최신1f1e385 포함 전체pytest1,775개(87.07초)·Ruff/format254파일·환경/pip 통과. 후속 병합의 공급기/Agent/DB/엔진 코드 불변 확인. 웹 파일/계약 불변으로 웹 검사 재실행 없음. 실제 로컬 대조 검사기 Ruff/format 통과.
+- 일반 develop 기준/대상보다 사용자 실데이터 전용 feat/real-data 기준/대상을 우선한다. master/develop·사용자 파일·기존v0/DB·다른 담당 체크아웃/자료/브랜치와 종료 잠금 보존. 실제 모델+DB+브라우저 E2E는 별도 새 계획/상한 승인 후이며 완료로 보고하지 않는다. PR 최신 head CI는 별도 확인한다.
+
 ### 기록 양식 — 실제 작업 시 새 WEB-* 또는 INT-* 항목으로 복사
 
 - 날짜/시간(KST), 담당/역할, 고유 ID:

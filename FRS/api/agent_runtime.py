@@ -1,6 +1,6 @@
 """명시 합성 배치 또는 명시 관측 실행과 시작 시 모델 검증 기록.
 
-import 중 외부 I/O는 없다. 관측 실행은 로컬 가공 파일만 읽으며 최신 실행을 고르지 않는다.
+import 중 외부 I/O는 없다. 관측 공급기를 명시하며 최신 실행을 고르지 않는다.
 """
 
 import json
@@ -20,6 +20,7 @@ from FRS.agent.material import (
     SyntheticMaterial,
     generate_synthetic_material,
 )
+from FRS.agent.mongo_material import MongoObservedMaterial
 from FRS.agent.ollama_selection import OllamaIDSelector, selector_spec
 from FRS.agent.ollama_transport import LOCAL_ORIGIN
 from FRS.agent.real_material import RUN_ID_PATTERN, ObservedMaterial
@@ -34,6 +35,7 @@ HEALTH_SCHEMA = "agent-health.v2"
 
 class AgentSettings(WireModel):
     data_mode: Literal["synthetic", "observed"] = "synthetic"
+    material_source: Literal["file", "mongodb"] = "file"
     run_id: Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]{0,47}$")]
     observed_at: AwareDatetime | None
     model: Literal["qwen3:8b"]
@@ -44,6 +46,8 @@ class AgentSettings(WireModel):
     @model_validator(mode="after")
     def mode_inputs(self):
         if self.data_mode == "synthetic":
+            if self.material_source != "file":
+                raise ValueError("합성 모드에서는 관측 DB 공급기를 사용할 수 없습니다.")
             if self.observed_at is None:
                 raise ValueError("합성 자료의 관측 시각을 명시해야 합니다.")
         elif (
@@ -62,6 +66,7 @@ class AgentSettings(WireModel):
         return cls.model_validate(
             dict(
                 data_mode=mode,
+                material_source=os.environ.get("AGENT_MATERIAL_SOURCE", "") or "file",
                 run_id=os.environ.get("AGENT_RUN_ID", ""),
                 observed_at=None
                 if mode == "observed" and not observed_at
@@ -133,11 +138,16 @@ class AgentService:
     _metadata: bytes = field(init=False, repr=False)
 
     def __post_init__(self):
-        if type(self.settings) is not AgentSettings or type(self.material) is not (
+        if type(self.settings) is not AgentSettings:
+            raise ValueError("검증 가능한 자료 모드별 서비스 설정이 필요합니다.")
+        expected_type = (
             SyntheticMaterial
             if self.settings.data_mode == "synthetic"
-            else ObservedMaterial
-        ):
+            else {"file": ObservedMaterial, "mongodb": MongoObservedMaterial}[
+                self.settings.material_source
+            ]
+        )
+        if type(self.material) is not expected_type:
             raise ValueError("검증 가능한 자료 모드별 서비스 설정이 필요합니다.")
         if not callable(getattr(self.selector, "select", None)):
             raise ValueError("명시한 조건 추출기가 필요합니다.")
@@ -145,7 +155,7 @@ class AgentService:
             data = self.material.to_dict()
             expected = SyntheticLeagueSpec(
                 **self.settings.model_dump(
-                    exclude={"data_mode", "model", "model_digest"}
+                    exclude={"data_mode", "material_source", "model", "model_digest"}
                 )
             )
             if data["data_mode"] != "synthetic" or data[
@@ -244,7 +254,12 @@ class AgentService:
 
 
 def build_service(
-    settings, *, clock=utc_now, verifier=verify_model, processed_root=None
+    settings,
+    *,
+    clock=utc_now,
+    verifier=verify_model,
+    processed_root=None,
+    mongo_client_factory=None,
 ):
     if type(settings) is not AgentSettings:
         raise ValueError("명시한 Agent 시작 설정이 필요합니다.")
@@ -252,13 +267,22 @@ def build_service(
     if settings.data_mode == "synthetic":
         material = generate_synthetic_material(
             SyntheticLeagueSpec(
-                **settings.model_dump(exclude={"data_mode", "model", "model_digest"})
+                **settings.model_dump(
+                    exclude={"data_mode", "material_source", "model", "model_digest"}
+                )
             )
         )
     else:
-        material = ObservedMaterial(
-            processed_root or ROOT / "data" / "processed", settings.run_id
-        )
+        root = processed_root or ROOT / "data" / "processed"
+        if settings.material_source == "mongodb":
+            options = (
+                {}
+                if mongo_client_factory is None
+                else {"client_factory": mongo_client_factory}
+            )
+            material = MongoObservedMaterial(root, settings.run_id, **options)
+        else:
+            material = ObservedMaterial(root, settings.run_id)
     service = AgentService(settings, material, OllamaIDSelector(settings.model), None)
     if service.health(clock())["reason"] == "data_expired":
         return service

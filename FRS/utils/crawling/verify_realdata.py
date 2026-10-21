@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 from FRS.core.reinforcement import reinforcement_delta
-from FRS.schema.models import PlayerCard, ReinforceStats, TeamColor
+from FRS.schema.models import CardPrice, PlayerCard, ReinforceStats, TeamColor
 from FRS.utils.crawling.ability_parser import ParseContext, keyword_map
 from FRS.utils.crawling.realdata_catalog import (
     ABILITY_URL,
@@ -214,9 +214,12 @@ def replay(
             _canonical(run.state["responses"]) == _canonical(responses),
             "재생한 요청·관측 기록이 다릅니다",
         )
-        for key in ("split_log", "truncated_cells", "salary_parity"):
+        # 가격 충돌 기록이 생기기 전 실행(예: real-data-20261021-b)은 충돌 0건으로 본다.
+        defaults = dict(price_conflicts=[])
+        for key in ("split_log", "truncated_cells", "salary_parity", "price_conflicts"):
             require(
-                _canonical(run.state.get(key)) == _canonical(state.get(key)),
+                _canonical(run.state.get(key, defaults.get(key)))
+                == _canonical(state.get(key, defaults.get(key))),
                 f"재생한 {key}가 다릅니다",
             )
         for key in (
@@ -226,10 +229,11 @@ def replay(
             "split_cells",
             "truncated_cells",
             "salary_parity",
+            "price_conflicts",
             "processed_hashes",
         ):
             require(
-                _canonical(replayed[key]) == _canonical(report[key]),
+                _canonical(replayed[key]) == _canonical(report.get(key, 0)),
                 f"재생한 보고서의 {key}가 다릅니다",
             )
         for name in PROCESSED_FILES:
@@ -260,6 +264,7 @@ def check_independently(state, report, bodies, processed_path, position_field):
     }
     leaves = {}
     catalog = set()
+    memberships = set()  # (클럽 이름, spid). 여러 클럽 경력 카드는 클럽마다 하나씩
     abilities = []
     lists = [e for e in state["responses"] if e["resource"] == "player_list"]
     # 포지션 칸이 아니면 폼의 포지션 값은 저장된 템플릿 값 그대로다.
@@ -289,6 +294,7 @@ def check_independently(state, report, bodies, processed_path, position_field):
         )
         leaves[cell] = rows
         catalog |= {int(spid) for spid in rows}
+        memberships |= {(cell[0], int(spid)) for spid in rows}
     for club in state["clubs"]:
         # 포지션으로 나눈 칸은 같은 급여 한 값을 공유하므로 급여 범위로만 덮음을 본다.
         spans = sorted({(low, high) for name, low, high, _ in leaves if name == club})
@@ -341,10 +347,25 @@ def check_independently(state, report, bodies, processed_path, position_field):
         )
     colors = read_jsonl(processed_path / "team_color.jsonl", TeamColor)
     require(
-        {c.spid for c in colors} == catalog
-        and len(colors) == len(catalog)
-        and all(c.type == "club" and c.name in state["clubs"] for c in colors),
-        "클럽 자격 관측이 목록 카드와 다릅니다",
+        {(c.name, c.spid) for c in colors} == memberships
+        and len(colors) == len(memberships)
+        and all(c.type == "club" for c in colors),
+        "클럽 자격 관측이 클럽별 목록 카드와 다릅니다",
+    )
+    prices = {
+        (p.spid, p.reinforce_level): p
+        for p in read_jsonl(processed_path / "card_price.jsonl", CardPrice)
+    }
+    conflicts = state.get("price_conflicts", [])
+    require(
+        report.get("price_conflicts", 0) == len(conflicts)
+        and all(
+            len(set(c["prices"])) > 1
+            and prices[(c["spid"], c["reinforce_level"])].price is None
+            and prices[(c["spid"], c["reinforce_level"])].status == "unknown"
+            for c in conflicts
+        ),
+        "가격 충돌 키가 unknown으로 남지 않았습니다",
     )
     return len(leaves)
 

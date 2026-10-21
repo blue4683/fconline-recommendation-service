@@ -221,6 +221,7 @@ class RealDataRun:
         positions=(),
         position_field=None,
         allow_empty_cells=False,
+        catalog_only=False,
         clock=_now,
     ):
         validate_run_id(run_id)
@@ -233,14 +234,18 @@ class RealDataRun:
         if self.positions and not position_field:
             raise ValueError("포지션 목록에는 확인된 필드 이름이 필요합니다.")
         self.allow_empty_cells = allow_empty_cells
+        self.catalog_only = catalog_only
         self.run_id, self.max_attempts = run_id, max_attempts
         self.fetch_body, self.clock = fetch, clock
         raw_path.mkdir(parents=True, exist_ok=False)
         processed_path.mkdir(parents=True, exist_ok=False)
         self.raw_path, self.processed_path = raw_path, processed_path
         self.rows = {}  # spid -> 5강 목록 행
-        self.memberships = {}  # spid -> TeamColor
+        # 여러 클럽 경력 카드는 클럽마다 자격 관측을 따로 남긴다.
+        self.memberships = {}  # (spid, 클럽 이름) -> TeamColor
         self.prices = {}  # (spid, level) -> CardPrice
+        # 같은 가격 키가 다른 값으로 관측되면 최신값을 고르지 않고 unknown으로 둔다.
+        self.price_conflicts = {}  # (spid, level) -> 관측한 가격 목록
         self.accepted = []  # (Cell, rows)
         self.split_log, self.truncated = [], []
         self.records = {
@@ -362,6 +367,10 @@ class RealDataRun:
             self.accept(cell, rows, entry)
         self.state["split_log"] = self.split_log
         self.state["truncated_cells"] = self.truncated
+        self.state["price_conflicts"] = [
+            dict(spid=spid, reinforce_level=level, prices=prices)
+            for (spid, level), prices in sorted(self.price_conflicts.items())
+        ]
         self.flush()
 
     def accept(self, cell, rows, entry):
@@ -372,7 +381,7 @@ class RealDataRun:
             if first.salary != row.salary:
                 raise CatalogStopped("conflict", "같은 카드의 급여 관측이 충돌합니다.")
             self.memberships.setdefault(
-                row.spid,
+                (row.spid, cell.club.name),
                 TeamColor(
                     batch_id=self.run_id,
                     source="nexon_web",
@@ -392,11 +401,22 @@ class RealDataRun:
                 if price.price is None:
                     values.update(status=DataStatus.UNKNOWN, valid_until=None)
                 fresh = CardPrice.model_validate(values)
-                if key in self.prices and self.prices[key].price != fresh.price:
-                    raise CatalogStopped(
-                        "conflict", "같은 가격 키의 관측이 충돌합니다."
+                known = self.prices.get(key)
+                if known is None:
+                    self.prices[key] = fresh
+                elif key in self.price_conflicts:
+                    self.price_conflicts[key].append(fresh.price)
+                elif known.price != fresh.price:
+                    # 사용자 결정(2026-10-21): 이 카드·강화의 가격만 unknown으로 둔다.
+                    self.price_conflicts[key] = [known.price, fresh.price]
+                    self.prices[key] = CardPrice.model_validate(
+                        {
+                            **known.model_dump(),
+                            "price": None,
+                            "status": DataStatus.UNKNOWN,
+                            "valid_until": None,
+                        }
                     )
-                self.prices.setdefault(key, fresh)
 
     def check_salary_parity(self):
         """클럽마다 11강 목록을 1회 받아 5강과 급여가 같은지 확인한다."""
@@ -505,9 +525,13 @@ class RealDataRun:
         try:
             self.collect_catalog()
             self.check_salary_parity()
-            self.collect_abilities()
-            self.save()
-            self.state["status"] = "completed"
+            if self.catalog_only:
+                # 측정 실행: 목록·급여 대조까지만 하고 능력치·가공 파일은 만들지 않는다.
+                self.state["status"] = "catalog_measured"
+            else:
+                self.collect_abilities()
+                self.save()
+                self.state["status"] = "completed"
         except KeyboardInterrupt:
             self.state.update(
                 status="interrupted", stop_reason={"kind": "process_interrupted"}
@@ -532,6 +556,7 @@ class RealDataRun:
             split_cells=len(self.split_log),
             truncated_cells=self.truncated,
             salary_parity=self.state.get("salary_parity"),
+            price_conflicts=len(self.price_conflicts),
             auto_activation=False,
             processed_hashes={
                 path.name: hashlib.sha256(path.read_bytes()).hexdigest()
@@ -542,15 +567,17 @@ class RealDataRun:
         return report
 
 
-def plan(clubs, *, max_attempts=None):
+def plan(clubs, *, max_attempts=None, catalog_only=False):
     cells = initial_cells(clubs)
     return dict(
         scope="real_data_branch_single_run",
+        mode="catalog_only" if catalog_only else "full",
         eligibility_basis=ELIGIBILITY_BASIS,
         initial_list_requests=len(cells),
         split_rule="only_when_exactly_200_rows",
         parity_requests=len(tuple(dict.fromkeys(c.club for c in cells))),
-        ability_requests="one_per_unique_card_at_reinforce_5",
+        ability_requests=0 if catalog_only else "one_per_unique_card_at_reinforce_5",
+        price_conflict="mark_key_unknown_and_report",
         retries=0,
         min_request_interval_seconds=1,
         max_attempts=max_attempts,
@@ -622,11 +649,20 @@ def main(argv=None):
         action="store_true",
         help="빈 목록 HTML 구조를 확인한 뒤에만 지정",
     )
+    parser.add_argument(
+        "--catalog-only",
+        action="store_true",
+        help="목록·급여 대조만 요청해 카드 수를 잰다. 능력치·가공 파일 없음",
+    )
     args = parser.parse_args(argv)
     if not args.run:
         print(
             json.dumps(
-                plan(args.club, max_attempts=args.max_attempts),
+                plan(
+                    args.club,
+                    max_attempts=args.max_attempts,
+                    catalog_only=args.catalog_only,
+                ),
                 ensure_ascii=False,
                 indent=2,
             )
@@ -652,10 +688,11 @@ def main(argv=None):
             positions=args.position,
             position_field=args.position_field,
             allow_empty_cells=args.allow_empty_cells,
+            catalog_only=args.catalog_only,
         )
         report = run.execute()
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0 if report["status"] == "completed" else 1
+    return 0 if report["status"] in ("completed", "catalog_measured") else 1
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 
 현재는 FRS 2.0의 데이터 스키마·현재 사이트 파서·명시 배치 후보 검색·수동 갱신 도구와 **Stage 2-0 모델 계약, 2-A 재학습, 2-B 평가 정정, 2-C 읽기 전용 API**을 구현했습니다. [MVP 범위·무기한 로컬 보관 정책](docs/mvp-scope.md)에 따라 실제 관측/모델은 Git에서 제외합니다. Stage 1-D 커버리지·팀컬러 발동 규칙, 1-F 실제 갱신과 스쿼드의 실데이터 통합은 미완료입니다. 제공자의 수집 허용 여부도 미확정이며 종료한 수집 승인을 재사용하지 않습니다.
 
-AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 진행합니다. [R2 주입 그래프](docs/injected-agent-graph.md)는 테스트 대역으로 기존 엔진까지 연결했고 실제 LLM·웹/API·MCP는 후속입니다.
+AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 진행합니다. [R2 주입 그래프](docs/injected-agent-graph.md) 이후 후보 ID 선택·qwen3:8b 소량 비교, HTTP/SSE·실제 브라우저 연결, 로컬 stdio MCP를 구현·검증했습니다. [W6 평가 실행기](docs/stage-w6-evaluation-implementation.md)의25문장 대역 검증은25/25이며 실제 모델의25문장 정확도는 아직 미측정입니다.
 
 [강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)의 [R0 순수 계산기](docs/reinforcement-derivation-implementation.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산합니다. MVP 추천 범위는 5~11강을 유지하고 가격·급여 등은 별도 자료로 다룹니다. R1 합성 자료에 연결했고 기존 관측/모델 변환이나 실제 수집은 실행하지 않았습니다.
 
@@ -142,3 +142,16 @@ GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/positi
 ### 로컬 stdio MCP (합성 데모)
 
 원문과 후보 ID 선택을 기존 검증/엔진에 연결하는 `build_squad` Tool, 지원조건 Resource, ID 선택 Prompt를 제공한다. 모델 호출·호스트 자동 등록·HTTP MCP는 없다. 입력/실행 정책과 명시 배치/시각 실행 명령·고정 합성 대조는 [MCP 구현 기록](docs/stage-w5-mcp-implementation.md)을 따른다. 웹은 기존 HTTP 경로를 계속 사용한다.
+
+
+### W6 로컬 평가 (실제 모델 호출 없음)
+
+[사전 정답25문장](docs/stage-w6-evaluation-cases.md)을 정답 선택 대역으로 실행해 조건·차단·기존 엔진/출력을 독립 채점합니다. 실제 모델 정확도와 구분하며, [구현 기록](docs/stage-w6-evaluation-implementation.md)에 초기 실패/최종 실행·해시·지표 분모·한계를 남겼습니다. 최종 합성 대역 결과는25/25, 신규61/전체pytest1,553개 통과입니다.
+
+```sh
+.venv/bin/python -m FRS.evaluation.offline \
+  --run-id w6-offline-example-new \
+  --observed-at 2026-10-21T00:00:00+00:00 --run
+```
+
+고정 과거 합성 시계의 예시입니다. `--run`을 빼면 계획만 출력합니다. 실행 ID는 새로 지정하고 결과는 Git 제외 `artifacts/agent-evaluations/<run-id>/`에서 확인합니다. 기존 결과는 덮어쓰지 않습니다. 실제 모델 평가·새 호출·외부 업로드는 이 명령에 포함되지 않습니다.

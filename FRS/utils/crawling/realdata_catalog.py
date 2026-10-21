@@ -38,6 +38,9 @@ ABILITY_URL = "https://fconline.nexon.com/datacenter/PlayerAbility"
 ELIGIBILITY_BASIS = "club_career_search"
 SKILLS = ("sprintspeed", "acceleration", "strength", "stamina")
 RUN_ID_PATTERN = r"real-data-[a-z0-9]+(?:-[a-z0-9]+)*"
+# 코드의 안전 상한이다. 실행마다 승인받은 --max-attempts가 실제 상한이다.
+# 3클럽 한 실행(측정 기준 약 5,530회)을 담도록 2026-10-22 사용자 결정으로 올렸다(RD-4).
+MAX_ATTEMPTS_LIMIT = 8000
 # 템플릿에 이미 있어야 하는 키다. 없으면 저장된 공식 폼이 아니므로 거부한다.
 REQUIRED_KEYS = (
     "n4LeagueId",
@@ -225,8 +228,10 @@ class RealDataRun:
         clock=_now,
     ):
         validate_run_id(run_id)
-        if type(max_attempts) is not int or not 1 <= max_attempts <= 5000:
-            raise CatalogStopped("invalid_run", "요청 상한은 1~5000의 정수여야 합니다.")
+        if type(max_attempts) is not int or not 1 <= max_attempts <= MAX_ATTEMPTS_LIMIT:
+            raise CatalogStopped(
+                "invalid_run", f"요청 상한은 1~{MAX_ATTEMPTS_LIMIT}의 정수여야 합니다."
+            )
         self.cells = initial_cells(clubs)
         self.template = validate_template(template)
         self.positions = tuple(positions)

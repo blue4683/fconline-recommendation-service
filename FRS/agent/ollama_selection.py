@@ -11,7 +11,7 @@ from FRS.agent.candidate_selection import (
     checked_registry,
     selection_spec,
 )
-from FRS.agent.candidates import canonical
+from FRS.agent.candidates import FIELDS, canonical
 from FRS.agent.ollama import OPTIONS
 from FRS.agent.ollama_transport import (
     LOCAL_ORIGIN,
@@ -30,13 +30,13 @@ candidate_set_id는 제공한 값을 그대로 반환한다. 값을 계산하거
 
 def selector_spec():
     spec = dict(
-        version=1,
+        version=2,
         selection_version=selection_spec()["selection_version"],
         origin=LOCAL_ORIGIN,
         models=MODELS,
         system=SYSTEM_PROMPT,
         format=CandidateSelection.model_json_schema(),
-        request_binding="candidate_set_id_enum_only",
+        request_binding="candidate_set_id_and_per_field_ids_counts_unique",
         options=dict(OPTIONS),
         think=False,
         stream=False,
@@ -55,6 +55,14 @@ def selection_request(model, registry):
     registry = checked_registry(getattr(registry, "original", None), registry)
     schema = CandidateSelection.model_json_schema()
     schema["properties"]["candidate_set_id"]["enum"] = [registry.candidate_set_id]
+    # 생성 시에도 필드 경계와 전체 출현 수를 제한한다. 복원 검증은 별도로 유지한다.
+    for field in FIELDS:
+        ids = [v.candidate_id for v in registry.candidates if v.field == field]
+        property_schema = schema["properties"][field]
+        property_schema.update(minItems=len(ids), maxItems=len(ids), uniqueItems=True)
+        if ids:
+            property_schema["items"]["enum"] = ids
+    schema["properties"]["unsupported"]["maxItems"] = 0
     data = dict(
         original=registry.original,
         candidate_set_id=registry.candidate_set_id,

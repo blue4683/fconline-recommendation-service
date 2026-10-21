@@ -394,3 +394,13 @@ def test_cli_run_requires_explicit_scope(tmp_path):
     with pytest.raises(SystemExit):
         main(["--club", "가상클럽:13:9", "--run", "--root", str(tmp_path)])
     assert not (tmp_path / "data").exists()
+
+
+@pytest.mark.parametrize("attempts", [0, 8001, "700", 1.5])
+def test_attempt_cap_must_be_an_integer_within_the_code_limit(make, attempts):
+    with pytest.raises(CatalogStopped, match="1~8000"):
+        make(Server(), max_attempts=attempts)
+
+
+def test_a_three_club_sized_cap_is_accepted(make):
+    assert make(Server(), max_attempts=5800).max_attempts == 5800

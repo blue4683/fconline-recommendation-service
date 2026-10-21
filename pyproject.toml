@@ -1,6 +1,7 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+# GitHub 표준 러너(4 vCPU)에 맞춰 4개 프로세스로 나눠 실행한다. 순차 실행은 -n 0.
+addopts = "-ra -n 4"
 
 [tool.ruff]
 target-version = "py311"

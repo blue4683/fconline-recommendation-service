@@ -14,7 +14,7 @@ AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-pr
 
 ## 문서 Q&A와 관측 확장
 
-[W8 구현 기록](docs/rag-langsmith-implementation.md): 로컬 문서 검색과 qwen3:8b 답변, 별도 Q&A API·CLI, 선택적 LangSmith 어댑터를 추가했다. 현재는 대역 검증까지이며 실제 모델/trace 전송은 별도 실행 전이다. 기존 추천 엔진·웹 wire는 유지한다.
+[W8 구현 기록](docs/rag-langsmith-implementation.md): 로컬 문서 검색과 qwen3:8b 답변, 별도 Q&A API·CLI, 선택적 LangSmith 어댑터를 추가했다. [실제 1회 검증](docs/rag-langsmith-results.md)은 고정7질문5/7, 추론6회·LangSmith POST26회와 첫 root 읽기 확인1회다. 실패2건을 보존하며 새 Q&A 웹 연결은 미검증이다. 기존 추천 엔진·웹 wire는 유지한다.
 
 ```sh
 python -m FRS.knowledge --question '5강과 8강 차이는?'

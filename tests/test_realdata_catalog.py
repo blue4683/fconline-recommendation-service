@@ -225,6 +225,85 @@ def test_duplicate_cards_across_cells_are_counted_once(make):
     assert len(run.prices) == 7
 
 
+OTHER = ClubSpec("가상클럽2", 13, 5)
+SHARED = 123000002
+
+
+class TwoClubServer:
+    """두 클럽이 카드 하나(SHARED)를 함께 보이는 합성 서버. 급여 21~25 칸에만 카드가 있다."""
+
+    def __init__(self, cheap_on_second=False):
+        self.cheap_on_second = cheap_on_second
+        self.calls = []
+
+    def __call__(self, url, form, resource):
+        self.calls.append((resource, form))
+        if resource == "ability":
+            html = ability_html(form["n1Strong"], form["spid"])
+            return html.replace("<span>20</span>", "<span>21</span>").encode()
+        if (int(form["n4SalaryMin"]), int(form["n4SalaryMax"])) != (21, 25):
+            return b"<html>empty</html>"
+        grade = int(form["n1Strong"])
+        spids = {"9": [123000001, SHARED], "5": [SHARED, 123000003]}[form["n4TeamId"]]
+        html = ""
+        for spid in spids:
+            row = rows_html([spid], 21, grade)
+            if self.cheap_on_second and form["n4TeamId"] == "5" and spid == SHARED:
+                row = row.replace("9,999,999,999,999,999,999", "1,000")
+            html += row
+        return html.encode()
+
+
+def test_cards_in_two_clubs_keep_one_membership_per_club(make, tmp_path):
+    report = make(TwoClubServer(), clubs=[CLUB, OTHER]).execute()
+    assert report["status"] == "completed", report
+    assert report["catalog_cards"] == 3 and report["profile_cards"] == 3
+    assert report["cards_by_club"] == {CLUB.name: 2, OTHER.name: 2}
+    assert report["price_conflicts"] == 0
+    colors = [
+        json.loads(line)
+        for line in (tmp_path / "out/team_color.jsonl").read_text().splitlines()
+    ]
+    assert sorted((c["name"], c["spid"]) for c in colors) == sorted(
+        [
+            (CLUB.name, 123000001),
+            (CLUB.name, SHARED),
+            (OTHER.name, SHARED),
+            (OTHER.name, 123000003),
+        ]
+    )
+
+
+def test_a_price_seen_with_two_values_becomes_unknown_without_stopping(make, tmp_path):
+    report = make(TwoClubServer(cheap_on_second=True), clubs=[CLUB, OTHER]).execute()
+    assert report["status"] == "completed", report
+    assert report["price_conflicts"] == 7  # 공유 카드의 5~11강 가격
+    prices = [
+        json.loads(line)
+        for line in (tmp_path / "out/card_price.jsonl").read_text().splitlines()
+    ]
+    shared = [p for p in prices if p["spid"] == SHARED]
+    assert len(shared) == 7
+    assert all(p["status"] == "unknown" and p["price"] is None for p in shared)
+    assert all(p["status"] == "ok" for p in prices if p["spid"] != SHARED)
+    manifest = json.loads((tmp_path / "raw/manifest.json").read_text())
+    assert {tuple(c["prices"]) for c in manifest["price_conflicts"]} == {
+        (9999999999999999999, 1000)
+    }
+
+
+def test_catalog_only_measures_cards_without_ability_requests(make, tmp_path):
+    server = TwoClubServer()
+    report = make(server, clubs=[CLUB, OTHER], catalog_only=True).execute()
+    assert report["status"] == "catalog_measured"
+    assert report["catalog_cards"] == 3 and report["profile_cards"] == 0
+    assert report["cards_by_club"] == {CLUB.name: 2, OTHER.name: 2}
+    # 목록 5칸 × 2클럽 + 급여 대조 2, 능력치 0
+    assert [r for r, _ in server.calls] == ["player_list"] * 12
+    assert report["attempts"] == 12
+    assert list((tmp_path / "out").glob("*.jsonl")) == []
+
+
 def test_empty_cell_stops_unless_structure_was_verified(make):
     run = make(Server(), allow_empty_cells=False)
     report = run.execute()

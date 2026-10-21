@@ -137,3 +137,8 @@ GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/positi
 [W4-1 웹 경계 코드](docs/agent-web-contract-implementation.md)는 엄격 DTO·오류 투영·요청/SSE 직렬화를 합성 검증했습니다. 실제 Agent HTTP 앱/브라우저 연결은 후속입니다.
 
 [별도 합성 Agent HTTP/SSE 앱](docs/synthetic-agent-api.md)은 GET /health·POST /recommend/squad/stream과 단일실행/기한/중단을 합성 검증했습니다. 수동 실행은 명시한 합성 배치/관측 시각·모델 digest와 실제 모델 상태 확인 범위가 필요합니다. 현재 상주 서버·실제 모델/브라우저 E2E는 미실행입니다.
+
+
+### 로컬 stdio MCP (합성 데모)
+
+원문과 후보 ID 선택을 기존 검증/엔진에 연결하는 `build_squad` Tool, 지원조건 Resource, ID 선택 Prompt를 제공한다. 모델 호출·호스트 자동 등록·HTTP MCP는 없다. 입력/실행 정책과 명시 배치/시각 실행 명령·고정 합성 대조는 [MCP 구현 기록](docs/stage-w5-mcp-implementation.md)을 따른다. 웹은 기존 HTTP 경로를 계속 사용한다.

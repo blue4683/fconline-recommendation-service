@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import ProgressSteps from './components/ProgressSteps.vue';
 import RequestComposer from './components/RequestComposer.vue';
 import ResultView from './components/ResultView.vue';
+import ServerStatus from './components/ServerStatus.vue';
 import { SCENARIOS, type ScenarioId } from './mocks/fixtures';
 import { createMockTransport } from './mocks/mockTransport';
+import { createHealthChecker, type HealthCheck, type HealthChecker } from './services/health';
 import { createLiveTransport, normalizeBaseUrl } from './services/liveTransport';
 import type { Transport, TransportMode } from './services/transport';
 import { useRecommendation } from './services/useRecommendation';
@@ -15,12 +17,15 @@ const props = withDefaults(
     liveBaseUrl?: string;
     /** 테스트용 교체 지점. */
     makeTransport?: (mode: TransportMode, scenario: () => ScenarioId) => Transport | null;
+    /** 실제 연결의 GET /health 확인. 테스트용 교체 지점. */
+    checkHealth?: HealthChecker;
     now?: () => number;
     mockDelayMs?: number;
   }>(),
   {
     liveBaseUrl: () => import.meta.env.VITE_FRS_API_BASE_URL ?? '',
     makeTransport: undefined,
+    checkHealth: undefined,
     now: undefined,
     mockDelayMs: 450,
   },
@@ -31,6 +36,39 @@ const mode = ref<TransportMode | null>(null);
 const scenario = ref<ScenarioId>('optimal');
 
 const rec = useRecommendation({ now: props.now });
+const nowFn = () => (props.now ?? Date.now)();
+
+// 실제 연결의 서버 상태. 연결 방식을 고를 때·다시 확인을 누를 때·요청이 끝날 때만 한 번씩 조회한다(주기 조회 없음).
+const checker = props.checkHealth ?? createHealthChecker();
+const health = shallowRef<HealthCheck | null>(null);
+const checking = ref(false);
+let healthGeneration = 0;
+
+async function refreshHealth(): Promise<void> {
+  const base = baseUrl.value;
+  if (!base) return;
+  const generation = ++healthGeneration;
+  checking.value = true;
+  let result: HealthCheck;
+  try {
+    result = await checker(base);
+  } catch {
+    result = { kind: 'unreachable' };
+  }
+  if (generation !== healthGeneration) return;
+  health.value = result;
+  checking.value = false;
+}
+
+watch(mode, (m) => {
+  if (m === 'live') {
+    void refreshHealth();
+  } else {
+    healthGeneration += 1;
+    health.value = null;
+    checking.value = false;
+  }
+});
 
 function transportFor(m: TransportMode): Transport | null {
   if (props.makeTransport) return props.makeTransport(m, () => scenario.value);
@@ -40,11 +78,23 @@ function transportFor(m: TransportMode): Transport | null {
 
 const blockedReason = computed(() => {
   if (mode.value === null) return '연결 방식을 먼저 고르세요.';
-  if (mode.value === 'live' && !baseUrl.value) return '실제 연결 주소가 아직 정해지지 않았습니다.';
+  if (mode.value === 'live') {
+    if (!baseUrl.value) return '실제 연결 주소가 아직 정해지지 않았습니다.';
+    const h = health.value;
+    if (checking.value || h === null) return '서버 상태를 확인한 뒤 보낼 수 있습니다.';
+    if (h.kind === 'unavailable') return '서버가 준비되지 않아 보낼 수 없습니다. 서버를 확인한 뒤 다시 확인을 눌러 주세요.';
+    if (h.kind === 'unreachable') return '서버에 연결하지 못해 보낼 수 없습니다.';
+    if (h.kind === 'invalid') return '서버 상태를 확인하지 못해 보낼 수 없습니다.';
+  }
   return null;
 });
 
 const running = computed(() => rec.phase.value === 'running');
+
+// 실제 요청이 끝나면 서버의 busy·기한 표시를 새로 읽는다.
+watch(running, (now, before) => {
+  if (before && !now && mode.value === 'live') void refreshHealth();
+});
 
 function onSubmit(message: string): void {
   if (mode.value === null) return;
@@ -96,6 +146,15 @@ function onSubmit(message: string): void {
             <option v-for="s in SCENARIOS" :key="s.id" :value="s.id">{{ s.label }}</option>
           </select>
         </div>
+        <ServerStatus
+          v-if="mode === 'live' && baseUrl"
+          :base-url="baseUrl"
+          :check="health"
+          :checking="checking"
+          :locked="running"
+          :now="nowFn"
+          @refresh="refreshHealth"
+        />
         <ProgressSteps
           v-if="rec.phase.value !== 'idle'"
           :started="rec.started.value"

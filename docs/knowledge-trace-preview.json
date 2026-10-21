@@ -1,0 +1,94 @@
+{
+  "example_only": true,
+  "description": "합성 대역 payload. 실제 실행/전송 기록 아님. 외부 대상 endpoint/project/key는 포함하지 않음.",
+  "schema_version": "langsmith-preview.v1",
+  "record_count": 4,
+  "runs": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "trace_id": "00000000-0000-4000-8000-000000000001",
+      "name": "knowledge-qa",
+      "run_type": "chain",
+      "start_time": "2026-10-21T00:00:00+00:00",
+      "end_time": "2026-10-21T00:00:02.500000+00:00",
+      "dotted_order": "20261021T000000000000Z00000000-0000-4000-8000-000000000001",
+      "parent_run_id": null,
+      "inputs": {},
+      "outputs": {},
+      "error": null,
+      "extra": {
+        "metadata": {
+          "status": "ok",
+          "corpus_version": "cf55ddd5ddec9815891be445b2144b412ede40c6e3f07acc53f155f8db1b2b7e",
+          "generator_kind": "test_double"
+        }
+      }
+    },
+    {
+      "id": "8c908a7b-8d65-5016-8103-7411de0041f3",
+      "trace_id": "00000000-0000-4000-8000-000000000001",
+      "name": "retrieve",
+      "run_type": "retriever",
+      "start_time": "2026-10-21T00:00:00+00:00",
+      "end_time": "2026-10-21T00:00:00.500000+00:00",
+      "dotted_order": "20261021T000000000000Z00000000-0000-4000-8000-000000000001.20261021T000000000000Z8c908a7b-8d65-5016-8103-7411de0041f3",
+      "parent_run_id": "00000000-0000-4000-8000-000000000001",
+      "inputs": {},
+      "outputs": {},
+      "error": null,
+      "extra": {
+        "metadata": {
+          "stage": "retrieve",
+          "elapsed_ms": 500,
+          "status": "ok",
+          "input_tokens": null,
+          "output_tokens": null
+        }
+      }
+    },
+    {
+      "id": "aa2d67c1-3060-53ea-8700-5089324248b7",
+      "trace_id": "00000000-0000-4000-8000-000000000001",
+      "name": "generate",
+      "run_type": "chain",
+      "start_time": "2026-10-21T00:00:01+00:00",
+      "end_time": "2026-10-21T00:00:01.500000+00:00",
+      "dotted_order": "20261021T000000000000Z00000000-0000-4000-8000-000000000001.20261021T000001000000Zaa2d67c1-3060-53ea-8700-5089324248b7",
+      "parent_run_id": "00000000-0000-4000-8000-000000000001",
+      "inputs": {},
+      "outputs": {},
+      "error": null,
+      "extra": {
+        "metadata": {
+          "stage": "generate",
+          "elapsed_ms": 500,
+          "status": "ok",
+          "input_tokens": null,
+          "output_tokens": null
+        }
+      }
+    },
+    {
+      "id": "ab185ed2-c124-5cd3-bfc1-ba7b4a4ef340",
+      "trace_id": "00000000-0000-4000-8000-000000000001",
+      "name": "validate",
+      "run_type": "parser",
+      "start_time": "2026-10-21T00:00:02+00:00",
+      "end_time": "2026-10-21T00:00:02.500000+00:00",
+      "dotted_order": "20261021T000000000000Z00000000-0000-4000-8000-000000000001.20261021T000002000000Zab185ed2-c124-5cd3-bfc1-ba7b4a4ef340",
+      "parent_run_id": "00000000-0000-4000-8000-000000000001",
+      "inputs": {},
+      "outputs": {},
+      "error": null,
+      "extra": {
+        "metadata": {
+          "stage": "validate",
+          "elapsed_ms": 500,
+          "status": "ok",
+          "input_tokens": null,
+          "output_tokens": null
+        }
+      }
+    }
+  ]
+}

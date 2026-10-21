@@ -44,6 +44,24 @@
 
 ## 진행·변경·질문 기록
 
+### INT-034 — W8 문서 Q&A·선택적 LangSmith 구현 (2026-10-21)
+
+- 통합 / 사용자 확정 범위 구현·대역 검증. 별도 API·CLI, 기존 qwen3:8b와 로컬 검색을 사용한다. 새 실제 호출/전송은 아직 미실행이다.
+- #95는 최신 head9468cb3/CI39552920296 성공 후4711d8f로 develop Squash·트리/메시지 확인·완료 브랜치 정리를 마쳤다. 현재 feat/document-rag-observability는 작업 중 들어온 문서#96/ecfb6fb까지 fast-forward했다. #96은 다른 실행 주체가 병합했다.
+- FRS/knowledge/와 docs/knowledge/에 corpus hash·허용 구간, TF-IDF 검색, 단일 생성/출처 검증, 관측, 독립 HTTP/CLI, 고정7질문 평가를 추가했다. LangSmith SDK 실제 Client는 대역 전송으로 검증했다. 기본0회, 원문/답변/환경 metadata 제외, 전송 전 payload 재비교, 재시도/redirect0, pending/fsync/잠금을 유지한다.
+- 검증: 신규91/전체 pytest1,662(60.48초), Ruff lint/format, 환경/pip 통과. 대역7/7은 실모델 지표가 아니다. 모델/metadata/LangSmith/서버/브라우저/수집0회. 기존 엔진/Agent/API/MCP/평가·frontend/·WEB-*·의존성/CI는 수정하지 않았다.
+- 웹 전달: 독립 POST /knowledge/query·GET /health와 knowledge-answer.v1/knowledge-health.v1은 rag-langsmith-implementation.md에 명시했다. 기존 추천 SSE/DTO 변경 없음. 새 Q&A UI와 실제 브라우저 검증은 후속이며 상대 수신/동의를 주장하지 않는다.
+- 사용자 지정 주 체크아웃.env의 LANGCHAIN_* 설정으로 미국 endpoint/FRS 프로젝트·키 보유를 값 노출 없이 확인했다. 파일 수정/복사 없음. 전송 미리보기와 상태최대2/추론7/LangSmith29요청 범위를 확인한 뒤 실제 실행한다.
+- WEB-007은 별도 실데이터 설계로 남긴다. 이번 범위에서 수집/자격 계약을 변경하지 않고 과거24/25·원본/잠금·실데이터 미완료와5분 발표 일정을 보존한다. 새 실제 결과 후 보고/발표 자료를 갱신한다.
+
+### INT-033 — W8 RAG·LangSmith 추가 경계 (2026-10-21)
+
+- 통합 / 사용자 결정: RAG+LangSmith, 계정/API 키 보유. Multi-Agent는 이번 추가 범위에서 제외한다. 후속 답변으로 기존qwen3:8b·로컬검색의 별도 문서 Q&A API·CLI를 확정했다. 추천 자동 설명은 추가하지 않는다.
+- WEB-006(#94)을 읽고 요청을 접수했다. 문서 diff/CI39550791870 확인 뒤dee6c46으로develop Squash·명시 메시지 확인. 웹 소스/WEB 기록은 변경하지 않는다. 상대 대화로 메시지 전송/수신을 주장하지 않는다.
+- docs/rag-langsmith-contract.md에 corpus/검색/생성/근거·기존 추천 보호·명시 관측/최소 전송 초안과 W8-0~5 증분을 기록한다. 단순 검색/로컬 JSON을 RAG 생성/실제 LangSmith 연동 완료로 보고하지 않는다.
+- 기존 langsmith0.14.11·명시 tracing off·로컬 모델을 확인했다. 두 작업 디렉터리에.env가 없고 실행 환경에도LangSmith key/endpoint/project 미설정임을 값 출력 없이 확인했다. 키를 채팅/커밋으로 받지 않는다.
+- 새 실제 모델/metadata/외부 전송/서버/브라우저/수집 없음. 기능·평가 결과는 후속이며 기존25문장/잠금·실데이터 상태·5분 발표 일정을 보존한다.
+
 ### INT-032 — W7 PPTX·5분 발표 자료 (2026-10-21)
 
 - 통합 / 사용자확정:10/22(목)13:00 KST 시작·5분·PPTX.7장/300초는이형식에맞춘편집구성이다. 이전발표형식/시각미정중이번결정을해제한다.
@@ -396,6 +414,48 @@
   - 미실행: 실제 qwen3:8b 연결(통합 담당 승인 범위), 웹 CI(INT-004).
 - 다음 담당: 통합 담당. 필요하면 상주 데모 실행 시 이 상태 표시를 같이 확인한다. 백엔드 wire나 health가 바뀌면 생성기로 fixture를 다시 만든다.
 
+### WEB-006 — 최종 발표 기술 요소 공백과 백엔드 구현 요청 (Multi-Agent·RAG·LangSmith)
+
+- 날짜/담당/ID: 2026-10-21 / 웹 / WEB-006. 구분: 변경 요청. 상태: 요청만 등록. 웹 소스·백엔드 변경과 실행은 없다.
+- 배경: 사용자가 최종 발표 자료에 넣어야 할 기술 요소로 Multi-Agent, MCP, RAG, 의존성 주입, LangSmith, 모듈화, 단위 테스트를 제시했다. master `5ae7440` 기준으로 앞의 세 가지(Multi-Agent, RAG, LangSmith)가 구현되지 않았음을 보고했다. 사용자는 "일부라도 구현 요청"을 선택했다.
+- 확인한 사실(master `5ae7440`, 읽기 전용):
+  - Multi-Agent: 단일 LangGraph Agent 안의 역할별 노드(준비, ID 선택, 검증, 탐색, 표시)만 있다. 모델 판단 지점은 ID 선택 한 곳이다.
+  - RAG: 문서 검색이나 임베딩 경로가 없다. 고정 합성 자료를 구조화 조회한다.
+  - LangSmith: `FRS/agent/graph.py`, `candidate_graph.py`, `ollama_selection.py`가 `tracing_context(enabled=False)`로 추적을 끈다. 지연과 토큰은 로컬 manifest에만 기록한다.
+  - 적용 근거가 있는 요소: MCP(W5), 의존성 주입(`AgentDependencies`, `create_agent_app(service_factory, clock)`), 모듈화, 단위 테스트(2026-10-21 로컬에서 pytest 1,571개, Vitest 108개 통과).
+- 통합 담당에게 요청(백엔드 범위이므로 웹은 구현하지 않는다):
+  1. 가능한 최소 범위로 세 항목 중 일부를 구현할 수 있는지 판단한다. 예: 조건 해석 Agent와 스쿼드 검증 Agent를 나누는 두 노드 구성, 지원 조건 문서 조각 검색을 근거로 쓰는 보완 안내, 로컬 추적 기록을 LangSmith 형식으로 남기는 선택 옵션.
+  2. LangSmith 업로드는 외부 전송과 API 키가 필요하다. 기존 규칙대로 사용자 승인 없이 켜지 않는다.
+  3. 새 실제 모델 호출이 필요하면 기존 승인 소진 규칙에 따라 별도 승인을 받는다.
+- 마감 영향: 작업 완료 마감은 2026-10-22 13:00 KST다. 그때까지 구현되지 않으면 발표 자료는 세 항목을 "미적용"으로 표기하고 이유와 후속 계획만 말한다. 현재 발표 자료가 그렇게 작성되어 있다.
+- 영향 경로·호환성: 이 WEB-006 항목만 추가했다. frontend/, FRS/, tests/, scripts/, CI, Docker, 설계 문서 변경 없음.
+- 사용자 결정 필요 여부: 구현 범위와 LangSmith 외부 전송 여부는 통합 담당이 사용자에게 확인한다.
+- 검증: 문서 변경만 했다. 링크와 경로, diff를 확인했다. 기능 테스트는 변경이 없어 실행할 필요가 없다(위 테스트 수는 사실 확인용으로 별도 실행).
+- 다음 담당: 통합 담당.
+
+### WEB-007 — 실데이터 브랜치 설계와 사용자 결정 RD-1·RD-2 전달
+
+- 날짜/담당/ID: 2026-10-21 / 웹 / WEB-007. 구분: 사용자 결정 전달 + 설계 제안 + 변경 요청. 상태: 문서만. 수집·코드 변경과 넥슨 요청은 없다.
+- 기준: develop `4711d8f`. 읽은 자료: AGENTS.md "외부 요청과 데이터 수집", 설계도 Stage 0(0-B·0-C), stage-1-d-reinspection·membership-inspection·search-feasibility·enrichment, stage-1-f-observation-policy·freshness-policy·manual-refresh, reinforcement-derivation-contract, `FRS/utils/crawling/refresh_run.py`(읽기 전용).
+- 사용자 요청: "master에는 합성 데이터로 수행할 수 있게 두고, develop에서 브랜치를 하나 만들어서 거기서 실데이터를 수집해서 사용할 수 있도록 설계해서 PR". 웹 담당은 평소 설계 문서를 쓰지 않지만 사용자가 직접 요청했으므로 **새 문서 `docs/real-data-branch-design.md` 하나**를 추가했다. 기존 설계도·AGENTS.md·코드·테스트는 바꾸지 않았다.
+- 사용자 결정(2026-10-21, 대화에서 확인):
+  - RD-1: 게임에서 클럽 경력이 있는 카드도 그 클럽의 소속 팀컬러를 받는다. 클럽 경력 검색을 자격 근거로 쓴다. 기존 관측 계약("경력은 보조")보다 이 결정이 우선한다.
+  - RD-2: 포트폴리오 용도의 수집·저장·사용은 문제없다고 사용자가 판단했다. 설계도 0-B의 사용자 판단으로 기록하며 넥슨 공식 확인은 아니다.
+  - 브랜치: master·develop은 합성 경로 유지, develop에서 만든 `feat/real-data`에서 실데이터를 수집·사용.
+  - 사용자 관찰: 공식 팀컬러 페이지의 `DataCenter.GetTeamColorDetail(1001)` 상세 창은 사용자 브라우저에서 소속 선수를 보여 주지만 한 번에 보이는 수가 정해져 있다. 사용자는 클럽 소속(경력) 검색 뒤 급여·능력치로 나눠 찾는 방식을 제안했다.
+- 설계 요지(상세는 새 문서):
+  1. 목록은 `POST /datacenter/PlayerList` 클럽 경력 검색을 클럽 3 × 급여 5구간으로 시작하고, 응답이 정확히 200장인 칸만 급여·포지션으로 더 나눈다. 페이지 넘김은 쓰지 않는다(2페이지가 1페이지와 같은 바이트였음).
+  2. 5~11강 가격은 목록 한 줄에 함께 있으므로 따로 요청하지 않는다. 능력치는 카드당 5강 1회 요청하고 6~11강은 검증된 누적 보너스로 파생한다(1,813회 → 카드 수만큼).
+  3. 급여는 5강 값을 쓰고, 실행마다 클럽별 11강 목록 1회로 동일성을 대조한다. 다르면 중단.
+  4. 상세 팝업은 대조용(전체 명단 근거 아님). 직접 HTTP 상세는 302였으므로 브라우저 확인 또는 요청 계약 기록 후에만 자동화.
+  5. 실데이터 공급기·자료 모드·`/health` 확장, `data_mode` 새 값은 계약 버전을 올려(`web-agent.v1` 제안) 양쪽을 함께 바꾼다. v0는 master에서 유지.
+- 통합 담당에게 요청: RD-1·RD-2를 설계도·AGENTS.md에 반영할지 판단, `feat/real-data` 생성, 새 문서 §9 순서로 구현. 넥슨 요청이 있는 단계(§9의 2·3·7)는 run-id·상한을 사용자에게 승인받는다.
+- 웹 담당 후속: 계약 v1이 정해지면 `feat/real-data`에서 웹 파서·자료 모드 표시·fixture를 맞춘다. master·develop의 웹은 바꾸지 않는다.
+- 영향 경로·호환성: `docs/real-data-branch-design.md`(새 파일)와 이 WEB-007 항목만. frontend/, FRS/, tests/, scripts/, CI, Docker, 기존 설계 문서 변경 없음. master 동작 변화 없음.
+- 사용자 결정 필요 여부: 이 PR 검토로 설계 방향 확인. 실수집 실행 범위는 통합 담당 단계에서 별도 승인.
+- 검증: 문서 변경만 했다. 새 문서의 상대 링크와 참조한 코드 위치(`.gitignore` 168행, `agent_contract.py` 144행, `refresh_run.py` `BANDS`)를 확인했다.
+- 다음 담당: 통합 담당.
+
 ### INT-018 — C4 실제 ID 선택 어댑터·새 비교 승인 (2026-10-20)
 
 - 담당: 통합 / 상태: 사용자 승인·계약. 기준 develop e234567 (#70), docs/candidate-ollama-contract.
@@ -403,6 +463,15 @@
 - 두 모델×7사례·준비 차단 미호출·최대12추론, 로컬 순차/각120초/재시도·다운로드·외부 전송 없음/서버·연결 오류 즉시 중단. 기존 기록 보존.
 - 실제 비교는 정규화까지만, 엔진/DB/수집/API/웹 제외. 웹 DTO 변경 없음·웹 담당 조치 없음. 모델 운영 채택은 후속.
 - 계약 PR은 문서/링크/diff 검토, 코드 테스트 미실행(문서만). 실제 구현/결과는 후속 기능 PR에 기록한다.
+
+### INT-035 — W8 실제 RAG·LangSmith1회 검증과 발표 반영
+
+- 날짜/담당:2026-10-21 / 통합. 상태:실제 검증 완료·품질5/7·실패2건. 기준 develop baf6fab, 후속 docs/rag-langsmith-results.
+- PR#97은head d7d0f91/CI39556588989 성공 뒤 baf6fab Squash·트리/메시지 확인·자체 완료 브랜치 정리. 새 사용자 승인으로 w8-rag-20261021-001을 실행했다.
+- 상태2·추론6·LangSmith 미국FRS POST26 성공 응답/첫root GET200·ID일치. 원문/답변/본문은 전송하지 않았다. 이번 Ollama 종료·승인/잠금 소진, 재호출 없음.
+- 고정7질문5/7. K03은 정답 검색 후 답변 누락, K05는 근거 부족에 출처를 남겨 invalid_output. [결과](rag-langsmith-results.md)·보고서·발표에 실패를 포함한다. 기존24/25와 별도 지표다.
+- 영향:문서/발표 산출물만. frontend/·WEB-*·기존 엔진/Agent/API/MCP/평가 코드 불변. 웹 담당은 별도knowledge-answer.v1 계약을 검토할 수 있으나 새 UI 구현/실제 연결은 미완료다. 기존 SSE 경로는 그대로다.
+- 남은 범위:Q&A 실제 웹 E2E·기존 추천 tracing·Multi-Agent·실데이터 통합·배포. 이 기록은 새 호출 승인이 아니다. 다음 담당은 통합(발표/검증 증거 정리).
 
 ### 기록 양식 — 실제 작업 시 새 WEB-* 또는 INT-* 항목으로 복사
 

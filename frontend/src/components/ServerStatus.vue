@@ -17,8 +17,8 @@ const emit = defineEmits<{ refresh: [] }>();
 
 const REASON_COPY: Record<HealthReason, { title: string; note: string }> = {
   data_expired: {
-    title: '서버의 합성 자료 기한이 지났습니다',
-    note: '서버를 새 합성 자료로 다시 시작해야 추천할 수 있습니다. 기한을 늘려 쓰지 않습니다.',
+    title: '서버의 자료 기한이 지났습니다',
+    note: '유효한 자료가 준비된 뒤 다시 확인해 주세요. 기한을 늘려 쓰지 않습니다.',
   },
   model_unverified: {
     title: '서버가 시작할 때 모델을 확인하지 못했습니다',
@@ -26,7 +26,7 @@ const REASON_COPY: Record<HealthReason, { title: string; note: string }> = {
   },
   not_configured: {
     title: '서버 시작 설정이 없습니다',
-    note: '서버의 합성 자료·모델 설정이 비어 있어 요청을 받지 않습니다.',
+    note: '서버의 자료·모델 설정이 비어 있어 요청을 받지 않습니다.',
   },
 };
 
@@ -67,6 +67,10 @@ const pastValidUntil = computed(() => {
     </div>
     <p v-if="view.note" class="note">{{ view.note }}</p>
     <dl v-if="health" class="facts">
+      <div v-if="health.data_mode">
+        <dt>자료 모드</dt>
+        <dd data-testid="server-data-mode">{{ health.data_mode === 'observed' ? '넥슨 데이터센터 관측 자료' : '합성 가상 리그 자료' }}</dd>
+      </div>
       <div v-if="health.model">
         <dt>모델</dt>
         <dd>
@@ -78,14 +82,15 @@ const pastValidUntil = computed(() => {
         <dd>{{ formatTime(health.model.checked_at) }} (서버 시작 때)</dd>
       </div>
       <div v-if="health.material">
-        <dt>자료 기준</dt>
-        <dd>{{ formatTime(health.material.observed_at) }}</dd>
+        <dt>관측 시각</dt>
+        <dd data-testid="server-observed-at">{{ formatTime(health.material.observed_at) }}</dd>
       </div>
       <div v-if="health.material">
         <dt>유효 기한</dt>
         <dd data-testid="server-valid-until">{{ formatTime(health.material.valid_until) }}</dd>
       </div>
     </dl>
+    <p v-if="health?.data_mode === 'observed'" class="note">가격은 참고가격이며 거래를 보장하지 않습니다. 현재 기준 절대 BP이며 별도로 환산하지 않습니다.</p>
     <p v-if="pastValidUntil" class="warn" data-testid="server-past-deadline">
       이 화면의 시계로는 유효 기한이 지났습니다. 다시 확인해 주세요.
     </p>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { REQUEST_EXAMPLES, REQUEST_FORMAT } from '../contracts/requestFormat';
-import { MAX_MESSAGE_CODE_POINTS } from '../contracts/webAgentV0';
+import { MAX_MESSAGE_CODE_POINTS } from '../contracts/webAgentV1';
 import { codePointLength, isBlank } from '../utils/format';
 
 const props = defineProps<{

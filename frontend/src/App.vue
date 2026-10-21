@@ -4,6 +4,7 @@ import ProgressSteps from './components/ProgressSteps.vue';
 import RequestComposer from './components/RequestComposer.vue';
 import ResultView from './components/ResultView.vue';
 import ServerStatus from './components/ServerStatus.vue';
+import type { DataMode } from './contracts/webAgentV1';
 import { SCENARIOS, type ScenarioId } from './mocks/fixtures';
 import { createMockTransport } from './mocks/mockTransport';
 import { createHealthChecker, type HealthCheck, type HealthChecker } from './services/health';
@@ -61,6 +62,7 @@ async function refreshHealth(): Promise<void> {
 }
 
 watch(mode, (m) => {
+  rec.reset();
   if (m === 'live') {
     void refreshHealth();
   } else {
@@ -68,6 +70,14 @@ watch(mode, (m) => {
     health.value = null;
     checking.value = false;
   }
+});
+
+const dataMode = computed<DataMode | null>(() => {
+  if (mode.value === 'mock') return 'synthetic';
+  if (mode.value !== 'live') return null;
+  const result = rec.outcome.value;
+  if (result?.kind === 'final') return result.result.data_mode;
+  return health.value?.kind === 'ready' || health.value?.kind === 'unavailable' ? health.value.health.data_mode : null;
 });
 
 function transportFor(m: TransportMode): Transport | null {
@@ -110,7 +120,9 @@ function onSubmit(message: string): void {
       <div class="brand">
         <h1>FRS 스쿼드 추천</h1>
         <p class="data-note" data-testid="data-note">
-          합성 가상 리그 자료로만 동작합니다. 선수 이름과 수치는 실제와 무관합니다.
+          <template v-if="dataMode === 'observed'">넥슨 데이터센터 관측 자료를 사용합니다. 가격은 참고가격이며 거래를 보장하지 않습니다.</template>
+          <template v-else-if="dataMode === 'synthetic'">합성 가상 리그 자료입니다. 선수 이름과 수치는 실제와 무관합니다.</template>
+          <template v-else>자료 모드는 연결 방식을 고른 뒤 서버 확인 결과에 따라 표시합니다.</template>
         </p>
       </div>
       <fieldset class="mode" :disabled="running">

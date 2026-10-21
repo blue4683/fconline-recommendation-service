@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProgressPayload } from '../contracts/webAgentV0';
+import type { ProgressPayload } from '../contracts/webAgentV1';
 
 /** 서버가 보낸 단계만 순서대로 보여 준다. 진행률을 만들어 내지 않는다. */
 defineProps<{

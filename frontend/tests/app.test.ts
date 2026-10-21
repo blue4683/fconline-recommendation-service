@@ -39,9 +39,9 @@ async function submit(w: ReturnType<typeof mount>, text = REQUEST_EXAMPLES[0]!) 
 }
 
 describe('App', () => {
-  it('합성 자료 안내를 항상 보이고, 연결 방식을 고르기 전에는 보내지 않는다', async () => {
+  it('자료 모드를 추측하지 않고, 연결 방식을 고르기 전에는 보내지 않는다', async () => {
     const w = mountApp();
-    expect(w.get('[data-testid=data-note]').text()).toContain('합성 가상');
+    expect(w.get('[data-testid=data-note]').text()).toContain('서버 확인 결과');
     await w.get('textarea').setValue('리버풀');
     expect(w.get('button.send').attributes('disabled')).toBeDefined();
     expect(w.text()).toContain('연결 방식을 먼저 고르세요');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ContractError, parseEnvelope, parseFinal, type FinalResult } from '../src/contracts/webAgentV0';
+import { ContractError, parseEnvelope, parseFinal, type FinalResult } from '../src/contracts/webAgentV1';
 import { finalFor, SCENARIOS, type ScenarioId } from '../src/mocks/fixtures';
 import { envelope, FIXED_NOW } from './helpers';
 
@@ -112,11 +112,11 @@ describe('parseFinal', () => {
 
     const mode = optimal() as unknown as Record<string, unknown>;
     mode.data_mode = 'real';
-    expect(() => parseFinal(mode)).toThrow(/synthetic/);
+    expect(() => parseFinal(mode)).toThrow(/허용 값/);
 
     const ver = optimal();
-    ver.versions.web_contract = 'web-agent.v1';
-    expect(() => parseFinal(ver)).toThrow(/web-agent.v0/);
+    ver.versions.web_contract = 'web-agent.v0';
+    expect(() => parseFinal(ver)).toThrow(/web-agent.v1/);
   });
 });
 
@@ -150,6 +150,17 @@ describe('parseFinal — 백엔드 내부 필드', () => {
 });
 
 describe('parseEnvelope', () => {
+  it('두 자료 모드는 수용하고 null·미지 모드와 v0는 거부한다', () => {
+    for (const mode of ['synthetic', 'observed']) {
+      expect(parseFinal({ ...optimal(), data_mode: mode }).data_mode).toBe(mode);
+      expect(parseEnvelope('started', envelope('r', 0, 'started', { data_mode: mode })).payload).toEqual({ data_mode: mode });
+    }
+    for (const mode of [null, 'real', '']) {
+      expect(() => parseFinal({ ...optimal(), data_mode: mode })).toThrow(ContractError);
+      expect(() => parseEnvelope('started', envelope('r', 0, 'started', { data_mode: mode }))).toThrow(ContractError);
+    }
+    expect(() => parseEnvelope('started', envelope('r', 0, 'started', { data_mode: 'observed' }, { contract_version: 'web-agent.v0' }))).toThrow(ContractError);
+  });
   it('SSE 이벤트 이름과 type이 다르면 거부한다', () => {
     const data = envelope('r', 0, 'started', { data_mode: 'synthetic' });
     expect(() => parseEnvelope('progress', data)).toThrow(/이벤트 이름/);

@@ -1,4 +1,4 @@
-import { ContractError } from '../contracts/webAgentV0';
+import { ContractError } from '../contracts/webAgentV1';
 import { parseHealth, type AgentHealth } from '../contracts/agentHealth';
 
 export type HealthCheck =

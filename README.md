@@ -4,7 +4,7 @@
 
 현재는 FRS 2.0의 데이터 스키마·현재 사이트 파서·명시 배치 후보 검색·수동 갱신 도구와 **Stage 2-0 모델 계약, 2-A 재학습, 2-B 평가 정정, 2-C 읽기 전용 API**을 구현했습니다. [MVP 범위·무기한 로컬 보관 정책](docs/mvp-scope.md)에 따라 실제 관측/모델은 Git에서 제외합니다. Stage 1-D 커버리지·팀컬러 발동 규칙, 1-F 실제 갱신과 스쿼드의 실데이터 통합은 미완료입니다. 제공자의 수집 허용 여부도 미확정이며 종료한 수집 승인을 재사용하지 않습니다.
 
-AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 진행합니다. [R2 주입 그래프](docs/injected-agent-graph.md) 이후 후보 ID 선택·qwen3:8b 소량 비교, HTTP/SSE·실제 브라우저 연결, 로컬 stdio MCP를 구현·검증했습니다. [W6 평가 실행기](docs/stage-w6-evaluation-implementation.md)의25문장 대역 검증은25/25이며 실제 모델의25문장 정확도는 아직 미측정입니다.
+AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 진행합니다. [R2 주입 그래프](docs/injected-agent-graph.md) 이후 후보 ID 선택·qwen3:8b 소량 비교, HTTP/SSE·실제 브라우저 연결, 로컬 stdio MCP를 구현·검증했습니다. [W6 평가 실행기](docs/stage-w6-evaluation-implementation.md)의25문장 대역 검증은25/25이며 [실모델 평가](docs/stage-w6-model-evaluation.md)는 전체E2E24/25, 모델 호출 대상근거/의미15/16이었습니다. 준비 차단9개와실모델측정을구분합니다.
 
 [강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)의 [R0 순수 계산기](docs/reinforcement-derivation-implementation.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산합니다. MVP 추천 범위는 5~11강을 유지하고 가격·급여 등은 별도 자료로 다룹니다. R1 합성 자료에 연결했고 기존 관측/모델 변환이나 실제 수집은 실행하지 않았습니다.
 
@@ -155,3 +155,10 @@ GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/positi
 ```
 
 고정 과거 합성 시계의 예시입니다. `--run`을 빼면 계획만 출력합니다. 실행 ID는 새로 지정하고 결과는 Git 제외 `artifacts/agent-evaluations/<run-id>/`에서 확인합니다. 기존 결과는 덮어쓰지 않습니다. 실제 모델 평가·새 호출·외부 업로드는 이 명령에 포함되지 않습니다.
+
+
+### W6 실제 모델 평가 결과
+
+고정25문장에로컬qwen3:8b를새1회적용했습니다. 준비차단9개는미호출하고상태2회·추론16회를사용했습니다. **전체E2E24/25(96%), 모델대상근거/의미15/16(93.75%), 정상유효11명8/8**입니다. 예산이빠진M02에서모델의잘못된필드배정을안전하게막았으나기대명확화에실패한것으로집계했습니다.
+
+[실행기·측정·실패·한계](docs/stage-w6-model-evaluation.md)에지연/토큰·실행소스/해시·새승인소진·서버종료를기록했습니다. 작은공개정형세트1회의결과이며일반한국어이해/운영SLA/실제선수추천품질을뜻하지않습니다. 기존승인은소진됐고실행을자동으로반복하지않습니다.

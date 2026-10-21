@@ -473,9 +473,19 @@
 - 영향:문서/발표 산출물만. frontend/·WEB-*·기존 엔진/Agent/API/MCP/평가 코드 불변. 웹 담당은 별도knowledge-answer.v1 계약을 검토할 수 있으나 새 UI 구현/실제 연결은 미완료다. 기존 SSE 경로는 그대로다.
 - 남은 범위:Q&A 실제 웹 E2E·기존 추천 tracing·Multi-Agent·실데이터 통합·배포. 이 기록은 새 호출 승인이 아니다. 다음 담당은 통합(발표/검증 증거 정리).
 
-### INT-036 — 실데이터 자료 모드와 계약 v1 백엔드 반영 (2026-10-21)
+### INT-036 — 인계 후 M02·K03·K05 출력 계약 보완
+
+- 날짜/담당:2026-10-21 / 통합. 상태:구현·합성 검증 완료. 기준 develop `37f7f27`, `fix/model-output-contracts`, 별도 작업 트리.
+- 인계 뒤 GitHub 조회:열린 PR 없음·#100 master 병합/CI 성공, 원격 develop/master SHA 일치. 주 체크아웃의 사용자 파일4개와 기존 백엔드 detached HEAD·다른 담당의 활성 브랜치를 보존한다.
+- M02 필드별 후보ID/개수·빈 필드/unsupported 제약, K03 규칙Q&A와 실제 구성 요청의 프롬프트 구분, K05 상태별 생성 객체를 추가했다. 사후 검증·오류 거부·재시도0을 유지한다. [구현/검증](model-output-contract-hardening.md).
+- 영향:Ollama 요청 형식/selector 사양v2·Q&A 프롬프트·합성 회귀만. candidate-selection.v1/knowledge-answer.v1 외부 계약과 엔진/API/MCP는 유지한다. frontend/·WEB-* 변경 없음·웹 담당 조치 없음.
+- 실제 모델/metadata·넥슨·LangSmith·서버/브라우저0회. 기존 소진 승인·실행/잠금·실제24/25와5/7·M02/K03/K05 실패 보존. 생성 개선의 실제 효과/새 형식의 Ollama 수용은 미검증이다.
+- 검증:새21/전체pytest1,683개(55.70초)·Ruff239파일/환경/pip 통과, Q&A대역7/7·실제 요청0회. 기존 W8 manifest SHA256도 인계값과 일치한다. PR/병합은 실제 상태로 별도 보고한다. 다음 실제 평가는 새 실행범위·상한 승인 필요. 다른 실데이터 작업은 인수하지 않는다.
+
+### INT-RD-001 — 실데이터 자료 모드와 계약 v1 백엔드 반영 (2026-10-21)
 
 - 날짜/담당: 2026-10-21 / 통합. 구분: 변경 요청·통합 결과. 상태: 백엔드 구현·검증, 웹 대기. 브랜치 `feat/real-data`(develop `37f7f27` 병합 후).
+- 식별자: `feat/real-data`에서 `c65e1cd`까지 INT-036으로 기록했다. develop의 INT-036(M02·K03·K05 출력 계약 보완)과 겹쳐 develop 병합 시 실데이터 브랜치 전용 식별자로만 바꿨다. 내용과 결정은 바꾸지 않았다.
 - 사용자 결정: [실데이터 설계](real-data-branch-design.md) §6 제안 채택. `web-agent.v1`·`agent-health.v2`·`data_mode` `"synthetic"|"observed"`. master/develop의 v0는 유지한다.
 - 변경 전 → 후: 요청·SSE의 `contract_version`과 `versions.web_contract`가 `web-agent.v1`이다. v0 요청은 422 `invalid_request`다. `started.payload.data_mode`와 최종 `data_mode`가 `"observed"`일 수 있다. `/health`는 `schema_version: "agent-health.v2"`, `data_mode`는 `"synthetic"`/`"observed"`, 설정 실패 시 `null`이다. `material` 키는 같다. 관측 모드의 성공/해 없음 `answer` 문구와 `progress.agent` 문구가 바뀐다(설계 §12.2).
 - 웹 담당에게 필요한 작업(`feat/real-data`에서만): v1 파서(`data_mode` 두 값, 요청 `contract_version` v1), health v2 파서(`data_mode` null 허용), 자료 모드별 안내·관측 시각 표시(설계 §7), v1 앱 코드로 fixture 재생성. 실제 선수명은 fixture에 넣지 않는다. 이 브랜치의 현재 웹은 v0라 실제 연결 시 요청이 거절된다.

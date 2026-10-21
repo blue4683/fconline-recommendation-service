@@ -68,3 +68,5 @@ HTTP는 `FRS.knowledge.api:create_knowledge_app` 또는 `FRS.knowledge.api:app`�
 ## 실제 검증 후 상태 (2026-10-21)
 
 PR#97은 CI39556588989 성공 후 baf6fab으로 develop Squash 병합했다. 새 사용자 승인1회의 [결과](rag-langsmith-results.md)는7질문 처리·추론6회·사전 검사5/7이며 K03 답변 누락/K05 상태별 형식 위반을 실패로 보존한다. LangSmith POST26 성공 응답과 첫 root GET200을 확인했다. 이번 Ollama는 종료했고 승인은 소진됐다. 기존 웹/엔진과 고정 corpus/정답/프롬프트를 바꾸지 않았다.
+
+인계 후 다음 단계 요청으로 [출력 계약을 보완](model-output-contract-hardening.md)했다. 생성 프롬프트에 규칙 질문과 실제 구성 요청의 구분을 명시하고, 상태별 JSON Schema를 나눴다. 새 합성 회귀를 통과했으나 추가 실제 모델/metadata·LangSmith 요청은0회다. 위 실제5/7·실패2건과 원래 기록을 유지한다.

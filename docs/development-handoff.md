@@ -665,3 +665,11 @@ W5#84는 최종head0f51b5b159661254f125c3ddbe09e600077757e8/CI39518543150 성공
 FRS/knowledge/·docs/knowledge/·신규91테스트와 환경 예시/구현 기록·합성 trace 미리보기를 추가했다. 전체 pytest1,662(60.48초)·Ruff/환경/pip·대역7/7 통과. 실제 모델/metadata/trace/서버/브라우저/수집0회. 기존 엔진/Agent/API/MCP/평가/웹·WEB-*·의존성/CI는 보존했다. wire/한도/한계는 rag-langsmith-implementation.md·INT-034를 읽는다.
 
 사용자 설정 파일은 /Users/skala/workspace/fconline-recommendation-service/.env다. Git 제외를 확인했고 LANGCHAIN_* 별칭의 미국 endpoint·FRS 프로젝트/키 설정만 확인했다. 수정/복사/키 출력 없음. 실제 실행은 payload 미리보기와 새1회 상태2/추론최대7/LangSmith최대29·순차/재시도0/오류중단/기록보존 범위를 확인한 뒤 수행한다. 이전 소진 승인 재사용 없음. 실제 결과와 수신 확인 후 보고/5분 발표 자료를 갱신하고 최신 CI/develop Squash·완료 브랜치 정리·master 검토 PR 상태를 확인한다. 외부 제출/발표/배포나 WEB-007의 새 수집을 자동 시작하지 않는다.
+
+## 최신: W8 실제 RAG·LangSmith 검증 (2026-10-21)
+
+PR#97 head d7d0f91219065dd9306a86eddbbb92c47ce5aac3/CI39556588989 성공 후 baf6fabeb5937d3a169e54aa40e2ba6d36a47508으로 develop Squash·트리/명시 메시지/공동저자 부재를 확인하고 자체 완료 브랜치를 로컬/원격 정리했다. 현재 후속 문서 브랜치는 docs/rag-langsmith-results이며 기존 사용자 체크아웃/WEB/다른 실데이터 브랜치를 보존한다.
+
+사용자 새 승인 w8-rag-20261021-001은 완료·소진됐다. 상태2·추론6·고정7질문5/7, K03 생성 누락/K05 형식 위반 실패를 유지한다. LangSmith 미국 FRS에POST26 성공 응답·첫 root GET1/200을 확인했다. 원문/답변/검색 본문은 전송하지 않았다. 이번 Ollama 종료·11434 listener 없음·승인 잠금/원본 로컬 보존이다. 자세한 호출/소스/corpus/산출물 해시는 [실제 결과](rag-langsmith-results.md)를 따른다.
+
+과거의 RAG/외부 tracing 미검증 문장보다 이 최신 기록을 우선한다. 기본 API tracing은 여전히 꺼져 있고 새 Q&A의 실제 HTTP/웹 E2E·기존 추천 tracing·Multi-Agent·실데이터1-D/F·배포는 미완료다. 기존 W6 M02·24/25를 바꾸지 않는다. 최신 발표는 기존7장/5분을 유지해 실제 RAG/관측·실패를 포함하며 파일/SHA/대본은 docs/presentation-5min.md에 있다. 새 호출/남은 횟수 재사용은 하지 않는다.

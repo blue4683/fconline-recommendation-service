@@ -67,7 +67,9 @@ def checked_registry(original, registry):
         raise CandidateSelectionError("invalid_registry")
     try:
         registry = CandidateSet.model_validate(registry.model_dump(warnings=False))
-        expected = prepare_candidates(original)
+        expected = prepare_candidates(
+            original, fixed_salary_cap=registry.fixed_salary_cap
+        )
         if expected.issues or expected.registry != registry:
             raise ValueError
     except (ValueError, TypeError) as exc:

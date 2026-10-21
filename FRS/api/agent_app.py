@@ -105,6 +105,7 @@ def execute(service, body, lease, clock, t0):
             material=GuardedMaterial(service.material, lease),
             batches=service.batches,
             clock=guarded_clock,
+            fixed_salary_cap=service.fixed_salary_cap,
         ).run(body.message, t0=t0)
         lease.check()
         lease.rendering.set()
@@ -115,6 +116,7 @@ def execute(service, body, lease, clock, t0):
             provenance=None if result.outcome == "input_issues" else service.provenance,
             material_id=service.material_id,
             data_mode=service.data_mode,
+            fixed_salary_cap=service.fixed_salary_cap,
         )
     except RunStopped:
         return error_outcome("request_deadline")

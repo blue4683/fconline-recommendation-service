@@ -12,7 +12,8 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
-from test_candidate_selection import SOURCE, selection
+from test_candidate_selection import SOURCE as LEGACY_SOURCE
+from test_candidate_selection import selection
 from test_schema import OBSERVED
 from test_synthetic_agent_api import parsed, request_body
 from test_synthetic_material import config
@@ -28,6 +29,7 @@ from FRS.api.agent_runtime import (
     build_service,
 )
 
+SOURCE = LEGACY_SOURCE.replace("급여 999", "급여 310")
 RUN_ID = "real-data-observed-test"
 FILES = {
     "cards": "player_card",

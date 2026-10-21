@@ -36,17 +36,17 @@ from FRS.api.agent_runtime import (  # noqa: E402
 )
 
 ORIGIN = "http://localhost:5173"
-READY = "예산 6조, 급여 210, 리버풀, 4-2-3-1, 5~8강으로 구성해줘"
+READY = "예산 6조, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘"
 STREAMS = [
     ("success_liverpool", READY, True),
     (
         "success_chelsea",
-        "예산 5조 8000억, 급여 205, 첼시, 4-1-2-3, 5강,7강으로 구성해줘",
+        "예산 5조 8000억, 급여 310, 첼시, 4-1-2-3, 5강,7강으로 구성해줘",
         True,
     ),
     (
         "success_munich",
-        "예산 3조, 급여 250, 바이에른 뮌헨, 4-2-2-2, 6~11강으로 구성해줘",
+        "예산 3조, 급여 310, 바이에른 뮌헨, 4-2-2-2, 6~11강으로 구성해줘",
         True,
     ),
     (
@@ -56,14 +56,16 @@ STREAMS = [
     ),
     (
         "prepare_unsupported",
-        "예산 6조, 급여 210, 리버풀, 4-2-3-1, 4강으로 구성해줘",
+        "예산 6조, 급여 310, 리버풀, 4-2-3-1, 4강으로 구성해줘",
         True,
     ),
     (
-        "normalizer_missing_salary",
+        "salary_omitted",
         "예산 6조, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
         True,
     ),
+    ("normalizer_missing_budget", READY.replace("예산 6조, ", ""), True),
+    ("prepare_wrong_salary", READY.replace("급여 310", "급여 300"), True),
     ("provider_error", READY, False),
 ]
 
@@ -124,7 +126,9 @@ def build_fixture(observed):
     streams = []
     observed_streams = [
         ("observed_success", READY, True),
-        ("observed_missing_salary", STREAMS[5][1], True),
+        ("observed_salary_omitted", STREAMS[5][1], True),
+        ("observed_missing_budget", READY.replace("예산 6조, ", ""), True),
+        ("observed_wrong_salary", READY.replace("급여 310", "급여 311"), True),
         ("observed_conflict", READY.replace("예산 6조", "예산 6조, 예산 5조"), True),
         ("observed_infeasible", READY.replace("예산 6조", "예산 0BP"), True),
         ("observed_provider_error", READY, False),

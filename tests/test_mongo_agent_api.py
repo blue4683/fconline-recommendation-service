@@ -7,7 +7,8 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
-from test_candidate_selection import SOURCE, selection
+from test_candidate_selection import SOURCE as LEGACY_SOURCE
+from test_candidate_selection import selection
 from test_load_observed import FakeDatabase
 from test_mongo_material import Connection
 from test_observed_agent_api import RUN_ID, settings, verified, write_run
@@ -20,6 +21,8 @@ from FRS.agent.real_material import ObservedMaterial
 from FRS.api.agent_app import create_agent_app
 from FRS.api.agent_runtime import AgentService, AgentSettings, build_service
 from FRS.utils.db.load_observed import load_observed_run
+
+SOURCE = LEGACY_SOURCE.replace("급여 999", "급여 310")
 
 
 @pytest.fixture(scope="module")
@@ -81,7 +84,7 @@ def test_file_mode_never_connects_to_mongo(processed_root):
 
 
 @pytest.mark.parametrize(
-    "message", [SOURCE, SOURCE.replace("급여 999, ", ""), SOURCE + ", 예산 1BP"]
+    "message", [SOURCE, SOURCE.replace("예산 1조 5천억, ", ""), SOURCE + ", 예산 1BP"]
 )
 def test_db_and_file_services_return_identical_wire_outcomes(
     bundle, processed_root, message

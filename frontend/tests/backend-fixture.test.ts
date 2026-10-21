@@ -72,10 +72,14 @@ describe('8001 앱 fixture — SSE', () => {
       'success_munich',
       'prepare_unstructured',
       'prepare_unsupported',
-      'normalizer_missing_salary',
+      'salary_omitted',
+      'normalizer_missing_budget',
+      'prepare_wrong_salary',
       'provider_error',
       'observed_success',
-      'observed_missing_salary',
+      'observed_salary_omitted',
+      'observed_missing_budget',
+      'observed_wrong_salary',
       'observed_conflict',
       'observed_infeasible',
       'observed_provider_error',
@@ -108,7 +112,7 @@ describe('8001 앱 fixture — SSE', () => {
   it('성공 결과는 정확한 문자열 수치와 확인된 모델 출처를 담는다', () => {
     const result = parseFinal(finalPayload(stream('success_chelsea')));
     expect(result.status).toBe('optimal');
-    expect(result.conditions).toMatchObject({ price_cap: '5800000000000', salary_cap: '205', allowed_reinforcements: [5, 7] });
+    expect(result.conditions).toMatchObject({ price_cap: '5800000000000', salary_cap: '310', allowed_reinforcements: [5, 7] });
     expect(result.squad!.rows).toHaveLength(11);
     expect(typeof result.squad!.total_price).toBe('string');
     expect(result.versions).toMatchObject({ model: 'qwen3:8b', model_digest: 'a'.repeat(64) });
@@ -270,7 +274,7 @@ describe('8001 앱 fixture — 화면', () => {
   it.each([
     ['observed_success', '최적'],
     ['observed_infeasible', '스쿼드가 없습니다'],
-    ['observed_missing_salary', '조건을 보완'],
+    ['observed_missing_budget', '조건을 보완'],
     ['observed_conflict', '조건을 보완'],
   ])('%s 관측 결과에 합성 문구를 붙이지 않는다', async (name, title) => {
     const s = stream(name);

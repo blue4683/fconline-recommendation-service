@@ -27,6 +27,7 @@ from FRS.agent.real_material import RUN_ID_PATTERN, ObservedMaterial
 from FRS.api.agent_contract import WireModel
 from FRS.api.agent_projection import SelectionProvenance
 from FRS.core.candidate_search.search import BatchSelection
+from FRS.core.request_normalization.conditions import GAME_SALARY_CAP
 from FRS.schema.models import DataStatus
 from FRS.schema.scope import ROOT
 
@@ -134,6 +135,7 @@ class AgentService:
     material: object
     selector: object
     verification: ModelVerification | None
+    fixed_salary_cap: int = field(default=GAME_SALARY_CAP, init=False)
 
     _metadata: bytes = field(init=False, repr=False)
 

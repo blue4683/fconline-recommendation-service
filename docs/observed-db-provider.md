@@ -49,4 +49,4 @@ AGENT_OBSERVED_AT=
 
 증거는 주 체크아웃의 Git 제외 `artifacts/observed-db-provider/observed-db-provider-20261022-002/`에 있다. completed manifest SHA256은 `91ebfda11ca6d9507fa126748e2c74ae382214560a2937eeca42662b0d88e8d7`다. 검사기는 `artifacts/handoff/observed-db-provider-check-20261022.py`이며 종료 실행을 덮어쓰지 않는다. 관측 행·실제 응답·자격 증명은 커밋하지 않는다.
 
-다클럽 PR#112의26d82bb를 병합한 기준에서 **전체 pytest1,770개(88.97초)**·Ruff·format254파일·환경 import/pip 검사가 통과했다(Python3.11.15). 이번에 추가한 합성 검증은30개다. PR 최신 head CI는 별도로 확인한다. 웹 파일/계약은 같아 웹 검사는 재실행하지 않았다. 실제 qwen3:8b+DB+브라우저 검증은 미실행이다. 이전 파일 기반 E2E003 완료와 소진 승인을 유지한다. 이번 작업은 `feat/real-data` 전용이며 master/develop·웹/엔진 코드·다른 담당의 다클럽 작업·기존5173 v0를 보존한다.
+다클럽 PR#112·수집기 상한 PR#113의 최신1f1e385를 병합한 기준에서 **전체 pytest1,775개(87.07초)**·Ruff·format254파일·환경 import/pip 검사가 통과했다(Python3.11.15). 이번에 추가한 합성 검증은30개다. 로컬 DB 대조 뒤 추가 병합한 변경은 수집기/문서/테스트에 한정됐으며 공급기·Agent·DB·엔진 코드는 동일하다. PR 최신 head CI는 별도로 확인한다. 웹 파일/계약은 같아 웹 검사는 재실행하지 않았다. 실제 qwen3:8b+DB+브라우저 검증은 미실행이다. 이전 파일 기반 E2E003 완료와 소진 승인을 유지한다. 이번 작업은 `feat/real-data` 전용이며 master/develop·웹/엔진 코드·다른 담당의 다클럽 작업·기존5173 v0를 보존한다.

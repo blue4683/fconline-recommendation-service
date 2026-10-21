@@ -1,4 +1,4 @@
-import { CONTRACT_VERSION } from '../src/contracts/webAgentV0';
+import { CONTRACT_VERSION } from '../src/contracts/webAgentV1';
 import type { Transport } from '../src/services/transport';
 
 export const FIXED_NOW = Date.parse('2026-10-20T01:00:00Z');

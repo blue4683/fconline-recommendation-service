@@ -1,12 +1,12 @@
 /**
- * 실제 8001 합성 Agent 앱(develop c0c47be)을 TestClient로 호출해 기록한 fixture를 웹 파서·세션·화면에 통과시킨다.
+ * 실제 v1 앱을 합성 자료·선택 대역으로 호출한 fixture를 웹 파서·세션·화면에 통과시킨다.
  * 다시 만들 때는 tests/fixtures/generate_backend_fixture.py. 상주 서버·실제 모델 연결 검증은 아니다.
  */
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App.vue';
 import { parseHealth } from '../src/contracts/agentHealth';
-import { ContractError, parseFinal } from '../src/contracts/webAgentV0';
+import { ContractError, parseFinal } from '../src/contracts/webAgentV1';
 import { buildRequest, runStream } from '../src/services/agentSession';
 import { createHealthChecker, type HealthCheck } from '../src/services/health';
 import { createLiveTransport } from '../src/services/liveTransport';
@@ -28,6 +28,7 @@ interface Recorded {
 
 const fixture = raw as unknown as {
   backend_sha: string;
+  fixture_data: string;
   observed_at: string;
   streams: Stream[];
   rejections: Recorded[];
@@ -63,7 +64,8 @@ function finalPayload(s: Stream): unknown {
 
 describe('8001 앱 fixture — SSE', () => {
   it('기준 백엔드와 기록 구성이 기대와 같다', () => {
-    expect(fixture.backend_sha).toBe('c0c47be');
+    expect(fixture.backend_sha).toMatch(/^[0-9a-f]{7,40}$/);
+    expect(fixture.fixture_data).toBe('generated_synthetic_only_including_observed_mode');
     expect(fixture.streams.map((s) => s.name)).toEqual([
       'success_liverpool',
       'success_chelsea',
@@ -72,13 +74,21 @@ describe('8001 앱 fixture — SSE', () => {
       'prepare_unsupported',
       'normalizer_missing_salary',
       'provider_error',
+      'observed_success',
+      'observed_missing_salary',
+      'observed_conflict',
+      'observed_infeasible',
+      'observed_provider_error',
     ]);
-    expect(fixture.rejections.map((r) => r.status)).toEqual([403, 415, 413, 422, 503]);
+    expect(fixture.rejections.map((r) => r.status)).toEqual([403, 415, 413, 422, 422, 503]);
     expect(fixture.health.map((h) => [h.name, h.status])).toEqual([
       ['ready', 200],
       ['data_expired', 503],
       ['model_unverified', 503],
       ['not_configured', 503],
+      ['observed_ready', 200],
+      ['observed_data_expired', 503],
+      ['observed_model_unverified', 503],
     ]);
   });
 
@@ -86,7 +96,7 @@ describe('8001 앱 fixture — SSE', () => {
     for (const chunk of [1, 7]) {
       const { outcome, stages } = await replay(s, chunk);
       expect(stages).toEqual(['agent', 'render']);
-      if (name === 'provider_error') {
+      if (name.endsWith('provider_error')) {
         expect(outcome).toMatchObject({ kind: 'server_error', code: 'selection_provider_error' });
       } else {
         expect(outcome.kind).toBe('final');
@@ -127,8 +137,9 @@ describe('8001 앱 fixture — 스트림 전 HTTP 거절', () => {
 describe('8001 앱 fixture — GET /health', () => {
   it.each(fixture.health.map((h) => [h.name, h] as const))('%s 본문을 상태 코드와 함께 해석한다', (name, h) => {
     const health = parseHealth(clone(h.body), h.status);
-    expect(health.status).toBe(name === 'ready' ? 'ready' : 'unavailable');
-    expect(health.reason).toBe(name === 'ready' ? null : name);
+    const reason = name.replace('observed_', '');
+    expect(health.status).toBe(reason === 'ready' ? 'ready' : 'unavailable');
+    expect(health.reason).toBe(reason === 'ready' ? null : reason);
     expect(health.busy).toBe(false);
   });
 
@@ -138,12 +149,24 @@ describe('8001 앱 fixture — GET /health', () => {
     expect(Date.parse(health.material!.valid_until)).toBe(OBSERVED + 24 * 3600 * 1000);
   });
 
+  it('자료 모드와 설정 실패의 null 조합을 검사한다', () => {
+    const ready = clone(recorded(fixture.health, 'observed_ready').body);
+    expect(parseHealth(ready, 200).data_mode).toBe('observed');
+    expect(() => parseHealth({ ...ready, data_mode: null }, 200)).toThrow(ContractError);
+    expect(() => parseHealth({ ...ready, data_mode: 'real' }, 200)).toThrow(ContractError);
+    const missing = clone(recorded(fixture.health, 'not_configured').body);
+    expect(parseHealth(missing, 503).data_mode).toBeNull();
+    expect(() => parseHealth({ ...missing, data_mode: 'observed' }, 503)).toThrow(ContractError);
+    const expired = clone(recorded(fixture.health, 'observed_data_expired').body);
+    expect(() => parseHealth({ ...expired, data_mode: null }, 503)).toThrow(ContractError);
+  });
+
   it('상태 코드와 본문이 어긋나거나 모르는 필드·사유·버전이면 거부한다', () => {
     const ready = () => clone(recorded(fixture.health, 'ready').body);
     expect(() => parseHealth(ready(), 503)).toThrow(ContractError);
     expect(() => parseHealth(clone(recorded(fixture.health, 'data_expired').body), 200)).toThrow(ContractError);
     expect(() => parseHealth({ ...ready(), extra: 1 }, 200)).toThrow(/알 수 없는 필드/);
-    expect(() => parseHealth({ ...ready(), schema_version: 'agent-health.v2' }, 200)).toThrow(ContractError);
+    expect(() => parseHealth({ ...ready(), schema_version: 'agent-health.v1' }, 200)).toThrow(ContractError);
     expect(() => parseHealth({ ...ready(), status: 'unavailable', reason: 'busy' }, 503)).toThrow(ContractError);
     expect(() => parseHealth({ ...ready(), busy: 'no' }, 200)).toThrow(ContractError);
     const noCheck = ready() as { model: Record<string, unknown> };
@@ -203,7 +226,7 @@ describe('8001 앱 fixture — 화면', () => {
   });
 
   it.each([
-    ['data_expired', '서버의 합성 자료 기한이 지났습니다'],
+    ['data_expired', '서버의 자료 기한이 지났습니다'],
     ['model_unverified', '서버가 시작할 때 모델을 확인하지 못했습니다'],
     ['not_configured', '서버 시작 설정이 없습니다'],
   ])('%s 상태면 이유를 보이고 보내기를 막는다', async (name, title) => {
@@ -239,6 +262,47 @@ describe('8001 앱 fixture — 화면', () => {
     await chooseLive(w);
     expect(w.find('[data-testid=server-status]').exists()).toBe(true);
     await w.get('input[value=mock]').setValue(true);
+    expect(w.find('[data-testid=server-status]').exists()).toBe(false);
+  });
+
+  it.each([
+    ['observed_success', '최적'],
+    ['observed_infeasible', '스쿼드가 없습니다'],
+    ['observed_missing_salary', '조건을 보완'],
+    ['observed_conflict', '조건을 보완'],
+  ])('%s 관측 결과에 합성 문구를 붙이지 않는다', async (name, title) => {
+    const s = stream(name);
+    const { w } = mountLive(async () => healthCheck('observed_ready'), s);
+    await chooseLive(w);
+    expect(w.get('[data-testid=data-note]').text()).toContain('넥슨 데이터센터 관측');
+    expect(w.get('[data-testid=server-data-mode]').text()).toContain('관측 자료');
+    expect(w.get('[data-testid=server-observed-at]').text()).not.toBe('');
+    await w.get('textarea').setValue(s.message);
+    await w.get('form').trigger('submit');
+    await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));
+    const result = w.get('[data-testid=result]');
+    expect(result.get('[data-testid=result-title]').text()).toContain(title);
+    expect(result.text()).toContain('참고가격');
+    expect(result.text()).not.toContain('합성 자료');
+    if (name === 'observed_success') {
+      const total = (finalPayload(s) as { squad: { total_price: string } }).squad.total_price;
+      expect(w.get('[data-testid=total-price]').text()).toBe(groupDigits(total));
+      expect(result.findAll('[data-testid=squad-row]')).toHaveLength(11);
+    } else {
+      expect(result.findAll('[data-testid=squad-row]')).toHaveLength(0);
+    }
+  });
+
+  it('관측 결과 뒤 모의 모드를 고르면 이전 결과를 지우고 합성 안내를 보인다', async () => {
+    const s = stream('observed_success');
+    const { w } = mountLive(async () => healthCheck('observed_ready'), s);
+    await chooseLive(w);
+    await w.get('textarea').setValue(s.message);
+    await w.get('form').trigger('submit');
+    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    await w.get('input[value=mock]').setValue(true);
+    expect(w.find('[data-testid=result]').exists()).toBe(false);
+    expect(w.get('[data-testid=data-note]').text()).toContain('합성 가상');
     expect(w.find('[data-testid=server-status]').exists()).toBe(false);
   });
 

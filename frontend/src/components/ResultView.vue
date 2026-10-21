@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Conditions, FinalResult, FinalStatus } from '../contracts/webAgentV0';
+import type { Conditions, FinalResult, FinalStatus } from '../contracts/webAgentV1';
 import type { Outcome } from '../services/agentSession';
 import { formatTime, groupDigits, koreanUnits } from '../utils/format';
 import FormationPitch from './FormationPitch.vue';
@@ -112,7 +112,7 @@ const HTTP_COPY: Record<number, { title: string; note: string; tone: Tone }> = {
   },
   503: {
     title: '추천 서버가 아직 준비되지 않았습니다',
-    note: '모델 확인이 끝나지 않았거나 합성 자료 기한이 지난 상태일 수 있습니다. 서버 준비 뒤 다시 보내 주세요.',
+    note: '모델 확인이 끝나지 않았거나 자료 기한이 지난 상태일 수 있습니다. 서버 준비 뒤 다시 보내 주세요.',
     tone: 'bad',
   },
 };
@@ -132,7 +132,14 @@ const header = computed<{ title: string; note: string | null; tone: Tone; detail
           detail: o.result.snapshot?.valid_until ? `유효 기한 ${formatTime(o.result.snapshot.valid_until)}` : undefined,
         };
       }
-      return STATUS_COPY[o.result.status];
+      const copy = STATUS_COPY[o.result.status];
+      if (o.result.data_mode === 'observed' && o.result.status === 'optimal') {
+        return { ...copy, note: '관측 자료와 조건에서 OVR 합이 가장 높은 조합입니다. 실제 경기 성능을 보장하지 않습니다.' };
+      }
+      if (o.result.data_mode === 'observed' && o.result.status === 'infeasible') {
+        return { ...copy, note: '보유한 관측 자료 기준의 결과입니다. 수집하지 않은 클럽이나 누락된 자료가 있을 수 있으며, 게임 전체에서 불가능하다는 뜻은 아닙니다.' };
+      }
+      return copy;
     case 'server_error':
       return { title: ERROR_TITLES[o.code] ?? '추천 중 오류가 발생했습니다', note: o.message, tone: 'bad', detail: `오류 코드 ${o.code}` };
     case 'protocol_error':
@@ -177,6 +184,9 @@ function versionText(v: Record<string, string>): string {
     <p v-if="header.detail" class="detail">{{ header.detail }}</p>
 
     <template v-if="final && !expired">
+      <p class="note" data-testid="result-data-mode">
+        {{ final.data_mode === 'observed' ? '넥슨 데이터센터 관측 자료 · 가격은 참고가격이며 거래를 보장하지 않습니다.' : '합성 가상 리그 자료 · 선수 이름과 수치는 실제와 무관합니다.' }}
+      </p>
       <ul v-if="final.issues.length" class="issues" data-testid="issues">
         <li v-for="(issue, i) in final.issues" :key="i">
           <span class="issue-field">{{ FIELD_LABELS[issue.field] ?? issue.field }}</span>
@@ -238,7 +248,7 @@ function versionText(v: Record<string, string>): string {
 
       <footer class="provenance">
         <p v-if="final.snapshot">
-          자료 기준 {{ formatTime(final.snapshot.t0) }}<template v-if="final.snapshot.valid_until">, 유효 기한 {{ formatTime(final.snapshot.valid_until) }}</template>
+          요청 기준 {{ formatTime(final.snapshot.t0) }}<template v-if="final.snapshot.valid_until">, 유효 기한 {{ formatTime(final.snapshot.valid_until) }}</template>
         </p>
         <p>적용 버전: {{ versionText(final.versions) }}</p>
       </footer>

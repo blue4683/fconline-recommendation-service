@@ -13,7 +13,7 @@ import {
   type ConditionIssue,
   type SquadRow,
   type Supported,
-} from '../contracts/webAgentV0';
+} from '../contracts/webAgentV1';
 
 export const SUPPORTED: Supported = {
   required_fields: ['price_cap', 'salary_cap', 'team_color', 'formation', 'allowed_reinforcements'],

@@ -46,7 +46,7 @@
 
 ### INT-033 — W8 RAG·LangSmith 추가 경계 (2026-10-21)
 
-- 통합 / 사용자 결정: RAG+LangSmith, 계정/API 키 보유. Multi-Agent는 이번 추가 범위에서 제외한다. 별도 Q&A/추천 자동 설명 연결 지점은 질문 중이다.
+- 통합 / 사용자 결정: RAG+LangSmith, 계정/API 키 보유. Multi-Agent는 이번 추가 범위에서 제외한다. 후속 답변으로 기존qwen3:8b·로컬검색의 별도 문서 Q&A API·CLI를 확정했다. 추천 자동 설명은 추가하지 않는다.
 - WEB-006(#94)을 읽고 요청을 접수했다. 문서 diff/CI39550791870 확인 뒤dee6c46으로develop Squash·명시 메시지 확인. 웹 소스/WEB 기록은 변경하지 않는다. 상대 대화로 메시지 전송/수신을 주장하지 않는다.
 - docs/rag-langsmith-contract.md에 corpus/검색/생성/근거·기존 추천 보호·명시 관측/최소 전송 초안과 W8-0~5 증분을 기록한다. 단순 검색/로컬 JSON을 RAG 생성/실제 LangSmith 연동 완료로 보고하지 않는다.
 - 기존 langsmith0.14.11·명시 tracing off·로컬 모델을 확인했다. 두 작업 디렉터리에.env가 없고 실행 환경에도LangSmith key/endpoint/project 미설정임을 값 출력 없이 확인했다. 키를 채팅/커밋으로 받지 않는다.

@@ -14,6 +14,8 @@ AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-pr
 
 ## 제출 자료
 
+- [5분 발표 구성·대본](docs/presentation-5min.md):10월22일13시·PPTX7장, 슬라이드 노트와 로컬 파일 정보
+
 - [AI Mini-Project 결과 보고서](docs/ai-mini-project-results.md):목표·구조·측정 결과·M02 실패·한계
 - [재현·시연 안내](docs/demo-reproduction-guide.md):추가 모델 요청 없는 검사/대역 실행, 저장 결과 확인, 모의 화면과 실제 연결의 구분
 

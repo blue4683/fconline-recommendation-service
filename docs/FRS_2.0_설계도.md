@@ -728,6 +728,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 
 | ID | 항목 | 상태 | 결과·메모 | 날짜 |
 |---|---|---|---|---|
+| W5 MCP 구현 | stdio Tool/Resource/Prompt·단일 전송 client | 구현·합성 검증 | 신규52/전체pytest1,492·Ruff·환경/pip 통과. 실제stdio12개 직접대조 일치·프로토콜2026-07-28·subprocess 종료. 취소/실제슬롯·만료/정밀도·SDK schema 재전송 차단. 모델/HTTP/호스트/웹/수집0. stage-w5-mcp-implementation.md·INT-027 | 2026-10-21 |
 | W5 MCP 계약 | stdio/입력·출력/실행·검증 범위 | 사용자 결정·설계 | 공식SDK2.3.0 호환 검증 후 고정, Tool1/Resource/Prompt·original+후보ID·고정 합성 context·mcp-build.v1·동시1/150초/재시도0 확정. 실제 모델/호스트/웹/배포 제외. stage-w5-mcp-contract.md·INT-026 | 2026-10-21 |
 | W4-3 브라우저 E2E | Vue 실제 연결→로컬모델→합성 엔진→표/명확화 | 소량 검증 | 001 상태1/추론0 연결거부 중단·보존. 새002 상태2/추론3·정상11명/누락·충돌 안내/기존 표 제거·SSE3/3. Node22 타입/87웹테스트/빌드 통과. 이번 서버/탭 종료, 소스 변경 없음. agent-browser-e2e.md·INT-025 | 2026-10-21 |
 | W4-2 실제 E2E | 실제 qwen3:8b→합성 엔진→ASGI/SSE | 소량 실행·저장 응답 검증 | 상태2+추론3 사용. 정상optimal11명/누락·충돌명확화. 원래 검사기 급여 타입 실패/manifest 보존, 무호출 오프라인3/3·최신 웹파서12이벤트 통과. 상주서버/브라우저/넥슨 없음·승인 소진. synthetic-agent-api.md·INT-024 | 2026-10-21 |

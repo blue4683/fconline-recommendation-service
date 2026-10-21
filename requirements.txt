@@ -64,3 +64,19 @@ uuid-utils==0.18.0
 websockets==16.1.1
 xxhash==4.0.2
 zstandard==0.25.0
+
+# W5 로컬 stdio MCP SDK와 신규 전이 의존성 (기존 고정값 유지)
+attrs==26.1.0
+cffi==2.1.1
+cryptography==50.0.2
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+mcp==2.3.0
+mcp-types==2.3.0
+pycparser==3.11
+pyjwt==2.15.1
+python-multipart==0.0.32
+referencing==0.37.0
+rpds-py==2026.9.1
+sse-starlette==3.5.0
+httpx2==2.14.0

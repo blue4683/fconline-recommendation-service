@@ -12,6 +12,16 @@ AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-pr
 
 [R3 코드 출력](docs/validated-agent-presentation.md)은 검증된 합성 스쿼드 표·정확한 문자열 금액/급여·상태 안내를 만들고 출력 직전 기한을 확인합니다. 현재 설명은 코드 템플릿이며 실제 LLM 서술·웹/API 연결은 후속입니다.
 
+## 실데이터 브랜치의 로컬 DB
+
+`feat/real-data`에서는 기존 리버풀 관측 배치 `real-data-20261021-b`의 **35,948행과 적재 기록1건**을 로컬 MongoDB에 저장하고 파일과 전량 대조했습니다. unknown 가격91건과 원래 시각·기한을 유지하며, 같은 배치의 중복 적재는 거부합니다. [적재·검색·재확인 기록](docs/observed-db-load-validation.md)을 따릅니다. Agent의 관측 공급기는 기존 명시 파일 경로를 사용합니다.
+
+```sh
+python -m FRS.utils.db.load_observed --root /path/to/data-checkout --run-id real-data-20261021-b
+```
+
+기본 명령은 DB 연결 없이 계획만 출력합니다. `--write`는 명시한 로컬 DB에 적재하며, 이미 적재한 동일 배치를 다시 쓰지 않습니다. 가격의 가장 이른 기한은2026-10-22 17:03:29 KST이고 DB 적재 시각으로 연장하지 않습니다.
+
 ## 문서 Q&A와 관측 확장
 
 [W8 구현 기록](docs/rag-langsmith-implementation.md): 로컬 문서 검색과 qwen3:8b 답변, 별도 Q&A API·CLI, 선택적 LangSmith 어댑터를 추가했다. [실제 1회 검증](docs/rag-langsmith-results.md)은 고정7질문5/7, 추론6회·LangSmith POST26회와 첫 root 읽기 확인1회다. 실패2건을 보존하며 새 Q&A 웹 연결은 미검증이다. 기존 추천 엔진·웹 wire는 유지한다.
@@ -137,7 +147,7 @@ docker compose --profile tools down
 docker compose up -d --build
 ```
 
-GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/position(명시 model_version·selection)을 제공합니다. MongoDB는 조회만 하며 unknown/만료 관측은 현재 추천에서 거부합니다. 실제 데이터 적재는 수행하지 않았습니다. 요청/오류 스키마, 호스트 실행·계정 권한·합성 Compose 검증은 [2-C API 기록](docs/stage-2-c-api.md)을 확인하세요.
+GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/position(명시 model_version·selection)을 제공합니다. MongoDB는 조회만 하며 unknown/만료 관측은 현재 추천에서 거부합니다. 관측b의 로컬 DB 사본 적재·대조는 [검증 기록](docs/observed-db-load-validation.md)에 있으며, 이 포지션 API의 실제 모델·관측 DB 통합 검증과는 구분합니다. 요청/오류 스키마, 호스트 실행·계정 권한·합성 Compose 검증은 [2-C API 기록](docs/stage-2-c-api.md)을 확인하세요.
 
 ## Skills
 

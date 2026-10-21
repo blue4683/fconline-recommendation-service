@@ -139,7 +139,7 @@ master ── develop ──────────────┬────�
 |---|---|---|
 | 1 | 구현·합성 테스트 완료 | `FRS/utils/crawling/realdata_catalog.py`. 200장 칸만 분할, 급여 대조, 요청 전 상한 예약, 재시도 0회, 비재개 |
 | 4 (공급기) | 구현·합성 테스트 완료 | `FRS/agent/real_material.py`. 명시 run-id, 보고서 해시 검증, 합성 공급기와 같은 반환 형태 |
-| 4 (DB 적재) | 구현·합성 테스트 완료 | `FRS/utils/db/load_observed.py`(RD-3). 보고서 해시 검증 → 같은 batch_id가 있으면 거부 → 기존 후보 검색 인덱스 생성 → 5개 컬렉션 적재·건수 대조 → `observed_load` 기록. 실패하면 이번 호출이 쓴 문서만 지운다. 기본 실행은 계획 출력, `--write`일 때만 적재 |
+| 4 (DB 적재) | 구현·합성·실제 로컬 대조 완료 | 기존b35,948행·감사1건을로컬MongoDB에적재. 전량파일일치·unknown91/원래기한유지·5인덱스·파일/DB검색일치·중복적재거부. 기본CLI는계획만출력. 상세 [DB 적재·대조](observed-db-load-validation.md) |
 | 2 | 클럽 ID 확인 완료(네트워크 0) | 2026-10-19 저장한 공식 검색 페이지 원본(`stage-1-d-user-player-search-20261019`)의 `SetAbilitySearch` 항목: 리버풀 13/9, 첼시 13/5, 바이에른 뮌헨 19/21(TSV 1860 뮌헨 33과 구분). 수집은 RD-4·§12.10 |
 | 3 | 리버풀 실행 완료 | `real-data-20261021-b` completed. 실행 기록은 §12.1 |
 | 4 (자료 모드·`/health`) | 구현·합성 테스트·로컬 대조 완료 | `AGENT_DATA_MODE=observed`와 실데이터 run-id를 명시할 때만 관측 자료를 쓴다. §12.2 |

@@ -252,6 +252,9 @@ W8 구현 후속 (2026-10-21): [구현 기록](rag-langsmith-implementation.md)�
 W8 실제1회 결정·결과 (2026-10-21): 사용자가 w8-rag-20261021-001의7질문·상태최대2/추론최대7·미국LangSmith FRS POST최대28+GET1을 승인했다. 실제 상태2·추론6·POST26/GET1, 사전 검사5/7·K03/K05 실패 보존, 첫root200·ID일치·이번Ollama종료·승인소진이다. 원문/답변/검색본문 전송 없음. [실제 결과](rag-langsmith-results.md)·INT-035를 따르며 기존24/25와 별도다. 새 Q&A 웹/추천 tracing·Multi-Agent/실데이터 완료로 확대하지 않는다.
 
 실데이터 브랜치 실행·계약 v1 결정 (2026-10-21, `feat/real-data` 전용): 사용자가 `real-data-20261021-a`(상한700·700회 stopped)와 `real-data-20261021-b`(상한1,700·1,656회 completed·리버풀1,634장)를 승인했음을 확인했다. 두 승인은 소진됐고 재개/재사용하지 않는다. 계약은 [실데이터 설계](real-data-branch-design.md) §6 제안대로 `web-agent.v1`·`agent-health.v2`·`data_mode=observed`를 채택하고 백엔드부터 바꾼다. master/develop의 v0는 유지한다. 첼시·바이에른 뮌헨 ID 확인/수집은 보류. 목록 가격은 절대 BP이며 게임 업데이트 가격 조정으로 이전의 1/10000이 된 현재 기준이다(사용자 확인, §12.4). 환산하지 않는다.
+
+실데이터 브라우저 E2E 003 결정 (2026-10-21): 사용자가 같은 세션의 브라우저 접근/계획·해시·상한을 확인하고 기존b+qwen3:8b+웹v1의 새003 1회와 기존v0 임시 교체 후복원을 승인했다. metadata2/추론3·Agent POST3/health4/OPTIONS3, 순차/재시도·다운로드·수집·LangSmith0·오류/만료중단·기록보존이다. 실제3사례검증후 임시서버를종료하고v0를복원했다. 003승인소진/기한불변이며 [실데이터 설계 §12.9](real-data-branch-design.md#129-새-승인-003의-실제-관측-자료모델브라우저-3사례-완료)과 INT-RD-004를 따른다. 일반 develop 기준/대상보다 사용자지정 feat/real-data 기준/대상을우선하며 master/develop은변경하지않는다.
+
 인계 후 보완 재개 (2026-10-21 사용자 요청): 최신 Git/PR 확인 뒤 다음 단계로 M02·K03·K05의 생성 제약/프롬프트와 합성 회귀 검증을 보완한다. [출력 계약 보완](model-output-contract-hardening.md)·INT-036을 따르며 기존 실측24/25·5/7과 실패를 보존한다. 새 실제 모델/metadata·수집·LangSmith·웹 연결/배포 승인은 포함하지 않는다.
 
 ## 6. 목표 아키텍처
@@ -747,6 +750,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 
 | ID | 항목 | 상태 | 결과·메모 | 날짜 |
 |---|---|---|---|---|
+| RD 브라우저 E2E 003 | 실데이터 설계 단계7 | 확인됨(실제3사례) | 새승인·코드1f1ad25/문서37a48ed/기존b. 실제qwen3:8b·웹v1 정상optimal11명(37,220 BP/급여200/OVR1,174) 독립검증·화면일치, 누락/충돌명확화·자료/엔진0·이전표제거. metadata2/추론3·POST3/health4/OPTIONS3모두200. 임시서버종료/v0복원·승인소진·자료기한/이전기록보존. INT-RD-004·real-data-branch-design.md §12.9 | 2026-10-21 |
 | RD 브라우저 E2E 002 | 실데이터 설계 단계7 | 중단·사례 미실행 | 사용자 새002/로컬접근 승인. 같은 코드/자료 검증·metadata2회200 뒤 저장된 브라우저 권한/관리정책으로 접근 거부. 추론/Agent 요청0·3사례 미실행. 이번 서버 종료·승인소진. 설정 해결 전 재실행/추가승인 반복 없음. INT-RD-003·real-data-branch-design.md §12.7 | 2026-10-21 |
 | RD 브라우저 E2E 001 | 실데이터 설계 단계7 | 중단·사례 미실행 | 사용자 새1회 승인·코드1f1ad25/기존b 명시·해시/기한 검증. metadata2회200·내부ready, 추론/Agent POST/health GET/OPTIONS0회. 브라우저 origin 권한 거부로stopped·3사례 미실행. 이번 서버 종료/listener 없음·승인 소진/재사용 금지. INT-RD-002·real-data-branch-design.md §12.6 | 2026-10-21 |
 | RD 웹 v1 | 실데이터 설계 단계5·6 | 확인됨(합성) | feat/real-data 기준2998c1c. v1/health v2·자료 모드/관측 시각·참고가격 표시·합성 fixture SSE12/거절6/health7. 웹125·타입/빌드·pytest1,727·Ruff247/환경/pip 통과. 실제 모델/metadata·서버/브라우저·수집·전송0회. Python CI 대상 확장·웹 CI 미구축. WEB-008·real-data-branch-design.md §12.5 | 2026-10-21 |

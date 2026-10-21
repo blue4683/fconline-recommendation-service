@@ -52,6 +52,13 @@ const view = computed(() => {
 
 const health = computed(() => (props.check?.kind === 'ready' || props.check?.kind === 'unavailable' ? props.check.health : null));
 
+/** 관측 모드의 실행 ID. 서버가 명시한 배치 값만 보이며 최신 실행을 추측하지 않는다. */
+const observedRuns = computed(() => {
+  const material = health.value?.material;
+  if (health.value?.data_mode !== 'observed' || !material) return null;
+  return [...new Set(Object.values(material.batches))].join(', ');
+});
+
 /** 브라우저 시계 기준 안내일 뿐이다. 실제 만료 판단은 서버가 한다. */
 const pastValidUntil = computed(() => {
   const until = health.value?.material?.valid_until;
@@ -70,6 +77,10 @@ const pastValidUntil = computed(() => {
       <div v-if="health.data_mode">
         <dt>자료 모드</dt>
         <dd data-testid="server-data-mode">{{ health.data_mode === 'observed' ? '넥슨 데이터센터 관측 자료' : '합성 가상 리그 자료' }}</dd>
+      </div>
+      <div v-if="observedRuns">
+        <dt>관측 실행</dt>
+        <dd data-testid="server-observed-run">{{ observedRuns }}</dd>
       </div>
       <div v-if="health.model">
         <dt>모델</dt>

@@ -1,5 +1,6 @@
 """실모델 실행기의 전송/상한/중단을 합성 응답으로 검증한다. 외부 접속 없음."""
 
+import copy
 import json
 import socket
 from datetime import datetime, timedelta, timezone
@@ -24,6 +25,30 @@ def no_network():
 
         guard.setattr(socket.socket, "connect", reject)
         guard.setattr(socket, "create_connection", reject)
+        yield
+
+
+@pytest.fixture(scope="module", autouse=True)
+def preflight_once():
+    """사전 증명은 같은 합성 입력·사례에서 항상 같으므로 모듈에서 한 번만 계산한다.
+
+    실제 검증 로직은 첫 실행에서 그대로 돌고, 직접 검증은 test_agent_evaluation이 맡는다.
+    """
+    computed = {}
+    verify = model.verify_fixture
+
+    def cached(material, spec, cases):
+        key = (
+            json.dumps(material.to_dict()["inputs"], sort_keys=True),
+            spec.model_dump_json(),
+            tuple(case.case_id for case in cases),
+        )
+        if key not in computed:
+            computed[key] = verify(material, spec, cases)
+        return copy.deepcopy(computed[key])
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(model, "verify_fixture", cached)
         yield
 
 

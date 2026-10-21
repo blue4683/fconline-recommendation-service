@@ -106,6 +106,10 @@ class Fixtures:
             payload = json.loads(raw)
             payload["price_cap"].pop()
             raw = json.dumps(payload)
+        if self.chat_error == "misassign_missing_budget" and case.case_id == "M02":
+            payload = json.loads(raw)
+            payload["price_cap"] = list(payload["salary_cap"])
+            raw = json.dumps(payload)
         return httpx2.Response(
             200,
             json=dict(
@@ -281,3 +285,18 @@ def test_transport_limits_reject_an_extra_attempt_without_transmission(spec):
         and len(report["inference_attempts"]) == 16
     )
     inner.assert_not_called()
+
+
+def test_observed_missing_budget_failure_is_safely_blocked_without_retry(
+    spec, tmp_path
+):
+    # 실제 응답 원본을 fixture로 복사하지 않고 잘못된 필드 배정 구조만 합성한다.
+    fixture = Fixtures(tmp_path, chat_error="misassign_missing_budget")
+    report = fixture.run(spec)
+    row = next(c for c in report["cases"] if c["case_id"] == "M02")
+    assert report["status"] == "completed" and len(fixture.chat_requests) == 16
+    assert row["schema_valid"] is True and row["evidence_valid"] is False
+    assert row["presentation"]["code"] == "field_mismatch"
+    assert row["material_loads"] == 0 and row["actual_model_requests"] == 1
+    assert report["summary"]["e2e"] == dict(passed=24, total=25, rate=24 / 25)
+    assert report["summary"]["constraints"]["passed"] == 8

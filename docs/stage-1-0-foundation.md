@@ -41,6 +41,7 @@ PyPI 릴리스 메타데이터에서 비사전·비철회 릴리스와 Python 3.
 | [scikit-learn](https://pypi.org/project/scikit-learn/1.9.1/) / [xgboost](https://pypi.org/project/xgboost/3.2.0/) | 1.9.1 / 3.2.0 |
 | [tqdm](https://pypi.org/project/tqdm/4.70.1/) | 4.70.1 |
 | [pytest](https://pypi.org/project/pytest/9.1.1/) / [Ruff](https://pypi.org/project/ruff/0.17.1/) | 9.1.1 / 0.17.1 |
+| [pytest-xdist](https://pypi.org/project/pytest-xdist/3.8.0/) / [execnet](https://pypi.org/project/execnet/2.1.2/) | 3.8.0 / 2.1.2 (2026-10-22 추가, `-n 4` 병렬 실행) |
 
 [PyPI](https://pypi.org/)의 각 패키지 릴리스·`Requires-Python` 및 실제 설치 결과를 기준으로 선택했다. [Requests 공식 문서](https://requests.readthedocs.io/en/latest/user/quickstart/)의 요청 인자·예외, [PyMongo 연결 옵션](https://www.mongodb.com/docs/languages/python/pymongo-driver/current/connect/connection-options/), [Ruff 설정](https://docs.astral.sh/ruff/configuration/), [Compose 필수 변수 문법](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/)을 확인했다.
 

@@ -1,0 +1,317 @@
+"""실데이터 수집기의 분할·대조·중단 규칙을 합성 응답으로 검증한다. 네트워크 없음."""
+
+import json
+from datetime import datetime, timedelta, timezone
+from itertools import count
+
+import pytest
+from test_ability_parser import ability_html
+from test_player_list_parser import synthetic_row
+
+from FRS.utils.crawling.realdata_catalog import (
+    ABILITY_URL,
+    BANDS,
+    LIST_CAP,
+    CannotSplit,
+    CatalogStopped,
+    Cell,
+    ClubSpec,
+    RealDataRun,
+    build_form,
+    initial_cells,
+    main,
+    split_cell,
+    validate_template,
+)
+
+OBSERVED = datetime(2026, 10, 21, tzinfo=timezone.utc)
+CLUB = ClubSpec("가상클럽", 13, 9)
+SKILLS = ("sprintspeed", "acceleration", "strength", "stamina")
+
+
+def template(**changes):
+    form = {
+        "n4LeagueId": "0",
+        "n4TeamId": "",
+        "n1History": "0",
+        "teamcolorid": "0",
+        "n4SalaryMin": "4",
+        "n4SalaryMax": "99",
+        "n4PageNo": "1",
+        "n1Strong": "1",
+        "strPosition": "",
+        **{f"strSkill{i}": s for i, s in enumerate(SKILLS, 1)},
+    }
+    form.update(changes)
+    return form
+
+
+def rows_html(spids, salary, grade=5):
+    return "".join(
+        synthetic_row(spid, grade).replace(">24</span>", f">{salary}</span>", 1)
+        for spid in spids
+    )
+
+
+class Server:
+    """칸마다 응답할 카드 수를 정해 두는 합성 서버."""
+
+    def __init__(self, sizes=None, parity_salary=None):
+        self.sizes = sizes or {}
+        self.parity_salary = parity_salary
+        self.calls = []
+        self.next_id = count(123000001)
+        self.ids = {}
+
+    def cards(self, key, size):
+        if key not in self.ids:
+            self.ids[key] = [next(self.next_id) for _ in range(size)]
+        return self.ids[key]
+
+    def __call__(self, url, form, resource):
+        self.calls.append((resource, form))
+        if resource == "ability":
+            html = ability_html(form["n1Strong"], form["spid"])
+            return html.replace("<span>20</span>", "<span>21</span>").encode()
+        low, high = int(form["n4SalaryMin"]), int(form["n4SalaryMax"])
+        grade = int(form["n1Strong"])
+        key = (low, high, form.get("strPosition", ""))
+        size = self.sizes.get(key, 1 if (low, high) == (21, 25) else 0)
+        if size == 0:
+            return b"<html>empty</html>"
+        salary = low
+        if grade == 11 and self.parity_salary is not None:
+            salary = self.parity_salary
+        return rows_html(self.cards(key, size), salary, grade).encode()
+
+
+@pytest.fixture
+def make(tmp_path):
+    def build(server, **options):
+        ticks = count(0, 2)
+        defaults = dict(
+            run_id="real-data-synthetic",
+            clubs=[CLUB],
+            template=template(),
+            max_attempts=200,
+            allow_empty_cells=True,
+            clock=lambda: OBSERVED + timedelta(seconds=next(ticks)),
+        )
+        defaults.update(options)
+        return RealDataRun(tmp_path / "raw", tmp_path / "out", server, **defaults)
+
+    return build
+
+
+def test_split_halves_salary_then_positions_then_gives_up():
+    cell = Cell(CLUB, 4, 20)
+    low, high = split_cell(cell)
+    assert (low.low, low.high, high.low, high.high) == (4, 12, 13, 20)
+    single = Cell(CLUB, 7, 7)
+    with pytest.raises(CannotSplit):
+        split_cell(single)
+    by_position = split_cell(single, ("ST", "GK"))
+    assert [c.position for c in by_position] == ["ST", "GK"]
+    with pytest.raises(CannotSplit):
+        split_cell(by_position[0], ("ST",))
+
+
+def test_initial_cells_cover_every_band_for_every_club():
+    other = ClubSpec("다른클럽", 14, 10)
+    cells = initial_cells([CLUB, other])
+    assert len(cells) == 2 * len(BANDS)
+    assert {(c.low, c.high) for c in cells} == set(BANDS)
+    with pytest.raises(ValueError):
+        initial_cells([CLUB, CLUB])
+
+
+def test_template_must_be_the_club_career_form():
+    validate_template(template())
+    for bad in (
+        template(teamcolorid="1001"),
+        template(n1History="1"),
+        template(strSkill4="agility"),
+    ):
+        with pytest.raises(ValueError):
+            validate_template(bad)
+    with pytest.raises(ValueError):
+        validate_template({k: v for k, v in template().items() if k != "n4TeamId"})
+
+
+def test_build_form_overrides_only_search_keys_and_needs_a_known_position_field():
+    cell = Cell(CLUB, 21, 25)
+    form = build_form(template(), cell, level=11)
+    assert form["n4LeagueId"] == "13" and form["n4TeamId"] == "9"
+    assert form["n1Strong"] == "11" and form["n1History"] == "0"
+    assert form["strPosition"] == ""
+    with pytest.raises(ValueError):
+        build_form(template(), Cell(CLUB, 5, 5, "ST"))
+    assert (
+        build_form(template(), Cell(CLUB, 5, 5, "ST"), position_field="strPosition")[
+            "strPosition"
+        ]
+        == "ST"
+    )
+
+
+def test_complete_run_collects_cards_with_club_career_basis(make, tmp_path):
+    server = Server()
+    run = make(server)
+    report = run.execute()
+    assert report["status"] == "completed", report
+    assert report["eligibility_basis"] == "club_career_search"
+    assert report["catalog_cards"] == 1
+    assert report["cards_by_club"] == {"가상클럽": 1}
+    # 목록 5 + 급여 대조 1 + 능력치 1
+    assert report["attempts"] == 7
+    resources = [r for r, _ in server.calls]
+    assert resources == ["player_list"] * 5 + ["player_list", "ability"]
+    out = tmp_path / "out"
+    prices = (out / "card_price.jsonl").read_text().splitlines()
+    salaries = (out / "card_salary.jsonl").read_text().splitlines()
+    stats = (out / "reinforce_stats.jsonl").read_text().splitlines()
+    assert (len(prices), len(salaries), len(stats)) == (7, 7, 6)
+    # 5강 기준 누적 보너스 표(6,8,11,15,17,19,21)의 6~11강 차이
+    deltas = [json.loads(s)["stats_delta"]["speed"] for s in stats]
+    assert deltas == [2, 5, 9, 11, 13, 15]
+    assert json.loads((out / "team_color.jsonl").read_text())["name"] == "가상클럽"
+    manifest = json.loads((tmp_path / "raw/manifest.json").read_text())
+    assert manifest["status"] == "completed" and manifest["retries"] == 0
+
+
+def test_only_an_exactly_full_list_is_split(make):
+    full = {(21, 25, ""): LIST_CAP}
+    server = Server(full)
+    run = make(server, max_attempts=2000)
+    # 200장 칸은 나뉘고 하위 칸은 1장씩만 돌려주도록 합성한다.
+    original = server.__call__
+
+    def respond(url, form, resource):
+        low, high = int(form["n4SalaryMin"]), int(form["n4SalaryMax"])
+        if resource == "player_list" and (low, high) != (21, 25):
+            server.sizes[(low, high, "")] = 1 if 21 <= low <= 25 else 0
+        return original(url, form, resource)
+
+    run.fetch_body = respond
+    run.collect_catalog()
+    assert [s["low"] for s in run.split_log] == [21]
+    assert run.truncated == []
+    ranges = {(c.low, c.high) for c, rows in run.accepted if rows}
+    assert ranges == {(21, 23), (24, 25)}  # 200장 칸 자체는 버리고 하위 칸만 쓴다
+    # 정확히 200장이 아닌 칸은 나누지 않는다.
+    assert all(s["low"] == 21 for s in run.split_log)
+
+
+def test_unsplittable_full_cell_is_flagged_not_dropped(make):
+    server = Server({(7, 7, ""): LIST_CAP})
+    run = make(server, max_attempts=100)
+    cell = Cell(CLUB, 7, 7)
+    form = build_form(run.template, cell)
+    rows, entry = run.list_rows(form, 5)
+    assert len(rows) == LIST_CAP
+    run.accepted.clear()
+    run.truncated.append(dict(cell.describe(), reason="test"))
+    run.accept(cell, rows, entry)
+    assert len(run.rows) == LIST_CAP
+
+
+def test_duplicate_cards_across_cells_are_counted_once(make):
+    run = make(Server())
+    cell = Cell(CLUB, 21, 25)
+    rows, entry = run.list_rows(build_form(run.template, cell), 5)
+    run.accept(cell, rows, entry)
+    run.accept(Cell(CLUB, 21, 25, "ST"), rows, entry)
+    assert len(run.rows) == len(run.memberships) == 1
+    assert len(run.prices) == 7
+
+
+def test_empty_cell_stops_unless_structure_was_verified(make):
+    run = make(Server(), allow_empty_cells=False)
+    report = run.execute()
+    assert report["status"] == "stopped"
+    assert report["stop_reason"]["kind"] == "empty_list_unverified"
+
+
+def test_salary_mismatch_between_grades_stops_the_run(make):
+    run = make(Server(parity_salary=23))
+    report = run.execute()
+    assert report["status"] == "stopped"
+    assert report["stop_reason"]["kind"] in {"parity", "salary_range"}
+    assert report["profile_cards"] == 0
+
+
+def test_budget_is_reserved_before_the_request_and_never_retried(make):
+    server = Server()
+    run = make(server, max_attempts=3)
+    report = run.execute()
+    assert report["status"] == "stopped"
+    assert report["stop_reason"]["kind"] == "budget_exhausted"
+    assert report["attempts"] == 3 and len(server.calls) == 3
+
+
+def test_transport_failure_stops_without_retry(make):
+    calls = []
+
+    def blocked(url, form, resource):
+        calls.append(resource)
+        raise CatalogStopped("blocked", "403")
+
+    report = make(blocked).execute()
+    assert report["status"] == "stopped" and report["stop_reason"]["kind"] == "blocked"
+    assert len(calls) == 1
+
+
+def test_structure_change_stops_instead_of_guessing(make):
+    server = Server()
+    original = server.__call__
+
+    def broken(url, form, resource):
+        body = original(url, form, resource)
+        return body.replace(b'class="pay"', b'class="renamed"')
+
+    report = make(broken).execute()
+    assert report["status"] == "stopped" and report["stop_reason"]["kind"] == "parsing"
+
+
+def test_detail_salary_conflict_stops(make):
+    server = Server()
+    original = server.__call__
+
+    def respond(url, form, resource):
+        body = original(url, form, resource)
+        if resource == "ability":
+            body = body.replace(b"<span>21</span>", b"<span>19</span>")
+        return body
+
+    report = make(respond).execute()
+    assert report["status"] in {"stopped"}
+    assert report["stop_reason"]["kind"] in {"parsing", "conflict"}
+
+
+def test_finished_run_cannot_request_again_and_run_dirs_are_not_reused(make, tmp_path):
+    run = make(Server())
+    run.execute()
+    with pytest.raises(CatalogStopped):
+        run.request(ABILITY_URL, {}, "ability")
+    with pytest.raises(FileExistsError):
+        make(Server())
+
+
+@pytest.mark.parametrize("run_id", ["synthetic", "real-data-", "real-data-A", "x" * 90])
+def test_run_id_must_be_explicit_real_data_id(make, run_id):
+    with pytest.raises(CatalogStopped):
+        make(Server(), run_id=run_id)
+
+
+def test_cli_defaults_to_plan_without_creating_anything(tmp_path, capsys):
+    assert main(["--club", "가상클럽:13:9", "--root", str(tmp_path)]) == 0
+    plan = json.loads(capsys.readouterr().out)
+    assert plan["initial_list_requests"] == len(BANDS)
+    assert plan["retries"] == 0
+    assert not (tmp_path / "data").exists()
+
+
+def test_cli_run_requires_explicit_scope(tmp_path):
+    with pytest.raises(SystemExit):
+        main(["--club", "가상클럽:13:9", "--run", "--root", str(tmp_path)])
+    assert not (tmp_path / "data").exists()

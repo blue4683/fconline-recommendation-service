@@ -2,6 +2,7 @@ import json
 import shutil
 
 import pytest
+from jsonschema import Draft202012Validator
 
 from FRS.agent.ollama_transport import ChatSample
 from FRS.knowledge.retrieval import CORPUS_FILES, KnowledgeIndex, Passage, load_index
@@ -212,12 +213,81 @@ def test_generation_request_binds_exact_sources_without_external_search():
     assert (
         data["model"] == "qwen3:8b" and data["keep_alive"] == 0 and not data["stream"]
     )
-    assert data["format"]["properties"]["source_ids"]["items"]["enum"] == [
+    answered, insufficient = data["format"]["anyOf"]
+    assert answered["properties"]["source_ids"]["items"]["enum"] == [
         h.passage.source_id for h in hits
     ]
+    assert insufficient["properties"]["source_ids"]["maxItems"] == 0
     content = json.loads(data["messages"][1]["content"])
     assert content["corpus_version"] == index.version
     assert content["sources"][0]["text"] == hits[0].passage.text
+
+
+@pytest.mark.parametrize(
+    "status,answer,source_ids,valid",
+    [
+        ("answered", "문서에 있는 답변", ["support/required-conditions"], True),
+        ("answered", "", ["support/required-conditions"], False),
+        ("answered", "근거 없음", [], False),
+        ("answered", "잘못된 출처", ["support/missing"], False),
+        ("answered", "중복 출처", ["support/required-conditions"] * 2, False),
+        ("insufficient_evidence", "", [], True),
+        ("insufficient_evidence", "", ["support/required-conditions"], False),
+        ("insufficient_evidence", "답을 추측", [], False),
+        ("provider_error", "", [], False),
+    ],
+)
+def test_status_bound_schema_and_service_agree(status, answer, source_ids, valid):
+    question = "스쿼드 추천에 필요한 다섯 필수 조건은 무엇인가요?"
+    index = load_index()
+    hits = index.search(question)
+    payload = dict(status=status, answer=answer, source_ids=source_ids)
+    schema = generation_request(question, hits, index.version)["format"]
+    Draft202012Validator.check_schema(schema)
+    assert Draft202012Validator(schema).is_valid(payload) is valid
+    generator = Generator(json.dumps(payload))
+    result, observation = KnowledgeService(index, generator).ask(question)
+    assert len(generator.calls) == 1
+    assert (result.status != "provider_error") is valid
+    if not valid:
+        assert result.error_code == "invalid_output"
+        assert result.answer == "" and not result.sources
+        assert observation.to_dict()["status"] == "invalid_output"
+
+
+def test_required_conditions_question_keeps_all_evidence_without_filling_values():
+    question = "스쿼드 추천에 필요한 다섯 필수 조건은 무엇인가요?"
+    generator = Generator()
+    service = KnowledgeService(load_index(), generator)
+    result, _ = service.ask(question)
+    assert result.status == "answered"
+    assert result.sources[0]["source_id"] == "support/required-conditions"
+    assert all(
+        term in result.answer for term in ("예산", "급여", "클럽", "포메이션", "강화")
+    )
+    assert len(generator.calls) == 1
+    _, hits, version = generator.calls[0]
+    request = generation_request(question, hits, version)
+    payload = json.loads(request["messages"][1]["content"])
+    assert payload["question"] == question
+    assert payload["sources"][0] == result.sources[0]
+
+
+def test_price_refusal_with_citations_stays_invalid_without_repair_or_retry():
+    question = "실제 선수의 현재 거래 가격을 알려주세요."
+    index = load_index()
+    sources = [h.passage.source_id for h in index.search(question)[:2]]
+    assert len(sources) == 2
+    payload = dict(status="insufficient_evidence", answer="", source_ids=sources)
+    schema = generation_request(question, index.search(question), index.version)[
+        "format"
+    ]
+    assert not Draft202012Validator(schema).is_valid(payload)
+    generator = Generator(json.dumps(payload))
+    result, _ = KnowledgeService(index, generator).ask(question)
+    assert len(generator.calls) == 1
+    assert result.status == "provider_error" and result.error_code == "invalid_output"
+    assert result.answer == "" and not result.sources
 
 
 @pytest.mark.parametrize(

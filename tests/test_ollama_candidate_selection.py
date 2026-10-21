@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import httpx2
 import pytest
+from jsonschema import Draft202012Validator
 from langsmith import get_tracing_context
 
 from FRS.agent.candidate_comparison import (
@@ -28,6 +29,9 @@ from FRS.agent.ollama_transport import (
     ChatSample,
     OllamaExtractionError,
 )
+from FRS.core.request_normalization import normalize_conditions
+from FRS.evaluation.corpus import load_cases
+from FRS.evaluation.offline import OracleSelector
 
 CASE = candidate_cases()[0]
 REGISTRY = prepare_candidates(CASE.original).registry
@@ -98,6 +102,68 @@ def test_both_model_requests_differ_only_in_model_and_specs_are_copied():
     assert selection_request(MODELS[0], REGISTRY)["options"]["seed"] == 123
     assert selector_spec()["options"]["seed"] == 123
     assert comparison_plan() == comparison_plan()
+
+
+@pytest.mark.parametrize("field", FIELDS)
+def test_missing_field_schema_requires_empty_array_and_keeps_missing_reason(field):
+    original = ", ".join(
+        v.span.text
+        if v.field not in ("price_cap", "salary_cap")
+        else ("예산 " if v.field == "price_cap" else "급여 ") + v.span.text
+        for v in REGISTRY.candidates
+        if v.field != field
+    )
+    registry = prepare_candidates(original).registry
+    schema = selection_request(MODELS[0], registry)["format"]
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema)
+    payload = json.loads(answer(registry))
+    assert schema["properties"][field]["maxItems"] == 0
+    assert validator.is_valid(payload)
+    extracted = decode_selection(original, registry, json.dumps(payload))
+    normalized = normalize_conditions(original, extracted)
+    assert any(
+        i.field == field and i.code == "missing_condition" for i in normalized.issues
+    )
+    payload[field] = [registry.candidates[0].candidate_id]
+    assert not validator.is_valid(payload)
+    with pytest.raises(CandidateSelectionError):
+        decode_selection(original, registry, json.dumps(payload))
+
+
+def test_all_fixed_selection_cases_fit_their_bound_schema():
+    # 사전 정답은 그대로 사용한다. 대역 검증은 실제 모델 평가가 아니다.
+    for case in load_cases():
+        preparation = prepare_candidates(case.original)
+        if preparation.issues:
+            continue
+        registry = preparation.registry
+        schema = selection_request(MODELS[1], registry)["format"]
+        Draft202012Validator.check_schema(schema)
+        payload = json.loads(OracleSelector(case).select(registry))
+        assert Draft202012Validator(schema).is_valid(payload), case.case_id
+
+
+@pytest.mark.parametrize("mutation", ["wrong_field", "drop", "duplicate", "context"])
+def test_bound_schema_rejects_wrong_ids_and_keeps_repeated_conflicting_budget(mutation):
+    original = "예산 1조, 예산 2조, 급여 300, 첼시, 4-1-2-3, 5강"
+    registry = prepare_candidates(original).registry
+    schema = selection_request(MODELS[1], registry)["format"]
+    validator = Draft202012Validator(schema)
+    payload = json.loads(answer(registry))
+    assert validator.is_valid(payload)
+    assert len(payload["price_cap"]) == 2
+    if mutation == "wrong_field":
+        payload["price_cap"][0] = payload["salary_cap"][0]
+    elif mutation == "drop":
+        payload["price_cap"].pop()
+    elif mutation == "duplicate":
+        payload["price_cap"][1] = payload["price_cap"][0]
+    else:
+        payload["unsupported"] = ["ctx-001"]
+    assert not validator.is_valid(payload)
+    with pytest.raises(CandidateSelectionError):
+        decode_selection(original, registry, json.dumps(payload))
 
 
 @pytest.mark.parametrize("model", ["qwen2.5:0.5b", "remote-model", None])

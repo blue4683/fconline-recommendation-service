@@ -44,6 +44,16 @@
 
 ## 진행·변경·질문 기록
 
+### INT-034 — W8 문서 Q&A·선택적 LangSmith 구현 (2026-10-21)
+
+- 통합 / 사용자 확정 범위 구현·대역 검증. 별도 API·CLI, 기존 qwen3:8b와 로컬 검색을 사용한다. 새 실제 호출/전송은 아직 미실행이다.
+- #95는 최신 head9468cb3/CI39552920296 성공 후4711d8f로 develop Squash·트리/메시지 확인·완료 브랜치 정리를 마쳤다. 현재 feat/document-rag-observability는 작업 중 들어온 문서#96/ecfb6fb까지 fast-forward했다. #96은 다른 실행 주체가 병합했다.
+- FRS/knowledge/와 docs/knowledge/에 corpus hash·허용 구간, TF-IDF 검색, 단일 생성/출처 검증, 관측, 독립 HTTP/CLI, 고정7질문 평가를 추가했다. LangSmith SDK 실제 Client는 대역 전송으로 검증했다. 기본0회, 원문/답변/환경 metadata 제외, 전송 전 payload 재비교, 재시도/redirect0, pending/fsync/잠금을 유지한다.
+- 검증: 신규91/전체 pytest1,662(60.48초), Ruff lint/format, 환경/pip 통과. 대역7/7은 실모델 지표가 아니다. 모델/metadata/LangSmith/서버/브라우저/수집0회. 기존 엔진/Agent/API/MCP/평가·frontend/·WEB-*·의존성/CI는 수정하지 않았다.
+- 웹 전달: 독립 POST /knowledge/query·GET /health와 knowledge-answer.v1/knowledge-health.v1은 rag-langsmith-implementation.md에 명시했다. 기존 추천 SSE/DTO 변경 없음. 새 Q&A UI와 실제 브라우저 검증은 후속이며 상대 수신/동의를 주장하지 않는다.
+- 사용자 지정 주 체크아웃.env의 LANGCHAIN_* 설정으로 미국 endpoint/FRS 프로젝트·키 보유를 값 노출 없이 확인했다. 파일 수정/복사 없음. 전송 미리보기와 상태최대2/추론7/LangSmith29요청 범위를 확인한 뒤 실제 실행한다.
+- WEB-007은 별도 실데이터 설계로 남긴다. 이번 범위에서 수집/자격 계약을 변경하지 않고 과거24/25·원본/잠금·실데이터 미완료와5분 발표 일정을 보존한다. 새 실제 결과 후 보고/발표 자료를 갱신한다.
+
 ### INT-033 — W8 RAG·LangSmith 추가 경계 (2026-10-21)
 
 - 통합 / 사용자 결정: RAG+LangSmith, 계정/API 키 보유. Multi-Agent는 이번 추가 범위에서 제외한다. 후속 답변으로 기존qwen3:8b·로컬검색의 별도 문서 Q&A API·CLI를 확정했다. 추천 자동 설명은 추가하지 않는다.

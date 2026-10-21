@@ -12,6 +12,17 @@ AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-pr
 
 [R3 코드 출력](docs/validated-agent-presentation.md)은 검증된 합성 스쿼드 표·정확한 문자열 금액/급여·상태 안내를 만들고 출력 직전 기한을 확인합니다. 현재 설명은 코드 템플릿이며 실제 LLM 서술·웹/API 연결은 후속입니다.
 
+## 문서 Q&A와 관측 확장
+
+[W8 구현 기록](docs/rag-langsmith-implementation.md): 로컬 문서 검색과 qwen3:8b 답변, 별도 Q&A API·CLI, 선택적 LangSmith 어댑터를 추가했다. 현재는 대역 검증까지이며 실제 모델/trace 전송은 별도 실행 전이다. 기존 추천 엔진·웹 wire는 유지한다.
+
+```sh
+python -m FRS.knowledge --question '5강과 8강 차이는?'
+python -m FRS.knowledge.evaluate --offline
+```
+
+두 명령은 모델/외부 전송0회다. LangSmith [payload 미리보기](docs/knowledge-trace-preview.json)는 합성 예시다.
+
 ## 제출 자료
 
 - [5분 발표 구성·대본](docs/presentation-5min.md):10월22일13시·PPTX7장, 슬라이드 노트와 로컬 파일 정보

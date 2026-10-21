@@ -610,6 +610,18 @@ def main(argv=None):
     parser.add_argument("--max-attempts", type=int)
     parser.add_argument("--template", type=Path, help="저장된 공식 검색 폼(JSON)")
     parser.add_argument("--root", type=Path, default=Path("."))
+    parser.add_argument("--position-field", help="확인된 포지션 필터 필드 이름")
+    parser.add_argument(
+        "--position",
+        action="append",
+        default=[],
+        help="확인된 포지션 필터 값. 급여 한 값 칸이 200장일 때만 사용",
+    )
+    parser.add_argument(
+        "--allow-empty-cells",
+        action="store_true",
+        help="빈 목록 HTML 구조를 확인한 뒤에만 지정",
+    )
     args = parser.parse_args(argv)
     if not args.run:
         print(
@@ -637,6 +649,9 @@ def main(argv=None):
             clubs=args.club,
             template=template,
             max_attempts=args.max_attempts,
+            positions=args.position,
+            position_field=args.position_field,
+            allow_empty_cells=args.allow_empty_cells,
         )
         report = run.execute()
     print(json.dumps(report, ensure_ascii=False, indent=2))

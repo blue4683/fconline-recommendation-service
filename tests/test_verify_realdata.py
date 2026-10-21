@@ -7,7 +7,7 @@ from itertools import count
 
 import pytest
 from test_ability_parser import ability_html
-from test_realdata_catalog import CLUB, OBSERVED, Server, template
+from test_realdata_catalog import CLUB, OBSERVED, OTHER, Server, TwoClubServer, template
 
 from FRS.utils.crawling.realdata_catalog import RealDataRun
 from FRS.utils.crawling.verify_pilot import VerificationError
@@ -41,10 +41,9 @@ def collect(root, server=None, *, step=2, **options):
         root / "data/processed" / RUN_ID,
         server or PayServer({(4, 20, ""): 200, (4, 12, ""): 120, (13, 20, ""): 80}),
         run_id=RUN_ID,
-        clubs=[CLUB],
         template=template(),
         clock=lambda: OBSERVED + timedelta(seconds=next(ticks)),
-        **{"max_attempts": 300, "allow_empty_cells": True, **options},
+        **{"clubs": [CLUB], "max_attempts": 300, "allow_empty_cells": True, **options},
     )
     report = run.execute()
     return root / "data/raw" / RUN_ID, root / "data/processed" / RUN_ID, report
@@ -158,4 +157,26 @@ def test_an_unsplit_full_cell_is_caught(tmp_path):
     state, report, bodies = check_records(raw, processed)
     state["split_log"] = []  # 200장 칸을 나눈 기록을 지우면 잘림을 숨긴 것이 된다.
     with pytest.raises(VerificationError, match="200장 칸"):
+        check_independently(state, report, bodies, processed, None)
+
+
+def test_two_clubs_with_a_price_conflict_verify(tmp_path):
+    raw, processed, report = collect(
+        tmp_path, TwoClubServer(cheap_on_second=True), clubs=[CLUB, OTHER]
+    )
+    assert report["status"] == "completed" and report["price_conflicts"] == 7
+    result = verify(raw, processed, allow_empty_cells=True)
+    assert result["catalog_cards"] == 3
+
+    # 충돌 키를 다시 ok 가격으로 바꾸면(해시는 맞춰도) 재생·독립 대조에서 거부한다.
+    def revive(lines):
+        for line in lines:
+            if line["status"] == "unknown":
+                line.update(
+                    status="ok", price=1000, valid_until=lines[0]["valid_until"]
+                )
+
+    state, report, bodies = check_records(raw, processed)
+    rewrite(processed, "card_price", revive)
+    with pytest.raises(VerificationError, match="unknown"):
         check_independently(state, report, bodies, processed, None)

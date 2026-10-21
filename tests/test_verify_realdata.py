@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import shutil
 from datetime import timedelta
 from itertools import count
 
@@ -49,6 +50,24 @@ def collect(root, server=None, *, step=2, **options):
     return root / "data/raw" / RUN_ID, root / "data/processed" / RUN_ID, report
 
 
+@pytest.fixture(scope="module")
+def base_run(tmp_path_factory):
+    """기본 합성 실행(카드 201장)은 모듈에서 한 번만 만들고 테스트마다 복사해 쓴다."""
+    root = tmp_path_factory.mktemp("base")
+    _, _, report = collect(root)
+    return root, report
+
+
+@pytest.fixture
+def standard(base_run, tmp_path):
+    def copy(root=tmp_path):
+        source, report = base_run
+        shutil.copytree(source / "data", root / "data")
+        return root / "data/raw" / RUN_ID, root / "data/processed" / RUN_ID, report
+
+    return copy
+
+
 def rewrite(processed, name, change):
     """가공 파일을 바꾸고 보고서 해시도 맞춰 해시 대조만으로는 못 찾게 한다."""
     path = processed / f"{name}.jsonl"
@@ -65,8 +84,8 @@ def rewrite(processed, name, change):
     report_path.write_text(json.dumps(report, ensure_ascii=False))
 
 
-def test_a_completed_run_verifies_by_replay_and_independent_reads(tmp_path):
-    raw, processed, report = collect(tmp_path)
+def test_a_completed_run_verifies_by_replay_and_independent_reads(standard):
+    raw, processed, report = standard()
     assert report["status"] == "completed" and report["split_cells"] == 1
     result = verify(raw, processed, allow_empty_cells=True)
     assert result["verified"] and result["network_requests"] == 0
@@ -74,8 +93,8 @@ def test_a_completed_run_verifies_by_replay_and_independent_reads(tmp_path):
     assert result["leaf_cells"] == 6  # 4~20을 둘로 나눈 칸 2개 + 나머지 4칸
 
 
-def test_cli_reads_the_run_under_root_and_reports_failure(tmp_path, capsys):
-    collect(tmp_path)
+def test_cli_reads_the_run_under_root_and_reports_failure(standard, tmp_path, capsys):
+    standard()
     assert (
         main(["--run-id", RUN_ID, "--root", str(tmp_path), "--allow-empty-cells"]) == 0
     )
@@ -92,29 +111,31 @@ def test_a_stopped_run_is_not_verified(tmp_path):
         verify(raw, processed, allow_empty_cells=True)
 
 
-def test_a_changed_raw_body_fails_the_hash(tmp_path):
-    raw, processed, _ = collect(tmp_path)
+def test_a_changed_raw_body_fails_the_hash(standard):
+    raw, processed, _ = standard()
     body = sorted(raw.glob("*-ability-*.body"))[0]
     body.write_bytes(body.read_bytes() + b" ")
     with pytest.raises(VerificationError, match="원본 해시"):
         verify(raw, processed, allow_empty_cells=True)
 
 
-def test_an_extra_raw_file_is_rejected(tmp_path):
-    raw, processed, _ = collect(tmp_path)
+def test_an_extra_raw_file_is_rejected(standard):
+    raw, processed, _ = standard()
     (raw / "9999-ability-1-5.body").write_bytes(b"x")
     with pytest.raises(VerificationError, match="기록에 없는 원본"):
         verify(raw, processed, allow_empty_cells=True)
 
 
 def test_requests_closer_than_one_second_are_rejected(tmp_path):
-    raw, processed, _ = collect(tmp_path, step=0.5)
+    raw, processed, _ = collect(
+        tmp_path, Server(), step=0.5
+    )  # 간격만 보므로 카드 1장 실행
     with pytest.raises(VerificationError, match="간격"):
         check_records(raw, processed)
 
 
-def test_a_rewritten_processed_file_fails_the_replay(tmp_path):
-    raw, processed, _ = collect(tmp_path)
+def test_a_rewritten_processed_file_fails_the_replay(standard):
+    raw, processed, _ = standard()
 
     def bump(lines):
         lines[0]["position_ovr"] = {
@@ -126,8 +147,8 @@ def test_a_rewritten_processed_file_fails_the_replay(tmp_path):
         verify(raw, processed, allow_empty_cells=True)
 
 
-def test_independent_reads_catch_a_wrong_derivation_or_stat(tmp_path):
-    raw, processed, _ = collect(tmp_path)
+def test_independent_reads_catch_a_wrong_derivation_or_stat(standard, tmp_path):
+    raw, processed, _ = standard()
     state, report, bodies = check_records(raw, processed)
     assert check_independently(state, report, bodies, processed, None) == 6
 
@@ -140,7 +161,7 @@ def test_independent_reads_catch_a_wrong_derivation_or_stat(tmp_path):
     with pytest.raises(VerificationError, match="강화 표와 다릅니다"):
         check_independently(state, report, bodies, processed, None)
 
-    raw2, processed2, _ = collect(tmp_path / "second")
+    raw2, processed2, _ = standard(tmp_path / "second")
 
     def stat(lines):
         name = next(iter(lines[0]["stats"]))
@@ -152,8 +173,8 @@ def test_independent_reads_catch_a_wrong_derivation_or_stat(tmp_path):
         check_independently(state, report, bodies, processed2, None)
 
 
-def test_an_unsplit_full_cell_is_caught(tmp_path):
-    raw, processed, _ = collect(tmp_path)
+def test_an_unsplit_full_cell_is_caught(standard):
+    raw, processed, _ = standard()
     state, report, bodies = check_records(raw, processed)
     state["split_log"] = []  # 200장 칸을 나눈 기록을 지우면 잘림을 숨긴 것이 된다.
     with pytest.raises(VerificationError, match="200장 칸"):

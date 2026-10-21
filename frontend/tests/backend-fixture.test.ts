@@ -215,6 +215,8 @@ describe('8001 앱 fixture — 화면', () => {
     expect(w.get('[data-testid=server-title]').text()).toBe('서버 준비됨');
     expect(w.get('[data-testid=server-status]').text()).toContain('qwen3:8b');
     expect(w.find('[data-testid=server-past-deadline]').exists()).toBe(false);
+    // 합성 모드는 관측 실행 ID를 보이지 않는다.
+    expect(w.find('[data-testid=server-observed-run]').exists()).toBe(false);
     await w.get('textarea').setValue(s.message);
     expect(w.get('button.send').attributes('disabled')).toBeUndefined();
     await w.get('form').trigger('submit');
@@ -277,6 +279,8 @@ describe('8001 앱 fixture — 화면', () => {
     expect(w.get('[data-testid=data-note]').text()).toContain('넥슨 데이터센터 관측');
     expect(w.get('[data-testid=server-data-mode]').text()).toContain('관측 자료');
     expect(w.get('[data-testid=server-observed-at]').text()).not.toBe('');
+    const batches = (recorded(fixture.health, 'observed_ready').body.material as { batches: Record<string, string> }).batches;
+    expect(w.get('[data-testid=server-observed-run]').text()).toBe([...new Set(Object.values(batches))].join(', '));
     await w.get('textarea').setValue(s.message);
     await w.get('form').trigger('submit');
     await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));

@@ -656,3 +656,12 @@ W5#84는 최종head0f51b5b159661254f125c3ddbe09e600077757e8/CI39518543150 성공
 최신 후속 사용자 확정: **2026-10-22(목)13:00 KST 시작·5분·PPTX**. 보고서#91은head894fb84/CI39546597140 성공 후b46e32b로develop Squash·메시지/트리/도달 확인·완료브랜치 로컬/원격 삭제를 마쳤다. master#90은별도 실행 주체가392211a로병합했다. 이 대화의master병합/배포는 없다.
 
 이후최신develop에서docs/project-presentation을만들었다. docs/presentation-5min.md에7장/300초/발표대본/출처·PPTX 경로/해시를 남겼다. 실제24/25·모델15/16·N01 541억BP/급여205·M02실패·합성한계를 인용했다. 최종PPTX는artifacts/presentation/output/FRS_Agent_5min_20261022.pptx이며Git제외 로컬산출물이다. 구조/글꼴/재가져오기와7장개별렌더를 확인했고PowerPoint앱검증은 하지 않았다. 기존코드/웹/WEB-*·원본/잠금은변경하지않았다. 모델/metadata/서버/브라우저/새수집/외부제출·발표·배포0. 문서/링크/diff검토와최신CI/PR병합·완료브랜치정리·master검토PR은실제상태를확인한다. 실제제출/발표완료는아니며새라이브실행승인을추정하지않는다.
+
+
+## W8 문서 Q&A·LangSmith 구현·실제 실행 대기 (2026-10-21)
+
+후속 사용자 확정: RAG+LangSmith, 계정/API 키 보유, 기존 qwen3:8b·로컬 검색의 별도 문서 Q&A API·CLI. #95는9468cb3/CI39552920296 성공 뒤4711d8f로 develop Squash·트리/메시지 확인·완료 브랜치 정리를 마쳤다. 현재 feat/document-rag-observability는 문서#96/ecfb6fb를 fast-forward해 포함했다. 그 병합은 다른 실행 주체가 수행했다.
+
+FRS/knowledge/·docs/knowledge/·신규91테스트와 환경 예시/구현 기록·합성 trace 미리보기를 추가했다. 전체 pytest1,662(60.48초)·Ruff/환경/pip·대역7/7 통과. 실제 모델/metadata/trace/서버/브라우저/수집0회. 기존 엔진/Agent/API/MCP/평가/웹·WEB-*·의존성/CI는 보존했다. wire/한도/한계는 rag-langsmith-implementation.md·INT-034를 읽는다.
+
+사용자 설정 파일은 /Users/skala/workspace/fconline-recommendation-service/.env다. Git 제외를 확인했고 LANGCHAIN_* 별칭의 미국 endpoint·FRS 프로젝트/키 설정만 확인했다. 수정/복사/키 출력 없음. 실제 실행은 payload 미리보기와 새1회 상태2/추론최대7/LangSmith최대29·순차/재시도0/오류중단/기록보존 범위를 확인한 뒤 수행한다. 이전 소진 승인 재사용 없음. 실제 결과와 수신 확인 후 보고/5분 발표 자료를 갱신하고 최신 CI/develop Squash·완료 브랜치 정리·master 검토 PR 상태를 확인한다. 외부 제출/발표/배포나 WEB-007의 새 수집을 자동 시작하지 않는다.

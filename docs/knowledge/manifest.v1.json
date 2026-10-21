@@ -1,0 +1,9 @@
+{
+  "schema_version": "knowledge-corpus.v1",
+  "documents": {
+    "support.md": "7d947c6d050a7023d5e7ff3ae257ebc8974affd59f3da33566de6092b6917d23",
+    "reinforcement.md": "be3595fcb5962bfac57e77c65443da1ff1ace720107126ab26e3d53f7606a2b0",
+    "verification.md": "5b597efe22df4a94b54889845dfb673bbe2e0736a4f8c0535cdf3c0ecc7ebaec"
+  },
+  "corpus_version": "cf55ddd5ddec9815891be445b2144b412ede40c6e3f07acc53f155f8db1b2b7e"
+}

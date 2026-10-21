@@ -750,6 +750,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 |---|---|---|---|---|
 | W6/W8 출력 계약 보완 | M02·K03·K05 합성 회귀 | 확인됨(합성) | 필드별 ID/출현 수·Q&A 상태별 생성 형식과 규칙 질문 안내 보강. 새21/전체pytest1,683(55.70초)·Ruff239파일/환경/pip·Q&A대역7/7. 기존 사후 거부/실측/질문/정답/corpus 유지. 실제 모델/metadata·수집·trace0회. INT-036·model-output-contract-hardening.md | 2026-10-21 |
 | 테스트 병렬 실행 | pytest-xdist `-n 4` | 확인됨(로컬) | develop `fa50500` 기준 로컬 병렬 1,683 통과(70초), pip check·Ruff·환경 확인. 같은 변경을 feat/real-data에 적용해 순차 135.8초 → 병렬 27.0초 비교. 로컬 순차 재측정은 Mac 절전으로 끝나지 않음. CI 결과는 PR에서 확인 | 2026-10-22 |
+| 실모델 평가 테스트 단축 | test_model_evaluation 사전 증명 모듈 1회 | 확인됨(로컬) | 같은 합성 입력·사례의 `verify_fixture` 결과를 모듈에서 한 번 계산해 재사용(실제 검증은 첫 실행·test_agent_evaluation 직접 테스트에서 유지). 파일 순차 21.3초 → 12.7초, 18 통과. develop `06a7ca4` 기준 전체 순차 1,683 통과·Ruff 통과. CI는 PR에서 확인 | 2026-10-22 |
 | W8 실제 Q&A·관측 | 새 승인1회·고정7질문 | 실행 완료/품질5/7 | 소스baf6fab·상태2/추론6·정답출처검색4/4·답변3/4. K03누락/K05형식오류 보존. LangSmith POST26성공응답+첫rootGET200·ID일치. 본문미전송·이번서버종료·승인소진. INT-035·rag-langsmith-results.md | 2026-10-21 |
 | W8 Q&A·관측 구현 | 별도 RAG·LangSmith SDK·평가 | 확인됨(대역) | 허용문서3개/구간해시·TF-IDF상위3·단일생성/출처검증·독립HTTP/CLI·최소metadata trace/pending상한. 신규91/전체1,662·Ruff/환경/pip·대역7/7. 실제 모델/trace/브라우저0회. 기존추천/웹/실데이터 불변. INT-034·rag-langsmith-implementation.md | 2026-10-21 |
 | W7 발표 자료 | 5분 PPTX·노트 대본 | 사용자 결정·자료 준비 | 10/22(목)13:00 KST·5분 확정.7장/300초·저장N01/실제24/25/모델15/16/M02실패·합성한계.구조/글꼴/재가져오기·7장개별렌더 확인. 코드/웹/새모델/서버/수집/외부제출·발표·배포 없음. presentation-5min.md·INT-032 | 2026-10-21 |

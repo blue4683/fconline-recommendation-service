@@ -119,6 +119,14 @@ def service(tmp_path):
 
 def test_api_omission_and_explicit_310_return_same_conditions_and_squad(service):
     assert service.fixed_salary_cap == 310
+    with pytest.raises(TypeError):
+        AgentService(
+            service.settings,
+            service.material,
+            service.selector,
+            service.verification,
+            fixed_salary_cap=None,
+        )
     outputs = []
     with TestClient(
         create_agent_app(service_factory=lambda: service, clock=lambda: OBSERVED)

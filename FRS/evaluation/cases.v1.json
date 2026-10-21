@@ -1,0 +1,897 @@
+{
+  "version": "w6-cases.v1",
+  "document_sha256": "3eaac390ea8536b413d83d50e37fe8f7c387d38e844988185a905a8864a8db9e",
+  "cases": [
+    {
+      "case_id": "N01",
+      "group": "N",
+      "original": "예산 1조, 급여 300, 리버풀, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 1000000000000,
+        "salary_cap": 300,
+        "team_color": "리버풀",
+        "formation": "4-2-3-1",
+        "allowed_reinforcements": [
+          5
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "N02",
+      "group": "N",
+      "original": "급여 300, 예산 1.5조, 첼시, 4-1-2-3, 5~11강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1.5조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "첼시"
+        ],
+        "formation": [
+          "4-1-2-3"
+        ],
+        "allowed_reinforcements": [
+          "5~11강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 1500000000000,
+        "salary_cap": 300,
+        "team_color": "첼시",
+        "formation": "4-1-2-3",
+        "allowed_reinforcements": [
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "N03",
+      "group": "N",
+      "original": "바이에른 뮌헨, 4-2-2-2, 예산 10조, 급여 300, 11강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "10조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "바이에른 뮌헨"
+        ],
+        "formation": [
+          "4-2-2-2"
+        ],
+        "allowed_reinforcements": [
+          "11강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 10000000000000,
+        "salary_cap": 300,
+        "team_color": "바이에른 뮌헨",
+        "formation": "4-2-2-2",
+        "allowed_reinforcements": [
+          11
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "N04",
+      "group": "N",
+      "original": "예산 1조 5천억, 급여 1,000, 리버풀, 4-1-2-3, 5강,7강,5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조 5천억"
+        ],
+        "salary_cap": [
+          "1,000"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-1-2-3"
+        ],
+        "allowed_reinforcements": [
+          "5강,7강,5강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 1500000000000,
+        "salary_cap": 1000,
+        "team_color": "리버풀",
+        "formation": "4-1-2-3",
+        "allowed_reinforcements": [
+          5,
+          7
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "N05",
+      "group": "N",
+      "original": "예산 150,000,000,000BP, 급여 300, 첼시, 4-2-2-2, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "150,000,000,000BP"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "첼시"
+        ],
+        "formation": [
+          "4-2-2-2"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 150000000000,
+        "salary_cap": 300,
+        "team_color": "첼시",
+        "formation": "4-2-2-2",
+        "allowed_reinforcements": [
+          5
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "N06",
+      "group": "N",
+      "original": "4-2-3-1, 5~7강, 바이에른 뮌헨, 급여 300, 예산 2조로 구성해줘.",
+      "evidence": {
+        "price_cap": [
+          "2조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "바이에른 뮌헨"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5~7강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 2000000000000,
+        "salary_cap": 300,
+        "team_color": "바이에른 뮌헨",
+        "formation": "4-2-3-1",
+        "allowed_reinforcements": [
+          5,
+          6,
+          7
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "N07",
+      "group": "N",
+      "original": "리버풀, 급여 300, 6강, 예산 1조, 4-2-2-2로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-2-2"
+        ],
+        "allowed_reinforcements": [
+          "6강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 1000000000000,
+        "salary_cap": 300,
+        "team_color": "리버풀",
+        "formation": "4-2-2-2",
+        "allowed_reinforcements": [
+          6
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "N08",
+      "group": "N",
+      "original": "예산 10조, 첼시, 8강,10강,11강, 급여 300, 4-2-3-1로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "10조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "첼시"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "8강,10강,11강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 10000000000000,
+        "salary_cap": 300,
+        "team_color": "첼시",
+        "formation": "4-2-3-1",
+        "allowed_reinforcements": [
+          8,
+          10,
+          11
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "optimal",
+        "feasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "I01",
+      "group": "I",
+      "original": "예산 1BP, 급여 300, 리버풀, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1BP"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 1,
+        "salary_cap": 300,
+        "team_color": "리버풀",
+        "formation": "4-2-3-1",
+        "allowed_reinforcements": [
+          5
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "infeasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "I02",
+      "group": "I",
+      "original": "예산 10조, 급여 0, 첼시, 4-1-2-3, 5~11강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "10조"
+        ],
+        "salary_cap": [
+          "0"
+        ],
+        "team_color": [
+          "첼시"
+        ],
+        "formation": [
+          "4-1-2-3"
+        ],
+        "allowed_reinforcements": [
+          "5~11강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 10000000000000,
+        "salary_cap": 0,
+        "team_color": "첼시",
+        "formation": "4-1-2-3",
+        "allowed_reinforcements": [
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "infeasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "I03",
+      "group": "I",
+      "original": "예산 1BP, 급여 0, 바이에른 뮌헨, 4-2-2-2, 11강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1BP"
+        ],
+        "salary_cap": [
+          "0"
+        ],
+        "team_color": [
+          "바이에른 뮌헨"
+        ],
+        "formation": [
+          "4-2-2-2"
+        ],
+        "allowed_reinforcements": [
+          "11강"
+        ]
+      },
+      "conditions": {
+        "price_cap": 1,
+        "salary_cap": 0,
+        "team_color": "바이에른 뮌헨",
+        "formation": "4-2-2-2",
+        "allowed_reinforcements": [
+          11
+        ]
+      },
+      "stage": "engine",
+      "outcomes": [
+        "infeasible"
+      ],
+      "issues": []
+    },
+    {
+      "case_id": "U01",
+      "group": "U",
+      "original": "예산 1조, 급여 300, 리버풀, 4-2-3-1, 5강, 특정 선수 제외로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "original",
+          "code": "unrecognized_context",
+          "span_text": "특정 선수 제외로 구성해줘"
+        }
+      ]
+    },
+    {
+      "case_id": "U02",
+      "group": "U",
+      "original": "예산 1조, 급여 300, 리버풀, 4-2-3-1, 5강, 국적 한국으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "original",
+          "code": "unrecognized_context",
+          "span_text": "국적 한국으로 구성해줘"
+        }
+      ]
+    },
+    {
+      "case_id": "U03",
+      "group": "U",
+      "original": "예산 1조, 급여 300, 리버풀, 4-2-3-1, 5강, 빠른 선수로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "original",
+          "code": "unrecognized_context",
+          "span_text": "빠른 선수로 구성해줘"
+        }
+      ]
+    },
+    {
+      "case_id": "U04",
+      "group": "U",
+      "original": "예산 1조, 급여 300, 뮌헨, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "original",
+          "code": "unrecognized_context",
+          "span_text": "뮌헨"
+        }
+      ]
+    },
+    {
+      "case_id": "U05",
+      "group": "U",
+      "original": "예산 1조, 급여 300, 리버풀, 4-2-3-1, 12강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "12강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "allowed_reinforcements",
+          "code": "unsupported_reinforcement",
+          "span_text": "12강"
+        }
+      ]
+    },
+    {
+      "case_id": "M01",
+      "group": "M",
+      "original": "예산 1조, 리버풀, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "normalize",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "salary_cap",
+          "code": "missing_condition",
+          "span_text": null
+        }
+      ]
+    },
+    {
+      "case_id": "M02",
+      "group": "M",
+      "original": "급여 300, 첼시, 4-1-2-3, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "첼시"
+        ],
+        "formation": [
+          "4-1-2-3"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "normalize",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "price_cap",
+          "code": "missing_condition",
+          "span_text": null
+        }
+      ]
+    },
+    {
+      "case_id": "M03",
+      "group": "M",
+      "original": "예산 1조, 급여 300, 4-2-2-2, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [],
+        "formation": [
+          "4-2-2-2"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "normalize",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "team_color",
+          "code": "missing_condition",
+          "span_text": null
+        }
+      ]
+    },
+    {
+      "case_id": "M04",
+      "group": "M",
+      "original": "예산 1조, 급여 300, 바이에른 뮌헨으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "바이에른 뮌헨"
+        ],
+        "formation": [],
+        "allowed_reinforcements": []
+      },
+      "conditions": null,
+      "stage": "normalize",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "formation",
+          "code": "missing_condition",
+          "span_text": null
+        },
+        {
+          "field": "allowed_reinforcements",
+          "code": "missing_condition",
+          "span_text": null
+        }
+      ]
+    },
+    {
+      "case_id": "A01",
+      "group": "A",
+      "original": "예산 1조, 예산 2조, 급여 300, 리버풀, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조",
+          "2조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "normalize",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "price_cap",
+          "code": "conflicting_values",
+          "span_text": null
+        }
+      ]
+    },
+    {
+      "case_id": "A02",
+      "group": "A",
+      "original": "예산 약 1조, 급여 300, 리버풀, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "약 1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "price_cap",
+          "code": "ambiguous_amount",
+          "span_text": "약 1조"
+        }
+      ]
+    },
+    {
+      "case_id": "A03",
+      "group": "A",
+      "original": "예산 1조5000, 급여 300, 리버풀, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조5000"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "price_cap",
+          "code": "missing_unit",
+          "span_text": "1조5000"
+        }
+      ]
+    },
+    {
+      "case_id": "A04",
+      "group": "A",
+      "original": "예산 1조, 급여 300, 리버풀, 4-2-3-1, 5강, 아니 예산 2조로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "1조"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "original",
+          "code": "unrecognized_context",
+          "span_text": "아니 예산 2조로 구성해줘"
+        }
+      ]
+    },
+    {
+      "case_id": "A05",
+      "group": "A",
+      "original": "예산 0.1BP, 급여 300, 리버풀, 4-2-3-1, 5강으로 구성해줘",
+      "evidence": {
+        "price_cap": [
+          "0.1BP"
+        ],
+        "salary_cap": [
+          "300"
+        ],
+        "team_color": [
+          "리버풀"
+        ],
+        "formation": [
+          "4-2-3-1"
+        ],
+        "allowed_reinforcements": [
+          "5강"
+        ]
+      },
+      "conditions": null,
+      "stage": "prepare",
+      "outcomes": [
+        "needs_clarification"
+      ],
+      "issues": [
+        {
+          "field": "price_cap",
+          "code": "fractional_bp",
+          "span_text": "0.1BP"
+        }
+      ]
+    }
+  ]
+}

@@ -16,7 +16,7 @@ import {
 } from '../contracts/webAgentV1';
 
 export const SUPPORTED: Supported = {
-  required_fields: ['price_cap', 'salary_cap', 'team_color', 'formation', 'allowed_reinforcements'],
+  required_fields: ['price_cap', 'team_color', 'formation', 'allowed_reinforcements'],
   clubs: [...SUPPORTED_CLUBS],
   formations: Object.keys(FORMATION_SLOTS),
   reinforcements: [...SUPPORTED_REINFORCEMENTS],
@@ -150,9 +150,8 @@ export interface ScenarioInfo {
 export const SCENARIOS: ScenarioInfo[] = [
   { id: 'optimal', label: '최적 스쿼드' },
   { id: 'feasible', label: '가능 스쿼드 (최적성 미확인)' },
-  { id: 'huge_numbers', label: '큰 금액 (34자리 BP·2^53 초과 급여)' },
   { id: 'expiring_soon', label: '곧 만료되는 결과 (30초)' },
-  { id: 'needs_clarification', label: '조건 누락 (급여 상한 없음)' },
+  { id: 'needs_clarification', label: '조건 누락 (예산 없음)' },
   { id: 'input_format', label: '정형 조건문이 아닌 요청' },
   { id: 'infeasible', label: '해 없음' },
   { id: 'unknown', label: '시간 내 미확정' },
@@ -166,7 +165,7 @@ export const SCENARIOS: ScenarioInfo[] = [
 
 const LIVERPOOL: Conditions = {
   price_cap: '6000000000000',
-  salary_cap: '210',
+  salary_cap: '310',
   team_color: '리버풀',
   formation: '4-2-3-1',
   allowed_reinforcements: [5, 6, 7, 8],
@@ -174,7 +173,7 @@ const LIVERPOOL: Conditions = {
 
 const CHELSEA: Conditions = {
   price_cap: '5800000000000',
-  salary_cap: '205',
+  salary_cap: '310',
   team_color: '첼시',
   formation: '4-1-2-3',
   allowed_reinforcements: [5, 6, 7, 8],
@@ -202,10 +201,10 @@ function snapshot(now: number, validForMs: number, id: string) {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-/** 선택 뒤 정규화가 급여 상한 누락을 찾은 경우. 백엔드 정규화 사유를 그대로 옮겼다. */
+/** 선택 뒤 정규화가 예산 누락을 찾은 경우. 백엔드 정규화 사유를 그대로 옮겼다. */
 const CLARIFY_ISSUES: ConditionIssue[] = [
   {
-    field: 'salary_cap',
+    field: 'price_cap',
     kind: 'missing',
     code: 'missing_condition',
     message: '필수 조건을 원문에 명시해야 합니다.',

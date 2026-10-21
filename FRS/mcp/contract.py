@@ -21,6 +21,10 @@ from FRS.api.agent_contract import (
 from FRS.api.agent_events import RequestId
 from FRS.core.candidate_search.search import BatchSelection
 from FRS.core.request_normalization import SupportedConditions, conditions_spec
+from FRS.core.request_normalization.conditions import (
+    GAME_REQUIRED_FIELDS,
+    GAME_SALARY_CAP,
+)
 from FRS.core.squad_recommend.snapshot import RequestSnapshot
 from FRS.schema.scope import FORMATION_SLOTS
 
@@ -183,6 +187,7 @@ def mcp_spec():
         fallback=False,
         cancellation="keep_slot_until_physical_worker_ends",
         model_calls=False,
+        salary_cap=GAME_SALARY_CAP,
         context="explicit_fixed_synthetic_batches_and_observed_at",
         request_id="correlation_only",
     )
@@ -193,9 +198,11 @@ def versions():
     return dict(
         mcp_policy=mcp_spec()["mcp_policy_version"],
         contract="mcp-build.v1",
-        candidate=candidate_spec()["candidate_version"],
+        candidate=candidate_spec(fixed_salary_cap=GAME_SALARY_CAP)["candidate_version"],
         selection=selection_spec()["selection_version"],
-        normalizer=conditions_spec()["normalizer_version"],
+        normalizer=conditions_spec(fixed_salary_cap=GAME_SALARY_CAP)[
+            "normalizer_version"
+        ],
         model="not_invoked_client_selection",
     )
 
@@ -204,9 +211,11 @@ def supported_resource():
     return dict(
         contract_version="mcp-build.v1",
         data_mode="synthetic",
-        supported=SupportedConditions().model_dump(mode="json"),
+        supported=SupportedConditions(required_fields=GAME_REQUIRED_FIELDS).model_dump(
+            mode="json"
+        ),
         limits=dict(original_codepoints=4000, candidates=128, contexts=64),
-        input="변경 없는 원문과 candidate-selection.v1. 후보 ID를 임의 보충하지 않습니다.",
+        input="급여 상한310 고정. 예산·클럽·포메이션·강화를 명시합니다. 변경 없는 원문과 candidate-selection.v1을 사용하며 급여 ID를 임의 보충하지 않습니다.",
         versions=versions(),
     )
 

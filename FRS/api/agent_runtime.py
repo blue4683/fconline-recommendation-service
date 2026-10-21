@@ -27,6 +27,10 @@ from FRS.agent.real_material import RUN_ID_PATTERN, ObservedMaterial
 from FRS.api.agent_contract import WireModel
 from FRS.api.agent_projection import SelectionProvenance
 from FRS.core.candidate_search.search import BatchSelection
+from FRS.core.request_normalization.conditions import (
+    GAME_SALARY_CAP,
+    validate_salary_policy,
+)
 from FRS.schema.models import DataStatus
 from FRS.schema.scope import ROOT
 
@@ -134,10 +138,13 @@ class AgentService:
     material: object
     selector: object
     verification: ModelVerification | None
+    # None은 과거 오프라인 계약 재현에만 사용한다. 환경/HTTP에는 선택지를 노출하지 않는다.
+    fixed_salary_cap: int | None = GAME_SALARY_CAP
 
     _metadata: bytes = field(init=False, repr=False)
 
     def __post_init__(self):
+        validate_salary_policy(self.fixed_salary_cap)
         if type(self.settings) is not AgentSettings:
             raise ValueError("검증 가능한 자료 모드별 서비스 설정이 필요합니다.")
         expected_type = (
@@ -260,9 +267,11 @@ def build_service(
     verifier=verify_model,
     processed_root=None,
     mongo_client_factory=None,
+    fixed_salary_cap=GAME_SALARY_CAP,
 ):
     if type(settings) is not AgentSettings:
         raise ValueError("명시한 Agent 시작 설정이 필요합니다.")
+    validate_salary_policy(fixed_salary_cap)
     settings = AgentSettings.model_validate(settings.model_dump())
     if settings.data_mode == "synthetic":
         material = generate_synthetic_material(
@@ -283,7 +292,9 @@ def build_service(
             material = MongoObservedMaterial(root, settings.run_id, **options)
         else:
             material = ObservedMaterial(root, settings.run_id)
-    service = AgentService(settings, material, OllamaIDSelector(settings.model), None)
+    service = AgentService(
+        settings, material, OllamaIDSelector(settings.model), None, fixed_salary_cap
+    )
     if service.health(clock())["reason"] == "data_expired":
         return service
     try:
@@ -297,4 +308,6 @@ def build_service(
         httpx2.HTTPError,
     ):
         verified = None
-    return AgentService(settings, material, service.selector, verified)
+    return AgentService(
+        settings, material, service.selector, verified, fixed_salary_cap
+    )

@@ -18,6 +18,7 @@ from FRS.agent.presentation import present_agent_result
 from FRS.api.agent_app import Gate, RunStopped
 from FRS.api.agent_runtime import utc_now
 from FRS.core.request_normalization import normalize_conditions
+from FRS.core.request_normalization.conditions import GAME_SALARY_CAP
 from FRS.mcp.contract import BuildRequest, MaterialContext, error_response, response
 
 DEADLINE_SECONDS = 150
@@ -64,7 +65,7 @@ class MCPService:
         return self.gate.active is not None
 
     def prompt(self, original):
-        prepared = prepare_candidates(original)
+        prepared = prepare_candidates(original, fixed_salary_cap=GAME_SALARY_CAP)
         if prepared.issues:
             return canonical(
                 dict(
@@ -86,7 +87,7 @@ class MCPService:
         if type(body) is not BuildRequest:
             raise ValueError("검증된 MCP 요청이 필요합니다.")
         check()
-        prepared = prepare_candidates(body.original)
+        prepared = prepare_candidates(body.original, fixed_salary_cap=GAME_SALARY_CAP)
         if prepared.issues:
             return response(
                 request_id=body.request_id,
@@ -98,7 +99,9 @@ class MCPService:
             extracted = decode_selection(body.original, prepared.registry, raw)
         except CandidateSelectionError as exc:
             return error_response(exc.code, body.request_id, outcome="selection_error")
-        normalized = normalize_conditions(body.original, extracted)
+        normalized = normalize_conditions(
+            body.original, extracted, fixed_salary_cap=GAME_SALARY_CAP
+        )
         check()
         # 오류 조건은 합성 자료/시계/엔진에 접근하지 않는다.
         batches, t0, material = None, None, None
@@ -131,6 +134,7 @@ class MCPService:
             material=CheckedMaterial(),
             batches=batches,
             clock=guarded_clock,
+            fixed_salary_cap=GAME_SALARY_CAP,
         ).run(body.original, t0=t0)
         check()
         if result.outcome != "agent_result":

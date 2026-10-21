@@ -10,6 +10,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from FRS.core.request_normalization import SupportedConditions
+from FRS.core.request_normalization.conditions import GAME_REQUIRED_FIELDS
 from FRS.schema.scope import FORMATION_SLOTS, PRIORITY_CLUBS
 
 WEB_CONTRACT = "web-agent.v1"
@@ -72,7 +73,12 @@ class WebSupported(WireModel):
 
     @model_validator(mode="after")
     def fixed_scope(self):
-        if self.model_dump() != SupportedConditions().model_dump(mode="json"):
+        if self.model_dump() not in (
+            SupportedConditions().model_dump(mode="json"),
+            SupportedConditions(required_fields=GAME_REQUIRED_FIELDS).model_dump(
+                mode="json"
+            ),
+        ):
             raise ValueError("고정 지원 목록이 일치하지 않습니다.")
         return self
 

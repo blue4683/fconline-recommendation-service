@@ -747,6 +747,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 
 | ID | 항목 | 상태 | 결과·메모 | 날짜 |
 |---|---|---|---|---|
+| RD 브라우저 E2E 001 | 실데이터 설계 단계7 | 중단·사례 미실행 | 사용자 새1회 승인·코드1f1ad25/기존b 명시·해시/기한 검증. metadata2회200·내부ready, 추론/Agent POST/health GET/OPTIONS0회. 브라우저 origin 권한 거부로stopped·3사례 미실행. 이번 서버 종료/listener 없음·승인 소진/재사용 금지. INT-RD-002·real-data-branch-design.md §12.6 | 2026-10-21 |
 | RD 웹 v1 | 실데이터 설계 단계5·6 | 확인됨(합성) | feat/real-data 기준2998c1c. v1/health v2·자료 모드/관측 시각·참고가격 표시·합성 fixture SSE12/거절6/health7. 웹125·타입/빌드·pytest1,727·Ruff247/환경/pip 통과. 실제 모델/metadata·서버/브라우저·수집·전송0회. Python CI 대상 확장·웹 CI 미구축. WEB-008·real-data-branch-design.md §12.5 | 2026-10-21 |
 | 실데이터 v1 연결 | 관측 자료 모드·health v2 | 확인됨(로컬) | `feat/real-data`. 명시 run-id만·보고서 해시 검증·ok 행 기준 기한. 신규11·전체 pytest1,706·Ruff. real-data-20261021-b 읽기 전용 대조: ready·기한2026-10-22T08:03:29Z, 리버풀 정상 요청 optimal 11명·급여 누락 명확화·첼시 infeasible. 선택기/모델 검증 대역, 네트워크0. 목록 가격은 현재 기준 절대 BP(사용자 확인·10-19/10-21 겹침5,341쌍 비율 중앙값1.0). real-data-branch-design.md §12 | 2026-10-21 |
 | W6/W8 출력 계약 보완 | M02·K03·K05 합성 회귀 | 확인됨(합성) | 필드별 ID/출현 수·Q&A 상태별 생성 형식과 규칙 질문 안내 보강. 새21/전체pytest1,683(55.70초)·Ruff239파일/환경/pip·Q&A대역7/7. 기존 사후 거부/실측/질문/정답/corpus 유지. 실제 모델/metadata·수집·trace0회. INT-036·model-output-contract-hardening.md | 2026-10-21 |

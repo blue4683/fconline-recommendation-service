@@ -144,7 +144,7 @@ master ── develop ──────────────┬────�
 | 4 (자료 모드·`/health`) | 구현·합성 테스트·로컬 대조 완료 | `AGENT_DATA_MODE=observed`와 실데이터 run-id를 명시할 때만 관측 자료를 쓴다. §12.2 |
 | 5 | 백엔드·웹 구현/합성 검증 완료 | `web-agent.v1`·`agent-health.v2` 파서·fixture. INT-RD-001·WEB-008 |
 | 6 | 구현·합성 검증 완료 | 자료 모드별 안내·관측 시각/기한·참고가격 표시. §12.5 |
-| 7 | 미착수 | 실제 모델·브라우저 E2E는 새 실행범위·상한 승인 필요 |
+| 7 | 001 중단·3사례 미실행 | metadata2회 뒤 브라우저 origin 권한 거부. 승인 소진·이번 서버 종료. §12.6 |
 
 실행 전에 확정해야 하는 값(코드는 추측하지 않고 거부한다):
 
@@ -204,3 +204,29 @@ master ── develop ──────────────┬────�
 fixture는 실제 관측 자료를 복사하지 않고 기존 합성 리그를 관측 형식으로 임시 저장해 v1 앱을 TestClient로 호출했다. SSE12·HTTP거절6·health7이며 반복 생성 바이트가 같다. Node22.23.3/npm10.9.9에서 웹 typecheck·125테스트·빌드, Python3.11.15에서 전체pytest1,727(65.60초)·Ruff247파일/환경/pip를 통과했다. 기존 Python CI의 대상에 feat/real-data를 추가했고, 웹 자동 CI/실제 모델·서버·브라우저 검증은 미실행이다. PR의 최신 CI 결과는 별도로 확인한다.
 
 단계7은 기존 b를 명시하고 새 E2E 기록 ID·상한을 승인받은 뒤 수행한다. 기존 소진 승인·잠금을 재사용하지 않으며 가격의 가장 이른 기한2026-10-22 17:03 KST를 유지한다. 이번 웹 검증으로 실데이터 추천 품질이나 브라우저 E2E 완료를 주장하지 않는다.
+
+
+### 12.6 관측 자료 브라우저 E2E 001 (승인·중단)
+
+사용자가 `observed-web-e2e-20261021-001` 새1회를 승인했다. 기준은 PR#106의 Squash `1f1ad2550d628112872a6d293ea1080be65fa779`이며, 코드 작업 트리와 자료 경로를 분리했다. 자료는 사용자 지정 체크아웃의 `data/processed/real-data-20261021-b/`를 명시해 읽었고 복사/변경하지 않았다. report와 가공5파일의 SHA256 및 원래 기한을 시작 전에 검증했다. report SHA256은 `53787a5cd3560f3960a5808a08abdba9f704024e9c7c7c7d13426db23dbbaf71`이다.
+
+승인 상한은 Ollama metadata2/추론3(각120초), Agent POST3/health GET4/CORS OPTIONS3이다. 정상(예산13만/급여200/리버풀/4-2-3-1/5강)·급여 누락·예산13만/5만 충돌을 순차 확인하고, 재시도/다운로드/새 수집/LangSmith0·오류/만료 즉시 중단·이번에 시작한 설치 서버만 종료하는 범위였다.
+
+실제 결과(2026-10-21 20:04:51~20:05:16 KST):
+
+| 항목 | 실제 시도 | 결과 |
+|---|---:|---|
+| Ollama metadata GET | 2/2 | version/tags 모두200, qwen3:8b digest 일치 |
+| Ollama 추론 POST | 0/3 | 미실행 |
+| Agent stream POST | 0/3 | 미실행 |
+| Agent health GET | 0/4 | 미실행 |
+| Agent CORS OPTIONS | 0/3 | 미실행 |
+| 브라우저 화면·정상/누락/충돌 | 0/3사례 | origin 접근 권한 거부로 모두 미실행 |
+
+서비스 시작 내부 검사는 `agent-health.v2`·`ready`·`observed`였다. material ID는 `08a698c865b1030a87568cfa02cea8ab5ed838bea9b7cd2b2176faeeab9fa31f`, 관측 시각은2026-10-21T08:34:20.775Z, 기한은2026-10-22T08:03:29.357Z였다. 이것은 HTTP health GET이나 실제 추론/추천 품질 확인을 대신하지 않는다.
+
+브라우저 도구가 `http://127.0.0.1:5173` origin 접근을 사용자 권한 거부로 차단해 `stopped(browser_origin_permission_denied)`로 종료했다. 다른 브라우저/직접HTTP로 우회하지 않았다. 이번 Ollama/Agent/Vite(PID18694/18850/18970)만 종료하고 해당PID 및8001/5173/11434 listener가 모두 없음을 확인했다.
+
+승인루트 `artifacts/observed-web-e2e/approval-20261021-001/`의 잠금·실행 계획·manifest·상태 기록·로그·summary.json은 Git 제외 로컬에 보존한다. manifest SHA256은 `cb8c9bd0ed5a878e9c7193ea4137a82ed6a378c805d07b27e3602242afcfc1b6`이다. **001 승인은 소진됐고 남은 횟수를 재사용하지 않는다.** 재개에는 새 실행ID·상한 승인과 브라우저의 해당 로컬 origin 접근 허용이 필요하다. 단계7은 미완료다.
+
+문서 내용/경로/링크·diff를 검토했다. 코드 변경이 없어 기능 테스트는 다시 실행하지 않았다. 기존125웹/1,727Python 합성 통과와 이번 실제 미실행을 구분한다. master/develop의 합성 경로·기존 실제 평가/종료 실행·첼시/뮌헨 보류 및 다른 담당 체크아웃/브랜치는 보존했다.

@@ -85,6 +85,17 @@ def test_default_database_comes_from_config(monkeypatch):
     mongo.__getitem__.assert_called_once_with("custom")
 
 
+def test_read_retry_can_be_disabled_explicitly(monkeypatch):
+    factory = Mock(return_value=MagicMock())
+    monkeypatch.setattr(client, "MongoClient", factory)
+    config = client.DatabaseConfig("127.0.0.1", 27017, "synthetic", "synthetic")
+    with client.Client(config=config, retry_reads=False):
+        pass
+    assert factory.call_args.kwargs["retryReads"] is False
+    with pytest.raises(ValueError):
+        client.Client(config=config, retry_reads="false")
+
+
 def test_dotenv_load_is_explicit_and_does_not_override_environment(monkeypatch):
     loader = Mock()
     monkeypatch.setattr(client, "load_dotenv", loader)

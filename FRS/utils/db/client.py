@@ -49,11 +49,14 @@ class DatabaseConfig:
 
 
 class Client:
-    def __init__(self, dbname=None, *, config=None):
+    def __init__(self, dbname=None, *, config=None, retry_reads=None):
         config = config or DatabaseConfig.from_env()
         database = config.database if dbname is None else dbname
         if not database.strip():
             raise ValueError("DB 이름은 비어 있을 수 없습니다.")
+        if retry_reads is not None and type(retry_reads) is not bool:
+            raise ValueError("retry_reads는 bool이어야 합니다.")
+        options = {} if retry_reads is None else {"retryReads": retry_reads}
         # 자격 증명을 URI에 이어 붙이지 않아 특수문자 인코딩 문제를 피한다.
         self.client = MongoClient(
             host=config.host,
@@ -66,6 +69,7 @@ class Client:
             socketTimeoutMS=10000,
             tz_aware=True,
             connect=False,
+            **options,
         )
         self.db = self.client[database]
 

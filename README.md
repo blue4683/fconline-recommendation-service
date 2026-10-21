@@ -16,6 +16,8 @@ AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-pr
 
 `feat/real-data`에서는 기존 리버풀 관측 배치 `real-data-20261021-b`의 **35,948행과 적재 기록1건**을 로컬 MongoDB에 저장하고 파일과 전량 대조했습니다. unknown 가격91건과 원래 시각·기한을 유지하며, 같은 배치의 중복 적재는 거부합니다. [적재·검색·재확인 기록](docs/observed-db-load-validation.md)을 따릅니다. Agent의 관측 공급기는 기존 명시 파일 경로를 사용합니다.
 
+후속 [DB 공급기 연결](docs/observed-db-provider.md)은 `AGENT_DATA_MODE=observed`·`AGENT_MATERIAL_SOURCE=mongodb`·명시 run-id일 때 DB를 읽습니다. 기본값은 기존 파일 공급기입니다. 요청마다 원본과 전량 대조하며 DB 장애·불일치 시 중단합니다. 실제 로컬 DB+선택기 대역의3사례 HTTP 응답은 파일 공급기와 같았고, DB를 연결한 실제 모델·브라우저 E2E는 후속 검증입니다.
+
 ```sh
 python -m FRS.utils.db.load_observed --root /path/to/data-checkout --run-id real-data-20261021-b
 ```

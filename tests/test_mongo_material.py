@@ -209,6 +209,32 @@ def test_driver_failure_is_safe_without_retry_or_fallback(loaded):
     factory.assert_called_once_with()
 
 
+def test_driver_disconnect_during_read_closes_the_connection_without_retry(loaded):
+    _, database, connection, material = loaded
+    read = Mock(side_effect=AutoReconnect("private password/path"))
+    database["card_price"].find = read
+    with pytest.raises(RealMaterialError) as exc:
+        material.load(material.batches)
+    assert "private" not in str(exc.value)
+    assert connection.opens == connection.closes == 1
+    read.assert_called_once_with({"batch_id": RUN_ID})
+
+
+def test_audit_removal_during_read_is_rejected(loaded):
+    _, database, connection, material = loaded
+    original = database["team_color"].find
+
+    def read(query):
+        rows = original(query)
+        database[LOAD_LOG].documents.clear()
+        return rows
+
+    database["team_color"].find = read
+    with pytest.raises(RealMaterialError):
+        material.load(material.batches)
+    assert connection.opens == connection.closes == 1
+
+
 def test_other_batches_are_not_selected(loaded):
     _, database, _, material = loaded
     row = copy.deepcopy(database["player_card"].documents[0])

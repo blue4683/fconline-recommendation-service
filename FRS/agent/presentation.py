@@ -1,4 +1,7 @@
-"""검증된 합성 스쿼드만 정확한 문자열 수치와 코드 템플릿으로 출력한다."""
+"""검증된 스쿼드만 정확한 문자열 수치와 코드 템플릿으로 출력한다.
+
+자료 모드(합성/관측)는 실행 서비스가 명시하며 후보 관측의 출처와 일치해야 한다.
+"""
 
 import hashlib
 import json
@@ -30,6 +33,17 @@ _MESSAGES = {
     "data_expired": "자료가 만료되어 추천을 반환하지 않습니다.",
     "internal_error": "처리 또는 검증 중 오류가 발생해 추천을 반환하지 않습니다.",
 }
+# 관측 자료 모드에서 자료 기준을 말하는 문구만 바꾼다. 나머지 상태 문구는 같다.
+_OBSERVED_MESSAGES = {
+    **_MESSAGES,
+    "optimal": "넥슨 데이터센터 관측 자료 기준으로 조건을 만족하는 11명을 검증했고 최적성을 확인했습니다. 가격은 참고가격입니다.",
+    "feasible": "넥슨 데이터센터 관측 자료 기준으로 조건을 만족하는 11명을 검증했습니다. 최적성은 미확인입니다. 가격은 참고가격입니다.",
+    "infeasible": "보유 관측 자료 기준으로 조건을 만족하는 스쿼드가 없습니다.",
+}
+_MODES = {
+    "synthetic": (SourceKind.SYNTHETIC, _MESSAGES),
+    "observed": (SourceKind.WEB, _OBSERVED_MESSAGES),
+}
 
 
 def _canonical(value):
@@ -45,7 +59,8 @@ def _canonical(value):
 def presentation_spec():
     spec = dict(
         version=1,
-        scope="synthetic_internal_presentation_not_http_contract",
+        scope="internal_presentation_not_http_contract",
+        data_modes={mode: source.value for mode, (source, _) in _MODES.items()},
         numeric_values="BP_salary_and_identifiers_as_exact_decimal_strings",
         successful_rows="11_in_formation_order_after_independent_revalidation",
         conditions="same_normalized_conditions_and_snapshot",
@@ -53,6 +68,7 @@ def presentation_spec():
         expiry="response_clock_after_validation_and_table_construction",
         model_metadata="not_provided_by_this_internal_layer",
         messages=dict(_MESSAGES),
+        observed_messages=dict(_OBSERVED_MESSAGES),
     )
     return {
         **spec,
@@ -72,12 +88,17 @@ class CodePresentation:
         return json.loads(self._payload)
 
 
-def present_agent_result(result: AgentRunResult, *, clock) -> CodePresentation:
+def present_agent_result(
+    result: AgentRunResult, *, clock, data_mode="synthetic"
+) -> CodePresentation:
     if not isinstance(result, AgentRunResult):
         raise TypeError("내부 AgentRunResult가 필요합니다.")
+    if data_mode not in _MODES:
+        raise ValueError("명시한 자료 모드가 필요합니다.")
+    source, messages = _MODES[data_mode]
     payload = dict(
         kind="code_presentation",
-        data_mode="synthetic",
+        data_mode=data_mode,
         presentation_version=presentation_spec()["presentation_version"],
         graph_version=result.graph_version,
         normalizer_version=None,
@@ -93,7 +114,7 @@ def present_agent_result(result: AgentRunResult, *, clock) -> CodePresentation:
     )
 
     def finish(status, code=None):
-        body = {**payload, "status": status, "code": code, "answer": _MESSAGES[status]}
+        body = {**payload, "status": status, "code": code, "answer": messages[status]}
         if status not in ("optimal", "feasible"):
             body["squad"] = None
         return CodePresentation(_canonical(body))
@@ -149,7 +170,7 @@ def present_agent_result(result: AgentRunResult, *, clock) -> CodePresentation:
         if any(query[key] != value for key, value in values.items()):
             raise ValueError
         if any(
-            row.source != SourceKind.SYNTHETIC
+            row.source != source
             for candidate in prepared.candidates
             for row in (
                 candidate.observations.player_card,

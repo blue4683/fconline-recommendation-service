@@ -1,4 +1,7 @@
-"""웹 v0 응답 경계. 도메인 정수/검증기를 바꾸지 않고 엄격히 검사한다."""
+"""웹 v1 응답 경계. 도메인 정수/검증기를 바꾸지 않고 엄격히 검사한다.
+
+v1은 v0에 관측 자료 모드(`observed`)만 더한다. v0는 master/develop에서 유지한다.
+"""
 
 import re
 from datetime import datetime
@@ -9,7 +12,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from FRS.core.request_normalization import SupportedConditions
 from FRS.schema.scope import FORMATION_SLOTS, PRIORITY_CLUBS
 
-WEB_CONTRACT = "web-agent.v0"
+WEB_CONTRACT = "web-agent.v1"
+DataMode = Literal["synthetic", "observed"]
 Text = Annotated[str, Field(min_length=1)]
 BP = Annotated[str, Field(max_length=34, pattern=r"^(0|[1-9][0-9]*)$")]
 Salary = Annotated[str, Field(max_length=19, pattern=r"^(0|[1-9][0-9]*)$")]
@@ -141,7 +145,7 @@ class WebFinal(WireModel):
     versions: dict[Text, Text]
     answer: Text
     narration_source: Literal["template"]
-    data_mode: Literal["synthetic"]
+    data_mode: DataMode
 
     @model_validator(mode="after")
     def consistent(self):

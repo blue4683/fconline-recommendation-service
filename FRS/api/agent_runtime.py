@@ -1,14 +1,18 @@
-"""명시 합성 배치와 시작 시 모델 검증 기록. import 중 외부 I/O는 없다."""
+"""명시 합성 배치 또는 명시 관측 실행과 시작 시 모델 검증 기록.
+
+import 중 외부 I/O는 없다. 관측 실행은 로컬 가공 파일만 읽으며 최신 실행을 고르지 않는다.
+"""
 
 import json
 import os
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 import httpx2
 from dotenv import load_dotenv
-from pydantic import AwareDatetime, Field
+from pydantic import AwareDatetime, Field, model_validator
 
 from FRS.agent.json_contract import strict_json
 from FRS.agent.material import (
@@ -18,29 +22,50 @@ from FRS.agent.material import (
 )
 from FRS.agent.ollama_selection import OllamaIDSelector, selector_spec
 from FRS.agent.ollama_transport import LOCAL_ORIGIN
+from FRS.agent.real_material import RUN_ID_PATTERN, ObservedMaterial
 from FRS.api.agent_contract import WireModel
 from FRS.api.agent_projection import SelectionProvenance
 from FRS.core.candidate_search.search import BatchSelection
+from FRS.schema.models import DataStatus
 from FRS.schema.scope import ROOT
+
+HEALTH_SCHEMA = "agent-health.v2"
 
 
 class AgentSettings(WireModel):
+    data_mode: Literal["synthetic", "observed"] = "synthetic"
     run_id: Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]{0,47}$")]
-    observed_at: AwareDatetime
+    observed_at: AwareDatetime | None
     model: Literal["qwen3:8b"]
     model_digest: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
     seed: Literal[123]
     members_per_family: Literal[3]
 
+    @model_validator(mode="after")
+    def mode_inputs(self):
+        if self.data_mode == "synthetic":
+            if self.observed_at is None:
+                raise ValueError("합성 자료의 관측 시각을 명시해야 합니다.")
+        elif (
+            self.observed_at is not None
+            or re.fullmatch(RUN_ID_PATTERN, self.run_id) is None
+        ):
+            # 관측 시각은 자료에서 읽는다. 설정값으로 바꾸지 않는다.
+            raise ValueError("관측 자료는 실데이터 실행 ID만 명시합니다.")
+        return self
+
     @classmethod
     def from_env(cls):
         load_dotenv(ROOT / ".env", override=False)
+        mode = os.environ.get("AGENT_DATA_MODE", "") or "synthetic"
+        observed_at = os.environ.get("AGENT_OBSERVED_AT", "")
         return cls.model_validate(
             dict(
+                data_mode=mode,
                 run_id=os.environ.get("AGENT_RUN_ID", ""),
-                observed_at=datetime.fromisoformat(
-                    os.environ.get("AGENT_OBSERVED_AT", "")
-                ),
+                observed_at=None
+                if mode == "observed" and not observed_at
+                else datetime.fromisoformat(observed_at),
                 model="qwen3:8b",
                 model_digest=os.environ.get("AGENT_MODEL_DIGEST", ""),
                 seed=123,
@@ -108,33 +133,59 @@ class AgentService:
     _metadata: bytes = field(init=False, repr=False)
 
     def __post_init__(self):
-        if (
-            type(self.settings) is not AgentSettings
-            or type(self.material) is not SyntheticMaterial
+        if type(self.settings) is not AgentSettings or type(self.material) is not (
+            SyntheticMaterial
+            if self.settings.data_mode == "synthetic"
+            else ObservedMaterial
         ):
-            raise ValueError("검증 가능한 합성 서비스 설정이 필요합니다.")
+            raise ValueError("검증 가능한 자료 모드별 서비스 설정이 필요합니다.")
         if not callable(getattr(self.selector, "select", None)):
             raise ValueError("명시한 조건 추출기가 필요합니다.")
-        data = self.material.to_dict()
-        expected = SyntheticLeagueSpec(
-            **self.settings.model_dump(exclude={"model", "model_digest"})
-        )
-        if data["data_mode"] != "synthetic" or data["inputs"] != expected.model_dump(
-            mode="json"
-        ):
-            raise ValueError("시작 설정과 합성 배치가 일치하지 않습니다.")
-        deadline = min(
-            datetime.fromisoformat(r["valid_until"])
-            for rows in data["records"].values()
-            for r in rows
-        )
+        if self.settings.data_mode == "synthetic":
+            data = self.material.to_dict()
+            expected = SyntheticLeagueSpec(
+                **self.settings.model_dump(
+                    exclude={"data_mode", "model", "model_digest"}
+                )
+            )
+            if data["data_mode"] != "synthetic" or data[
+                "inputs"
+            ] != expected.model_dump(mode="json"):
+                raise ValueError("시작 설정과 합성 배치가 일치하지 않습니다.")
+            batches = data["batches"]
+            observed_at = self.settings.observed_at
+            deadline = min(
+                datetime.fromisoformat(r["valid_until"])
+                for rows in data["records"].values()
+                for r in rows
+            )
+        else:
+            if self.material.run_id != self.settings.run_id:
+                raise ValueError("시작 설정과 관측 실행이 일치하지 않습니다.")
+            batches = self.material.batches.model_dump()
+            # unknown 등 비정상 관측은 후보 검색이 제외하므로 기한 계산에서도 뺀다.
+            rows = [
+                row
+                for group in self.material.load(self.material.batches).values()
+                for row in group
+                if row.status == DataStatus.OK
+            ]
+            if not rows or any(row.valid_until is None for row in rows):
+                raise ValueError("기한이 있는 정상 관측 자료가 필요합니다.")
+            # 모든 관측이 끝난 시각부터 가장 이른 기한 전까지만 준비 상태다.
+            observed_at = max(row.observed_at for row in rows)
+            deadline = min(row.valid_until for row in rows)
         metadata = dict(
             id=self.material.material_id,
-            batches=data["batches"],
-            observed_at=self.settings.observed_at.isoformat(),
+            batches=batches,
+            observed_at=observed_at.isoformat(),
             valid_until=deadline.isoformat(),
         )
         object.__setattr__(self, "_metadata", json.dumps(metadata).encode())
+
+    @property
+    def data_mode(self):
+        return self.settings.data_mode
 
     @property
     def material_id(self):
@@ -158,7 +209,7 @@ class AgentService:
         metadata = json.loads(self._metadata)
         deadline = datetime.fromisoformat(metadata["valid_until"])
         reason = None
-        if now < self.settings.observed_at or now >= deadline:
+        if now < datetime.fromisoformat(metadata["observed_at"]) or now >= deadline:
             reason = "data_expired"
         verification = self.verification
         if type(verification) is not ModelVerification:
@@ -173,10 +224,10 @@ class AgentService:
         ):
             reason = reason or "model_unverified"
         return dict(
-            schema_version="agent-health.v1",
+            schema_version=HEALTH_SCHEMA,
             status="ready" if reason is None else "unavailable",
             reason=reason,
-            data_mode="synthetic",
+            data_mode=self.data_mode,
             model=dict(
                 name=self.settings.model,
                 digest=self.settings.model_digest,
@@ -192,13 +243,22 @@ class AgentService:
         )
 
 
-def build_service(settings, *, clock=utc_now, verifier=verify_model):
+def build_service(
+    settings, *, clock=utc_now, verifier=verify_model, processed_root=None
+):
     if type(settings) is not AgentSettings:
         raise ValueError("명시한 Agent 시작 설정이 필요합니다.")
     settings = AgentSettings.model_validate(settings.model_dump())
-    material = generate_synthetic_material(
-        SyntheticLeagueSpec(**settings.model_dump(exclude={"model", "model_digest"}))
-    )
+    if settings.data_mode == "synthetic":
+        material = generate_synthetic_material(
+            SyntheticLeagueSpec(
+                **settings.model_dump(exclude={"data_mode", "model", "model_digest"})
+            )
+        )
+    else:
+        material = ObservedMaterial(
+            processed_root or ROOT / "data" / "processed", settings.run_id
+        )
     service = AgentService(settings, material, OllamaIDSelector(settings.model), None)
     if service.health(clock())["reason"] == "data_expired":
         return service

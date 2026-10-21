@@ -251,6 +251,8 @@ W8 구현 후속 (2026-10-21): [구현 기록](rag-langsmith-implementation.md)�
 
 W8 실제1회 결정·결과 (2026-10-21): 사용자가 w8-rag-20261021-001의7질문·상태최대2/추론최대7·미국LangSmith FRS POST최대28+GET1을 승인했다. 실제 상태2·추론6·POST26/GET1, 사전 검사5/7·K03/K05 실패 보존, 첫root200·ID일치·이번Ollama종료·승인소진이다. 원문/답변/검색본문 전송 없음. [실제 결과](rag-langsmith-results.md)·INT-035를 따르며 기존24/25와 별도다. 새 Q&A 웹/추천 tracing·Multi-Agent/실데이터 완료로 확대하지 않는다.
 
+실데이터 브랜치 실행·계약 v1 결정 (2026-10-21, `feat/real-data` 전용): 사용자가 `real-data-20261021-a`(상한700·700회 stopped)와 `real-data-20261021-b`(상한1,700·1,656회 completed·리버풀1,634장)를 승인했음을 확인했다. 두 승인은 소진됐고 재개/재사용하지 않는다. 계약은 [실데이터 설계](real-data-branch-design.md) §6 제안대로 `web-agent.v1`·`agent-health.v2`·`data_mode=observed`를 채택하고 백엔드부터 바꾼다. master/develop의 v0는 유지한다. 첼시·바이에른 뮌헨 ID 확인/수집은 보류. 목록 가격 단위는 미확정(§12.4).
+
 ## 6. 목표 아키텍처
 
 ```
@@ -744,6 +746,7 @@ Stage 0 근거·표본·한계: [검증 기록](stage-0-validation.md). 일부 �
 
 | ID | 항목 | 상태 | 결과·메모 | 날짜 |
 |---|---|---|---|---|
+| 실데이터 v1 연결 | 관측 자료 모드·health v2 | 확인됨(로컬) | `feat/real-data`. 명시 run-id만·보고서 해시 검증·ok 행 기준 기한. 신규11·전체 pytest1,706·Ruff. real-data-20261021-b 읽기 전용 대조: ready·기한2026-10-22T08:03:29Z, 리버풀 정상 요청 optimal 11명·급여 누락 명확화·첼시 infeasible. 선택기/모델 검증 대역, 네트워크0. 목록 가격 단위 미확정. real-data-branch-design.md §12 | 2026-10-21 |
 | W8 실제 Q&A·관측 | 새 승인1회·고정7질문 | 실행 완료/품질5/7 | 소스baf6fab·상태2/추론6·정답출처검색4/4·답변3/4. K03누락/K05형식오류 보존. LangSmith POST26성공응답+첫rootGET200·ID일치. 본문미전송·이번서버종료·승인소진. INT-035·rag-langsmith-results.md | 2026-10-21 |
 | W8 Q&A·관측 구현 | 별도 RAG·LangSmith SDK·평가 | 확인됨(대역) | 허용문서3개/구간해시·TF-IDF상위3·단일생성/출처검증·독립HTTP/CLI·최소metadata trace/pending상한. 신규91/전체1,662·Ruff/환경/pip·대역7/7. 실제 모델/trace/브라우저0회. 기존추천/웹/실데이터 불변. INT-034·rag-langsmith-implementation.md | 2026-10-21 |
 | W7 발표 자료 | 5분 PPTX·노트 대본 | 사용자 결정·자료 준비 | 10/22(목)13:00 KST·5분 확정.7장/300초·저장N01/실제24/25/모델15/16/M02실패·합성한계.구조/글꼴/재가져오기·7장개별렌더 확인. 코드/웹/새모델/서버/수집/외부제출·발표·배포 없음. presentation-5min.md·INT-032 | 2026-10-21 |

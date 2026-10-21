@@ -473,6 +473,15 @@
 - 영향:문서/발표 산출물만. frontend/·WEB-*·기존 엔진/Agent/API/MCP/평가 코드 불변. 웹 담당은 별도knowledge-answer.v1 계약을 검토할 수 있으나 새 UI 구현/실제 연결은 미완료다. 기존 SSE 경로는 그대로다.
 - 남은 범위:Q&A 실제 웹 E2E·기존 추천 tracing·Multi-Agent·실데이터 통합·배포. 이 기록은 새 호출 승인이 아니다. 다음 담당은 통합(발표/검증 증거 정리).
 
+### INT-036 — 실데이터 자료 모드와 계약 v1 백엔드 반영 (2026-10-21)
+
+- 날짜/담당: 2026-10-21 / 통합. 구분: 변경 요청·통합 결과. 상태: 백엔드 구현·검증, 웹 대기. 브랜치 `feat/real-data`(develop `37f7f27` 병합 후).
+- 사용자 결정: [실데이터 설계](real-data-branch-design.md) §6 제안 채택. `web-agent.v1`·`agent-health.v2`·`data_mode` `"synthetic"|"observed"`. master/develop의 v0는 유지한다.
+- 변경 전 → 후: 요청·SSE의 `contract_version`과 `versions.web_contract`가 `web-agent.v1`이다. v0 요청은 422 `invalid_request`다. `started.payload.data_mode`와 최종 `data_mode`가 `"observed"`일 수 있다. `/health`는 `schema_version: "agent-health.v2"`, `data_mode`는 `"synthetic"`/`"observed"`, 설정 실패 시 `null`이다. `material` 키는 같다. 관측 모드의 성공/해 없음 `answer` 문구와 `progress.agent` 문구가 바뀐다(설계 §12.2).
+- 웹 담당에게 필요한 작업(`feat/real-data`에서만): v1 파서(`data_mode` 두 값, 요청 `contract_version` v1), health v2 파서(`data_mode` null 허용), 자료 모드별 안내·관측 시각 표시(설계 §7), v1 앱 코드로 fixture 재생성. 실제 선수명은 fixture에 넣지 않는다. 이 브랜치의 현재 웹은 v0라 실제 연결 시 요청이 거절된다.
+- 검증: 신규11·전체 pytest1,706·Ruff 통과. 실데이터 run b 읽기 전용 대조는 선택기/모델 검증 대역·네트워크0(설계 §12.3). 실제 모델·브라우저 미실행.
+- 다음 담당: 웹(파서·표시). 통합은 가격 단위 확인(설계 §12.4)과 §9의 7 승인 대기.
+
 ### 기록 양식 — 실제 작업 시 새 WEB-* 또는 INT-* 항목으로 복사
 
 - 날짜/시간(KST), 담당/역할, 고유 ID:

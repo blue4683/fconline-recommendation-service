@@ -53,7 +53,7 @@ def service(material):
 
 
 def request_body(message=SOURCE, request_id="request-1"):
-    return dict(contract_version="web-agent.v0", request_id=request_id, message=message)
+    return dict(contract_version="web-agent.v1", request_id=request_id, message=message)
 
 
 def parsed(response):

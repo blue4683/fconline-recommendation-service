@@ -35,6 +35,7 @@ ERROR_MESSAGES = {
 }
 CLARIFY = "필수 조건과 안내된 사유를 확인하고 완전한 요청을 다시 입력해 주세요."
 EXPIRED = "자료가 만료되어 추천을 반환하지 않습니다."
+DATA_MODES = ("synthetic", "observed")
 _PREPARATION_KINDS = {
     **dict.fromkeys(
         (
@@ -77,6 +78,7 @@ def projection_spec():
         preparation_kinds=dict(_PREPARATION_KINDS),
         errors=dict(ERROR_MESSAGES),
         messages=dict(clarification=CLARIFY, expiry=EXPIRED),
+        data_modes=list(DATA_MODES),
         presentation_version=presentation_spec()["presentation_version"],
         candidate_version=candidate_spec()["candidate_version"],
         selection_version=selection_spec()["selection_version"],
@@ -147,21 +149,32 @@ def error_outcome(code="internal_error"):
     return WebOutcome("error", canonical(dict(code=code, message=ERROR_MESSAGES[code])))
 
 
-def project_result(original, result, *, clock, provenance=None, material_id=None):
+def project_result(
+    original,
+    result,
+    *,
+    clock,
+    provenance=None,
+    material_id=None,
+    data_mode="synthetic",
+):
     """복구/모델 호출 없이 원문-준비-도메인 결과의 결합을 검사한다."""
     try:
+        if data_mode not in DATA_MODES:
+            raise ValueError("명시한 자료 모드가 필요합니다.")
         return _project(
             original,
             result,
             clock=clock,
             provenance=provenance,
             material_id=material_id,
+            data_mode=data_mode,
         )
     except (ValueError, TypeError, KeyError, ValidationError):
         return error_outcome()
 
 
-def _project(original, result, *, clock, provenance, material_id):
+def _project(original, result, *, clock, provenance, material_id, data_mode):
     if (
         type(result) is not CandidateRunResult
         or result.adapter_version != candidate_agent_spec()["adapter_version"]
@@ -215,7 +228,7 @@ def _project(original, result, *, clock, provenance, material_id):
             versions=versions,
             answer=CLARIFY,
             narration_source="template",
-            data_mode="synthetic",
+            data_mode=data_mode,
         )
         return WebOutcome(
             "final", canonical(WebFinal.model_validate(body).model_dump(mode="json"))
@@ -249,7 +262,7 @@ def _project(original, result, *, clock, provenance, material_id):
     # 선택을 대신 수행하는 것이 아니라 이미 반환된 전체 근거의 일치만 대조한다.
     if agent.normalization != normalize_conditions(original, evidence):
         raise ValueError("요청의 전체 출현 근거가 일치하지 않습니다.")
-    presented = present_agent_result(agent, clock=clock).to_dict()
+    presented = present_agent_result(agent, clock=clock, data_mode=data_mode).to_dict()
     versions.update(
         selection=selection_spec()["selection_version"],
         graph=agent.graph_version,
@@ -269,7 +282,7 @@ def _project(original, result, *, clock, provenance, material_id):
             not isinstance(material_id, str)
             or re.fullmatch(r"[0-9a-f]{64}", material_id) is None
         ):
-            raise ValueError("명시 합성 자료 ID가 필요합니다.")
+            raise ValueError("명시 자료 ID가 필요합니다.")
         versions["material"] = material_id
         if presented["snapshot"] is not None:
             snapshot = agent.build.snapshot

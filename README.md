@@ -12,6 +12,15 @@ AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-pr
 
 [R3 코드 출력](docs/validated-agent-presentation.md)은 검증된 합성 스쿼드 표·정확한 문자열 금액/급여·상태 안내를 만들고 출력 직전 기한을 확인합니다. 현재 설명은 코드 템플릿이며 실제 LLM 서술·웹/API 연결은 후속입니다.
 
+## 제출 자료
+
+- [5분 발표 구성·대본](docs/presentation-5min.md):10월22일13시·PPTX7장, 슬라이드 노트와 로컬 파일 정보
+
+- [AI Mini-Project 결과 보고서](docs/ai-mini-project-results.md):목표·구조·측정 결과·M02 실패·한계
+- [재현·시연 안내](docs/demo-reproduction-guide.md):추가 모델 요청 없는 검사/대역 실행, 저장 결과 확인, 모의 화면과 실제 연결의 구분
+
+보고서는 제출용 Markdown 초안입니다. 외부 제출·PPT/녹화·배포는 완료하지 않았으며 실제 모델 호출 승인은 소진됐습니다.
+
 ## 포지션 분류 평가
 
 2026-10-19, 1-B/C의 기본 5강 **1,104카드·1,740라벨 행**, 70/30·시드 123·XGBoost 2024 설정·임계값 0.1로 비교했습니다. 포지션 분류 확률은 선수 성능 점수가 아닙니다.
@@ -132,11 +141,11 @@ GET /health, GET /cards/{spid}(필수 batch_id·version), POST /recommend/positi
 
 로컬 추출 어댑터와 1회 비교의 범위·사전 점검 중단 결과: [Ollama 비교 기록](docs/ollama-extraction-comparison.md). 새 승인으로 두 모델×5회 비교를 완료했으며 현재 직접 구간 생성 방식은 두 모델 모두 의미 0/5로 채택 보류다.
 
-정형 조건문의 후보 생성·ID 검증·기존 엔진 연결(합성 검증): [C1~C3 구현 결과](docs/controlled-candidate-selection.md). [실제 ID 선택 소량 비교](docs/ollama-candidate-selection-results.md)에서는 8B 6/6·2B 5/6의 근거/정규화 일치를 확인했습니다. 정형 입력의 제한된 검증이며 사용자는 qwen3:8b를 데모 추출 모델로 채택했습니다. [HTTP/SSE 설계](docs/agent-http-sse-contract.md)를 정리했고 Agent API/웹 실연결은 후속입니다.
+정형 조건문의 후보 생성·ID 검증·기존 엔진 연결(합성 검증): [C1~C3 구현 결과](docs/controlled-candidate-selection.md). [실제 ID 선택 소량 비교](docs/ollama-candidate-selection-results.md)에서는 8B 6/6·2B 5/6의 근거/정규화 일치를 확인했습니다. 정형 입력의 제한된 검증이며 사용자는 qwen3:8b를 데모 추출 모델로 채택했습니다. [HTTP/SSE 설계](docs/agent-http-sse-contract.md) 뒤 [Agent API](docs/synthetic-agent-api.md)와 [실제 브라우저3사례](docs/agent-browser-e2e.md)를 구현·검증했습니다. 아래 초기 단계와 후속 결과를 구분합니다.
 
-[W4-1 웹 경계 코드](docs/agent-web-contract-implementation.md)는 엄격 DTO·오류 투영·요청/SSE 직렬화를 합성 검증했습니다. 실제 Agent HTTP 앱/브라우저 연결은 후속입니다.
+[W4-1 웹 경계 코드](docs/agent-web-contract-implementation.md)는 엄격 DTO·오류 투영·요청/SSE 직렬화를 합성 검증했습니다. 후속 W4-2/3에서 실제 Agent HTTP 앱과 브라우저 연결을 별도로 검증했습니다.
 
-[별도 합성 Agent HTTP/SSE 앱](docs/synthetic-agent-api.md)은 GET /health·POST /recommend/squad/stream과 단일실행/기한/중단을 합성 검증했습니다. 수동 실행은 명시한 합성 배치/관측 시각·모델 digest와 실제 모델 상태 확인 범위가 필요합니다. 현재 상주 서버·실제 모델/브라우저 E2E는 미실행입니다.
+[별도 합성 Agent HTTP/SSE 앱](docs/synthetic-agent-api.md)은 GET /health·POST /recommend/squad/stream과 단일실행/기한/중단을 합성 검증했습니다. 수동 실행은 명시한 합성 배치/관측 시각·모델 digest와 실제 모델 상태 확인 범위가 필요합니다. 실제 모델 ASGI/브라우저3사례 검증을 마쳤고 검증용 서버는 종료했습니다. W6의 내부25문장 평가와 범위를 구분합니다.
 
 
 ### 로컬 stdio MCP (합성 데모)

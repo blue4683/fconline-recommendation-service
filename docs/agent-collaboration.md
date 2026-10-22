@@ -25,8 +25,8 @@
 | 웹 계약 | web-agent.v0 구현/검증: agent-http-sse-contract.md·INT-022~025. 실제 브라우저3사례 확인·검증용 서버 종료 |
 | 실제 기존 API | GET /health, GET /cards/{spid}, POST /recommend/position. 채팅/스쿼드 스트림 아님 |
 | 보호 경로 | 웹은 frontend/ 웹 파일과 자기 WEB-* 기록만 수정. frontend/AGENTS.md·FRS/·기존 tests/·공통 설정 등은 읽기 전용 |
-| 검증 기준 | Python 필수 검사 유지. W5#84 통합 기준Python1,492·웹 Node22/타입·108테스트·빌드 통과. 웹CI 미구축. W6 문서에서 새로 실행한 수치가 아님 |
-| 구현된 자동 보호 | Python CI만 존재. 경로 자동 차단/웹 CI·파일 권한 격리는 미구축 |
+| 검증 기준 | Python 필수 검사 유지. 웹 CI 후속(INT-CI-001): 로컬Python2,089·웹 Node22.23.3/npm10.9.9·타입/129테스트/빌드 통과. 최신 head의 Python/웹 CI 결과는 해당 PR에서 확인 |
+| 구현된 자동 보호 | Python CI와 별도 웹 CI. 경로 자동 차단·파일 권한 격리는 미구축. CI는 실제 브라우저/모델 E2E나 브랜치 보호 설정을 대신하지 않음 |
 | 데이터/실행 | 합성 Agent MVP 우선. 1-D/1-F 미완료, 새 수집·실모델 실행/비용·외부 tracing 승인 확대 없음 |
 
 ## 계약·환경 확인 대기
@@ -37,12 +37,19 @@
 | WEB-001 | Node/npm·Vue/Vite/TypeScript·테스트 도구 버전과 설치/검증 명령 | 웹 | 구현. 버전 고정·명령은 아래 WEB-001과 frontend/README. 웹 CI 추가는 INT-004 대기 |
 | INT-002 | 경로·주소/origin·CORS·실행/준비 상태 | 통합 | 별도 합성 앱/8001·origin2개/readiness·임시 실제 연결 검증(INT-023~025). 검증용 서버 종료 |
 | INT-003 | 동시 실행·중복·취소·시간 상한/재시도 정책 | 통합 | 동시1/대기0/초과409·150초/보수적 종료 구현(INT-023). ID 상관관계만·중복 억제 없음·재시도0 |
-| INT-004 | mock/live 계약 검사·보호 경로 확인·웹 CI 구성 | 통합 | 웹 도구/스크립트 확정 후 별도 구현/검증. 현재 자동 차단 없음 |
+| INT-004 | mock/live 계약 검사·보호 경로 확인·웹 CI 구성 | 통합 | 기존 가상 fixture 검사와 웹 CI는 INT-CI-001. 최신 백엔드 fixture 재생성·경로 자동 차단은 별도 후속 |
 | INT-005 | 실제 합성 Agent 연결과 최종 만료/설명 검사 | 통합 | W1~W4 백엔드 구현 후 엔드포인트·PR·SHA·합성 대조 결과 공유 |
 
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-CI-001 — 웹 타입·테스트·빌드 자동 검증 (2026-10-22)
+
+- 통합 / 사용자가 MF-2 실제 평가 준비를 다른 담당에게 맡겼음을 확인한 후 독립 웹 CI를 진행했다. 기준 developb568efbacc50a8d1c4bb2f541c4de4e5aca272a4의 공용 기록/웹 설계도 확인. docs/frontend-ci.md에 기존 미구축 상태의 후속과 검증 한계를 기록한다.
+- 새 frontend.yml은 기존 Python CI와 같은 세 대상 PR/push에서 Node22.23.3/npm10.9.9·lock 설치·타입 검사·테스트·빌드를 수행한다. checkout/setup-node는 SHA 고정, contents:read·10분·npm lock 캐시이며 기존 Python workflow는 유지한다.
+- 로컬 웹 타입/129테스트/빌드, 전체pytest2,089(35.17초/4worker)·Ruff lint/format278·환경/pip·문서 링크, YAML 이벤트/작업 경로/캐시/SHA/실패 정책을 확인했다. 최신 head의 실제 Python/웹 CI 결과는 PR에서 확인한다.
+- frontend 문서/지침의 CI 상태만 갱신하고 웹 앱·package/lock·API/엔진·MF-2/3·WEB-*는 수정하지 않는다. 경로 보호/브랜치 보호 설정·실모델·브라우저·DB·수집·배포는 포함하지 않으며 상대 수신/확인을 주장하지 않는다. master#143 초안/충돌·소진 승인·기존 자료/기한·타 담당은 보존한다.
 
 ### INT-SCORE-003 — MF-2 선호 평가 계약·도구 (2026-10-22)
 

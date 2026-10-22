@@ -3,6 +3,7 @@
 import hashlib
 import json
 import random
+import re
 from datetime import timedelta
 
 import pytest
@@ -210,6 +211,71 @@ def test_form_hides_ovr_scores_and_weights_and_escapes_text(policy):
     assert "<b>선수" not in form
     assert pset.version in form and "판단 불가" in form
     assert form.count('type="radio"') == 4 * len(pset.pairs)
+
+
+def test_form_aligns_both_sides_with_korean_labels_and_exact_differences(policy):
+    cards = pool()
+    cards = [
+        card.model_copy(
+            update={"stats": {**card.stats, "speed": 120 + index, "accelartion": 0}}
+        )
+        for index, card in enumerate(cards)
+    ]
+    pset, _ = select_pairs(spec(policy), policy=policy, cards=cards)
+    before = pset.model_dump()
+    form = render_form(pset, cards=cards, policy=policy)
+    by_spid = {card.spid: card for card in cards}
+    blocks = re.findall(r'<section class="pair".*?</section>', form, re.S)
+    assert len(blocks) == len(pset.pairs)
+    for pair, block in zip(pset.pairs, blocks):
+        a, b = by_spid[pair.a.card.spid], by_spid[pair.b.card.spid]
+        row = re.search(r'<tr data-stat="speed">(.*?)</tr>', block).group(1)
+        delta = a.stats["speed"] - b.stats["speed"]
+        assert 'scope="row">속력</th>' in row
+        assert re.findall(r"<td[^>]*>(.*?)</td>", row) == [
+            str(a.stats["speed"]),
+            str(b.stats["speed"]),
+            f"{delta:+d}",
+        ]
+        assert row.count('class="higher"') == 1
+        equal = re.search(r'<tr data-stat="accelartion">(.*?)</tr>', block).group(1)
+        assert re.findall(r"<td[^>]*>(.*?)</td>", equal) == ["0", "0", "같음"]
+        assert 'class="higher"' not in equal
+        assert block.count("data-stat=") == 34
+    assert pset.model_dump() == before
+
+
+def test_form_does_not_rank_body_or_unknown_values(policy):
+    cards = pool()
+    cards = [
+        card.model_copy(
+            update={"height": None if index % 2 else 180, "weight": 80 + index}
+        )
+        for index, card in enumerate(cards)
+    ]
+    pset, _ = select_pairs(spec(policy), policy=policy, cards=cards)
+    form = render_form(pset, cards=cards, policy=policy)
+    for label in ("키", "몸무게", "체형"):
+        rows = re.findall(rf'<tr><th scope="row">{label}</th>(.*?)</tr>', form)
+        assert len(rows) == len(pset.pairs)
+        assert all('class="higher"' not in row for row in rows)
+    heights = re.findall(r'<tr><th scope="row">키</th>(.*?)</tr>', form)
+    assert all("미상" in row and "—" in row for row in heights)
+
+
+def test_form_navigation_keeps_original_sheet_identity_and_input_names(policy):
+    cards = pool()
+    pset, _ = select_pairs(spec(policy), policy=policy, cards=cards)
+    form = render_form(pset, cards=cards, policy=policy)
+    meta = json.loads(re.search(r"const META = (.*);", form).group(1))
+    assert meta["set_version"] == pset.version
+    assert meta["pairs"] == [pair.pair_id for pair in pset.pairs]
+    assert 'const KEY = "mf2-sheet-" + META.set_version;' in form
+    for pair in pset.pairs:
+        assert form.count(f'name="v-{pair.pair_id}"') == 4
+        assert form.count(f'name="r-{pair.pair_id}"') == 1
+    assert '<select id="pair-select" aria-label="비교할 쌍">' in form
+    assert "<!--PAIRS-->" not in form and "/*META*/" not in form
 
 
 def test_template_and_import_keep_the_frozen_set_and_mark_human_judgments(policy):

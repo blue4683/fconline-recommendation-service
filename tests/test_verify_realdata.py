@@ -15,8 +15,10 @@ from test_realdata_catalog import (
     OBSERVED,
     OTHER,
     NationServer,
+    OvrServer,
     Server,
     TwoClubServer,
+    ovr_template,
     template,
 )
 
@@ -24,6 +26,7 @@ from FRS.utils.crawling.realdata_catalog import RealDataRun
 from FRS.utils.crawling.verify_pilot import VerificationError
 from FRS.utils.crawling.verify_realdata import (
     check_independently,
+    check_ovr_leaves,
     check_records,
     main,
     verify,
@@ -273,3 +276,35 @@ def test_an_empty_cell_must_be_the_no_result_page(standard):
     assert check_independently(
         state, report, changed, processed, None, allow_empty_cells=True
     )
+
+
+def test_an_ovr_split_run_verifies_and_rejects_bad_ovr_leaves(tmp_path):
+    raw, processed, report = collect(
+        tmp_path,
+        OvrServer(),
+        template=ovr_template(),
+        positions=("ST", "GK"),
+        position_field="strPosition",
+        allow_empty_cells=False,
+        split_ovr=True,
+        max_attempts=500,
+    )
+    assert report["status"] == "completed" and report["catalog_cards"] == 325
+    result = verify(
+        raw, processed, positions=("ST", "GK"), position_field="strPosition"
+    )
+    assert result["verified"]
+
+    group = ("가상클럽", 7, 7, "ST")
+    a, b = {b"1", b"2"}, {b"3"}
+    good = {(*group, (0, 100)): a, (*group, (101, 200)): b}
+    state = {"split_ovr": True}
+    check_ovr_leaves(state, good, {})
+    with pytest.raises(VerificationError, match="같은 카드"):
+        check_ovr_leaves(state, {(*group, (0, 100)): a, (*group, (101, 200)): a}, {})
+    with pytest.raises(VerificationError, match="덮지 않습니다"):
+        check_ovr_leaves(state, {(*group, (0, 100)): a}, {})
+    with pytest.raises(VerificationError, match="아래 칸"):
+        check_ovr_leaves(state, good, {(*group, None): a | b | {b"9"}})
+    with pytest.raises(VerificationError, match="쓰지 않은 실행"):
+        check_ovr_leaves({}, good, {})

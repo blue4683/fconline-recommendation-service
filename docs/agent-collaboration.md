@@ -44,6 +44,13 @@
 
 ## 진행·변경·질문 기록
 
+### INT-SCORE-003 — MF-2 선호 평가 계약·도구 (2026-10-22)
+
+- 통합 / 사용자 MF-2 진행 요청, 기준 develop77e4fe2079675c16ffb51702e62308bea7f243c0(#141·#142 병합 후)과 INT-SCORE-001/002 확인. docs/multi-factor-preference-evaluation.md에 코드·설계 차이 검토, 세트/보고서 계약, 사용법, 결정 대기 MF2-D1~D6을 기록한다.
+- FRS/evaluation/multi_factor.py에 PreferenceSet(쌍·슬롯·관측 키·강화·배치/정책 버전·출처·판단·근거·판단자·성향·시점·조정/보류)·순수 평가기·오프라인 CLI를 추가했다. 정답은 판단 자료이며 scorer 출력으로 만들지 않는다. 사람/합성 판단·조정/보류 분할을 합치지 않고, 보류 평가용 사람 판단이 없으면 품질 not_evaluated, 기준 없음(criteria/passed=null)이다.
+- 검증: 신규37/전체pytest2,089(32.92초/4worker)·Ruff lint·format280파일·환경/pip 통과. 합성 예제는 가상 카드8·합성 판단4건이며 실제 선호 일치율이 아니다. 최신 head CI/PR은 실제 상태로 확인한다.
+- 운영 OVR scorer/스냅샷/CP-SAT/탐욕/독립 스쿼드 검증/Agent/API/MCP/웹 및 WEB-*·frontend/는 수정하지 않았다. 웹 영향 없음(새 wire 없음). 상대 수신/확인을 주장하지 않는다. 실자료/DB·모델/metadata·수집·학습·서버/브라우저·배포0, 이전 실행/잠금·관측 상태/기한·1-D/F 미완료·타 담당 체크아웃과 master PR#143 상태 보존.
+
 ### INT-SCORE-002 — MF-1 순수 다요소 scorer 구현 (2026-10-22)
 
 - 통합 / 사용자 설계 기반 구현 요청, 기준 develop6c07be70bea0d3209d501bdab6e1ca6346f65367 및 INT-SCORE-001/웹 설계도 확인. 첫 증분은 명시 실험 정책·순수 계산·합성 검증이다. docs/multi-factor-performance-implementation.md에 입력/출력·검증·후속 경계를 기록한다.

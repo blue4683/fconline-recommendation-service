@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MF-2 선수 비교 · 판단 양식</title>
+<style>
+:root { color-scheme: light dark; --bg:#f5f7fa; --panel:#fff; --fg:#182230;
+  --muted:#586577; --line:#dce3ec; --soft:#eef2f7; --accent:#245ad1; --high:#e9f1ff; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#131923; --panel:#1b2432; --fg:#edf2f9; --muted:#b1bed0;
+    --line:#3a485c; --soft:#253144; --accent:#91b6ff; --high:#263f62; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg);
+  font:15px/1.55 system-ui,-apple-system,sans-serif; }
+main { max-width:1100px; margin:auto; padding:28px 24px 48px; }
+h1 { font-size:28px; letter-spacing:-.04em; margin:0 0 8px; }
+p { margin:8px 0; }
+.intro,.set-info,.hint { color:var(--muted); }
+.set-info { font-size:12px; overflow-wrap:anywhere; }
+.judge-fields { display:grid; grid-template-columns:1fr 2fr; gap:16px; margin:20px 0; }
+.judge-fields label,.rationale { font-size:13px; font-weight:600; }
+input[type=text],textarea,select,button { font:inherit; color:var(--fg); }
+input[type=text],textarea,select { border:1px solid var(--line); border-radius:8px;
+  background:var(--panel); padding:9px 12px; }
+input[type=text],textarea { width:100%; display:block; margin-top:6px; }
+textarea { resize:vertical; }
+button { border:1px solid var(--line); border-radius:8px; background:var(--panel);
+  padding:9px 14px; cursor:pointer; font-weight:600; }
+button:disabled { opacity:.45; cursor:default; }
+button:hover:not(:disabled) { border-color:var(--accent); }
+button.primary { background:var(--accent); color:var(--panel); border-color:var(--accent); }
+:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+.toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px;
+  position:sticky; top:0; z-index:2; padding:12px 0; background:var(--bg);
+  border-bottom:1px solid var(--line); }
+.navigation { display:flex; align-items:center; gap:8px; }
+.navigation select { max-width:280px; }
+.save-area { display:flex; gap:16px; align-items:center; }
+#progress { color:var(--muted); font-size:13px; white-space:nowrap; }
+[hidden] { display:none !important; }
+.hint { font-size:13px; margin:14px 0 18px; }
+.hint-mark { background:var(--high); border-radius:4px; padding:2px 6px; color:var(--fg); }
+.pair { margin-top:20px; }
+h2 { font-size:20px; margin:0 0 14px; }
+h2 span { margin-left:12px; color:var(--muted); font-size:13px; font-weight:400; }
+.sides { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; }
+.player-heading { position:relative; border:1px solid var(--line); border-radius:12px;
+  background:var(--panel); padding:18px 20px 18px 58px; min-width:0; }
+.side-label { position:absolute; left:18px; top:19px; width:28px; height:28px;
+  display:grid; place-items:center; border-radius:8px; background:var(--soft); font-weight:700; }
+h3 { font-size:20px; margin:0 0 4px; overflow-wrap:anywhere; }
+.player-heading p { color:var(--muted); font-size:13px; margin:3px 0; overflow-wrap:anywhere; }
+.player-heading .traits { color:var(--fg); margin-top:8px; }
+.comparison-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  align-items:start; }
+.comparison-group { border:1px solid var(--line); background:var(--panel);
+  border-radius:10px; overflow:hidden; }
+table { width:100%; border-collapse:collapse; table-layout:fixed; }
+caption { text-align:left; padding:10px 14px; font-weight:700; background:var(--soft); }
+th,td { padding:7px 10px; border-top:1px solid var(--line); }
+thead th { font-size:12px; color:var(--muted); text-align:center; font-weight:500; }
+thead th:first-child { width:38%; text-align:left; }
+thead th:last-child { width:22%; }
+thead small { display:block; font-size:10px; }
+tbody th { font-size:13px; text-align:left; font-weight:500; overflow-wrap:anywhere; }
+td { text-align:center; font-variant-numeric:tabular-nums; font-weight:600; }
+td.higher { background:var(--high); color:var(--accent); }
+td.difference { font-size:12px; color:var(--muted); font-weight:400; }
+.observation { color:var(--muted); font-size:12px; margin:16px 0 20px; overflow-wrap:anywhere; }
+summary { cursor:pointer; }
+fieldset { border:1px solid var(--line); border-radius:10px; padding:14px;
+  margin:0 0 16px; background:var(--panel); display:flex; flex-wrap:wrap; gap:12px; }
+legend { font-weight:700; padding:0 6px; }
+fieldset label { display:flex; gap:6px; align-items:center; border:1px solid var(--line);
+  border-radius:8px; padding:10px 16px; cursor:pointer; }
+fieldset label:has(input:checked) { border-color:var(--accent); background:var(--high); }
+input[type=radio] { accent-color:var(--accent); }
+.pair-actions { display:flex; justify-content:space-between; margin-top:20px; }
+@media (max-width:720px) {
+  main { padding:20px 12px 32px; }
+  h1 { font-size:24px; }
+  .judge-fields,.comparison-grid { grid-template-columns:1fr; gap:12px; }
+  .toolbar { flex-wrap:wrap; gap:8px; }
+  .navigation { width:100%; }
+  .navigation select { flex:1; min-width:0; max-width:none; }
+  .save-area { width:100%; justify-content:space-between; }
+  .sides { gap:8px; }
+  .player-heading { padding:12px; }
+  .side-label { position:static; margin-bottom:8px; }
+  h3 { font-size:17px; }
+  h2 span { display:block; margin:2px 0 0; }
+  fieldset { gap:8px; }
+  fieldset label { flex:1 1 40%; justify-content:center; padding:10px 6px; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>두 선수, 같은 항목으로 비교하세요</h1>
+<p class="intro">해당 슬롯에서 능력만 보고 더 쓰고 싶은 선수를 골라 주세요.<br>
+OVR·평가 점수·가격·급여는 숨겼으며, A/B 순서는 무작위입니다.</p>
+<p class="set-info">세트 <!--SET_ID--> · 기준 시각 <!--REFERENCE--> · <!--COUNT-->쌍</p>
+<div class="judge-fields">
+<label for="judge">판단자 ID(가명)<input type="text" id="judge" placeholder="예: judge-01"></label>
+<label for="style">플레이 성향<input type="text" id="style" placeholder="예: 측면 돌파 위주"></label>
+</div>
+<div class="toolbar">
+<nav class="navigation" aria-label="비교 쌍 이동" hidden>
+<button id="previous" type="button" aria-label="이전 비교">←</button>
+<select id="pair-select" aria-label="비교할 쌍"></select>
+<button id="next" type="button" aria-label="다음 비교">→</button>
+</nav>
+<div class="save-area"><span id="progress" role="status" aria-live="polite"></span>
+<button class="primary" id="save" type="button">판단 파일 저장</button></div>
+</div>
+<p class="hint"><span class="hint-mark">파란 칸</span>은 해당 수치가 더 큰 쪽입니다.
+차이는 A − B이며, 전체 성능의 우열을 뜻하지 않습니다. 키·몸무게·체형에는 우열을 표시하지 않습니다.</p>
+<!--PAIRS-->
+</main>
+<script>
+const META = /*META*/;
+// Keep the original key and sheet contract so earlier drafts still load.
+const KEY = "mf2-sheet-" + META.set_version;
+const times = {};
+const sections = [...document.querySelectorAll(".pair")];
+const selector = document.getElementById("pair-select");
+let current = 0;
+function read() {
+  return META.pairs.map(id => {
+    const picked = document.querySelector(`input[name="v-${id}"]:checked`);
+    const text = document.querySelector(`textarea[name="r-${id}"]`).value;
+    return { pair_id: id, verdict: picked ? picked.value : null, rationale: text,
+      judged_at: picked ? (times[id] || null) : null };
+  });
+}
+function sheet() {
+  return { schema_version: META.schema_version, set_id: META.set_id,
+    set_version: META.set_version, judge_id: document.getElementById("judge").value.trim(),
+    play_style: document.getElementById("style").value.trim(), entries: read() };
+}
+function update() {
+  const entries = read();
+  const done = entries.filter(e => e.verdict && e.rationale.trim()).length;
+  document.getElementById("progress").textContent = `${done} / ${META.pairs.length} 완료`;
+  entries.forEach((entry, index) => {
+    const complete = entry.verdict && entry.rationale.trim();
+    selector.options[index].textContent = `${complete ? "✓ " : ""}${index + 1}. ${entry.pair_id}`;
+  });
+  try { localStorage.setItem(KEY, JSON.stringify({ s: sheet(), t: times })); } catch (e) {}
+}
+function showPair(index, focus = true) {
+  current = Math.max(0, Math.min(index, sections.length - 1));
+  sections.forEach((section, i) => { section.hidden = i !== current; });
+  selector.value = String(current);
+  document.getElementById("previous").disabled = current === 0;
+  document.getElementById("next").disabled = current === sections.length - 1;
+  document.querySelectorAll("[data-move]").forEach(button => {
+    button.disabled = Number(button.dataset.move) < 0 ? current === 0 : current === sections.length - 1;
+  });
+  if (focus) {
+    sections[current].querySelector("h2").focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+}
+sections.forEach((section, index) => {
+  selector.add(new Option("", String(index)));
+});
+document.querySelector(".navigation").hidden = false;
+document.getElementById("previous").addEventListener("click", () => showPair(current - 1));
+document.getElementById("next").addEventListener("click", () => showPair(current + 1));
+selector.addEventListener("change", () => showPair(Number(selector.value)));
+document.querySelectorAll("[data-move]").forEach(button => {
+  button.addEventListener("click", () => showPair(current + Number(button.dataset.move)));
+});
+document.addEventListener("input", event => {
+  const name = event.target.name || "";
+  if (name.startsWith("v-") || name.startsWith("r-")) {
+    times[name.slice(2)] = new Date().toISOString();
+  }
+  update();
+});
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (saved) {
+    Object.assign(times, saved.t || {});
+    document.getElementById("judge").value = saved.s.judge_id || "";
+    document.getElementById("style").value = saved.s.play_style || "";
+    for (const e of saved.s.entries) {
+      if (e.verdict) {
+        const box = document.querySelector(`input[name="v-${e.pair_id}"][value="${e.verdict}"]`);
+        if (box) box.checked = true;
+      }
+      const area = document.querySelector(`textarea[name="r-${e.pair_id}"]`);
+      if (area) area.value = e.rationale || "";
+    }
+  }
+} catch (e) {}
+document.getElementById("save").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(sheet(), null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "judgments.json";
+  link.click();
+});
+update();
+const firstPending = read().findIndex(entry => !entry.verdict || !entry.rationale.trim());
+showPair(firstPending < 0 ? 0 : firstPending, false);
+</script>
+</body>
+</html>

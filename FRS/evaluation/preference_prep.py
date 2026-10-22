@@ -94,6 +94,14 @@ _GROUP_LABELS = dict(
     physical="경합·활동",
     gk="GK",
 )
+_STAT_LABELS = {
+    key: label
+    for label, key in json.loads(
+        (Path(__file__).parents[1] / "schema" / "keyword.json").read_text(
+            encoding="utf-8"
+        )
+    ).items()
+}
 _VERDICT_LABELS = (
     ("prefer_a", "A 선호"),
     ("prefer_b", "B 선호"),
@@ -368,51 +376,102 @@ def _shown(value, suffix=""):
     return "미상" if value is None else f"{value}{suffix}"
 
 
-def _card_html(label, card, side, policy):
-    feet = card.left_foot, card.right_foot
-    weak = "미상" if None in feet else min(feet)
-    skills = "미상" if card.skills is None else ", ".join(card.skills) or "없음"
-    body_text = " · ".join(
-        (_shown(card.height, "cm"), _shown(card.weight, "kg"), _shown(card.physical))
+def _comparison_row(label, a, b, *, suffix="", highlight=False, stat=None):
+    numeric = isinstance(a, int) and isinstance(b, int)
+    delta = a - b if numeric else None
+    difference = (
+        "—" if delta is None else ("같음" if delta == 0 else f"{delta:+d}{suffix}")
     )
+    a_class = ' class="higher"' if highlight and numeric and a > b else ""
+    b_class = ' class="higher"' if highlight and numeric and b > a else ""
+    attr = f' data-stat="{html.escape(stat)}"' if stat else ""
+    return (
+        f'<tr{attr}><th scope="row">{html.escape(label)}</th>'
+        f"<td{a_class}>{html.escape(_shown(a, suffix))}</td>"
+        f"<td{b_class}>{html.escape(_shown(b, suffix))}</td>"
+        f'<td class="difference">{html.escape(difference)}</td></tr>'
+    )
+
+
+def _comparison_table(title, rows):
+    return (
+        '<div class="comparison-group"><table>'
+        f"<caption>{html.escape(title)}</caption>"
+        '<thead><tr><th scope="col">항목</th><th scope="col">A</th>'
+        '<th scope="col">B</th><th scope="col">차이 <small>A − B</small></th>'
+        f"</tr></thead><tbody>{''.join(rows)}</tbody></table></div>"
+    )
+
+
+def _comparison_html(a, b, policy):
     rows = [
-        ("카드", f"{card.name} · 시즌 {card.season_id} · spid {card.spid}"),
-        ("강화", f"{side.reinforce_level}강"),
-        ("등록 포지션", ", ".join(p.value for p in card.positions)),
-        ("키·몸무게·체형", body_text),
-        (
-            "왼발·오른발 (약발)",
-            f"{_shown(feet[0])} · {_shown(feet[1])} (약발 {weak})",
+        _comparison_row("키", a.height, b.height, suffix="cm"),
+        _comparison_row("몸무게", a.weight, b.weight, suffix="kg"),
+        _comparison_row("체형", a.physical, b.physical),
+        _comparison_row("왼발", a.left_foot, b.left_foot, highlight=True),
+        _comparison_row("오른발", a.right_foot, b.right_foot, highlight=True),
+        _comparison_row(
+            "약발",
+            None
+            if None in (a.left_foot, a.right_foot)
+            else min(a.left_foot, a.right_foot),
+            None
+            if None in (b.left_foot, b.right_foot)
+            else min(b.left_foot, b.right_foot),
+            highlight=True,
         ),
-        ("개인기", _shown(card.dribble_skill)),
-        ("특성", skills),
-        ("관측", f"{card.batch_id} · {card.observed_at.isoformat()}"),
+        _comparison_row("개인기", a.dribble_skill, b.dribble_skill, highlight=True),
     ]
-    body = "".join(
-        f"<tr><th>{html.escape(k)}</th><td>{html.escape(v)}</td></tr>" for k, v in rows
-    )
+    tables = [_comparison_table("신체·양발·개인기", rows)]
     for group in sorted(policy.groups, key=lambda g: list(_GROUP_LABELS).index(g.name)):
-        values = " · ".join(
-            f"{html.escape(s.name)} {_shown(card.stats.get(s.name))}"
-            for s in sorted(group.stats, key=lambda s: s.name)
+        tables.append(
+            _comparison_table(
+                _GROUP_LABELS[group.name],
+                [
+                    _comparison_row(
+                        _STAT_LABELS[s.name],
+                        a.stats.get(s.name),
+                        b.stats.get(s.name),
+                        highlight=True,
+                        stat=s.name,
+                    )
+                    for s in group.stats
+                ],
+            )
         )
-        body += f"<tr><th>{_GROUP_LABELS[group.name]}</th><td>{values}</td></tr>"
-    return f'<div class="card"><h3>{label}</h3><table>{body}</table></div>'
+    return '<div class="comparison-grid">' + "".join(tables) + "</div>"
+
+
+def _card_heading(label, card, side):
+    skills = "미상" if card.skills is None else ", ".join(card.skills) or "없음"
+    positions = ", ".join(p.value for p in card.positions)
+    return (
+        '<div class="player-heading">'
+        f'<span class="side-label">{label}</span>'
+        f"<h3>{html.escape(card.name)}</h3>"
+        f"<p>시즌 {html.escape(str(card.season_id))} · {side.reinforce_level}강</p>"
+        f"<p>{html.escape(positions)}</p>"
+        f'<p class="traits">특성: {html.escape(skills)}</p></div>'
+    )
 
 
 def render_form(pset, *, cards, policy):
     """로컬 판단 양식(HTML). OVR·점수·방식 선택·가격은 넣지 않는다."""
     by_key = {(c.spid, c.batch_id, c.version): c for c in cards}
     blocks = []
-    for pair in pset.pairs:
+    for index, pair in enumerate(pset.pairs, 1):
         sides = []
+        pair_cards = []
         for label, side in (("A", pair.a), ("B", pair.b)):
             key = side.card
-            sides.append(
-                _card_html(
-                    label, by_key[(key.spid, key.batch_id, key.version)], side, policy
-                )
-            )
+            card = by_key[(key.spid, key.batch_id, key.version)]
+            pair_cards.append(card)
+            sides.append(_card_heading(label, card, side))
+        observed = "".join(
+            f"<p>{label} · spid {card.spid} · {html.escape(card.batch_id)} · "
+            f"{html.escape(card.observed_at.isoformat())}</p>"
+            for label, card in zip(("A", "B"), pair_cards)
+        )
         radios = "".join(
             f'<label><input type="radio" name="v-{pair.pair_id}" value="{v}"> '
             f"{text}</label>"
@@ -420,11 +479,19 @@ def render_form(pset, *, cards, policy):
         )
         blocks.append(
             f'<section class="pair" data-pair="{pair.pair_id}">'
-            f"<h2>{pair.pair_id} · 슬롯 {pair.slot.value}</h2>"
+            f'<h2 tabindex="-1">비교 {index} / {len(pset.pairs)} '
+            f"<span>슬롯 {pair.slot.value} · {pair.pair_id}</span></h2>"
             f'<div class="sides">{"".join(sides)}</div>'
+            f"{_comparison_html(*pair_cards, policy)}"
+            f'<details class="observation"><summary>카드 ID·관측 정보</summary>'
+            f"{observed}</details>"
             f"<fieldset><legend>판단 (능력 기준)</legend>{radios}</fieldset>"
-            f'<textarea name="r-{pair.pair_id}" rows="2" '
-            f'placeholder="판단 근거"></textarea></section>'
+            f'<label class="rationale" for="r-{pair.pair_id}">판단 근거</label>'
+            f'<textarea id="r-{pair.pair_id}" name="r-{pair.pair_id}" rows="2" '
+            f'placeholder="선택한 이유나 판단이 어려운 이유를 적어 주세요."></textarea>'
+            '<div class="pair-actions"><button type="button" data-move="-1">'
+            '← 이전 비교</button><button type="button" data-move="1">'
+            "다음 비교 →</button></div></section>"
         )
     meta = json.dumps(
         dict(
@@ -434,102 +501,18 @@ def render_form(pset, *, cards, policy):
             pairs=[p.pair_id for p in pset.pairs],
         )
     )
-    return _FORM.format(
-        set_id=html.escape(pset.set_id),
-        reference=html.escape(pset.material.reference_time.isoformat()),
-        count=len(pset.pairs),
-        blocks="".join(blocks),
-        meta=meta,
+    return (
+        _FORM.replace("<!--SET_ID-->", html.escape(pset.set_id))
+        .replace(
+            "<!--REFERENCE-->", html.escape(pset.material.reference_time.isoformat())
+        )
+        .replace("<!--COUNT-->", str(len(pset.pairs)))
+        .replace("/*META*/", meta)
+        .replace("<!--PAIRS-->", "".join(blocks))
     )
 
 
-_FORM = """<!doctype html>
-<html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MF-2 판단 양식</title>
-<style>
-:root {{ --bg:#fff; --fg:#1c1c1c; --line:#d0d0d0; --muted:#666; }}
-@media (prefers-color-scheme: dark) {{
-  :root {{ --bg:#161616; --fg:#e8e8e8; --line:#3a3a3a; --muted:#aaa; }}
-}}
-body {{ background:var(--bg); color:var(--fg); font:15px/1.5 sans-serif;
-  margin:0 auto; max-width:1100px; padding:16px; }}
-.pair {{ border-top:2px solid var(--line); padding:12px 0; }}
-.sides {{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }}
-table {{ border-collapse:collapse; width:100%; }}
-th, td {{ border-bottom:1px solid var(--line); padding:3px 6px; text-align:left;
-  vertical-align:top; }}
-th {{ white-space:nowrap; color:var(--muted); font-weight:normal; }}
-fieldset {{ border:1px solid var(--line); margin:8px 0; }}
-label {{ margin-right:16px; }}
-textarea, input[type=text] {{ width:100%; box-sizing:border-box; }}
-.top {{ position:sticky; top:0; background:var(--bg); padding:8px 0; }}
-</style></head><body>
-<h1>MF-2 비교 판단 양식</h1>
-<p>세트 {set_id} · 기준 시각 {reference} · {count}쌍. 같은 슬롯에서 두 카드의 능력만 보고
-고르세요. OVR·점수·추천 방식·가격·급여는 일부러 표시하지 않습니다. 화면 순서(A/B)는
-무작위로 정했습니다.</p>
-<div class="top">
-<label>판단자 ID(가명) <input type="text" id="judge" placeholder="예: judge-01"></label>
-<label>플레이 성향 <input type="text" id="style" placeholder="예: 측면 돌파 위주"></label>
-<p><span id="progress"></span> <button id="save" type="button">판단 파일 저장</button></p>
-</div>
-{blocks}
-<script>
-const META = {meta};
-const KEY = "mf2-sheet-" + META.set_version;
-const times = {{}};
-function read() {{
-  return META.pairs.map(id => {{
-    const picked = document.querySelector(`input[name="v-${{id}}"]:checked`);
-    const text = document.querySelector(`textarea[name="r-${{id}}"]`).value;
-    return {{ pair_id: id, verdict: picked ? picked.value : null, rationale: text,
-      judged_at: picked ? (times[id] || null) : null }};
-  }});
-}}
-function sheet() {{
-  return {{ schema_version: META.schema_version, set_id: META.set_id,
-    set_version: META.set_version, judge_id: document.getElementById("judge").value.trim(),
-    play_style: document.getElementById("style").value.trim(), entries: read() }};
-}}
-function update() {{
-  const done = read().filter(e => e.verdict && e.rationale.trim()).length;
-  document.getElementById("progress").textContent = `${{done}} / ${{META.pairs.length}} 완료`;
-  try {{ localStorage.setItem(KEY, JSON.stringify({{ s: sheet(), t: times }})); }} catch (e) {{}}
-}}
-document.addEventListener("input", event => {{
-  const name = event.target.name || "";
-  if (name.startsWith("v-") || name.startsWith("r-")) {{
-    times[name.slice(2)] = new Date().toISOString();
-  }}
-  update();
-}});
-try {{
-  const saved = JSON.parse(localStorage.getItem(KEY) || "null");
-  if (saved) {{
-    Object.assign(times, saved.t || {{}});
-    document.getElementById("judge").value = saved.s.judge_id || "";
-    document.getElementById("style").value = saved.s.play_style || "";
-    for (const e of saved.s.entries) {{
-      if (e.verdict) {{
-        const box = document.querySelector(`input[name="v-${{e.pair_id}}"][value="${{e.verdict}}"]`);
-        if (box) box.checked = true;
-      }}
-      const area = document.querySelector(`textarea[name="r-${{e.pair_id}}"]`);
-      if (area) area.value = e.rationale || "";
-    }}
-  }}
-}} catch (e) {{}}
-document.getElementById("save").addEventListener("click", () => {{
-  const blob = new Blob([JSON.stringify(sheet(), null, 2)], {{ type: "application/json" }});
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "judgments.json";
-  link.click();
-}});
-update();
-</script></body></html>
-"""
+_FORM = Path(__file__).with_name("preference_form.html").read_text(encoding="utf-8")
 
 
 def _sha256(path):

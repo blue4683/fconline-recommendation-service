@@ -2,31 +2,33 @@
 
 현재 스쿼드메이커에 있는 AI 추천 기능을 비슷하게 구현하는 프로젝트입니다.
 
-현재는 FRS 2.0의 데이터 스키마·현재 사이트 파서·명시 배치 후보 검색·수동 갱신 도구와 **Stage 2-0 모델 계약, 2-A 재학습, 2-B 평가 정정, 2-C 읽기 전용 API**을 구현했습니다. [MVP 범위·무기한 로컬 보관 정책](docs/mvp-scope.md)에 따라 실제 관측/모델은 Git에서 제외합니다. Stage 1-D 커버리지·팀컬러 발동 규칙, 1-F 실제 갱신과 스쿼드의 실데이터 통합은 미완료입니다. 제공자의 수집 허용 여부도 미확정이며 종료한 수집 승인을 재사용하지 않습니다.
+현재는 FRS 2.0의 데이터 스키마·현재 사이트 파서·명시 배치 후보 검색·수동 갱신 도구와 **Stage 2-0 모델 계약, 2-A 재학습, 2-B 평가 정정, 2-C 읽기 전용 API**을 구현했습니다. [MVP 범위·무기한 로컬 보관 정책](docs/mvp-scope.md)에 따라 실제 관측/모델은 Git에서 제외합니다. Stage 1-D 전체 커버리지·공식 팀컬러 발동 규칙과 1-F 지속 갱신은 미완료입니다. 스쿼드는 명시 관측 배치의 파일·MongoDB 공급기를 지원하며, 새 실행과 전체 실데이터 단계 완료는 구분합니다. 제공자의 수집 허용 여부도 미확정이며 종료한 수집 승인을 재사용하지 않습니다.
 
 AI Mini-Project의 다음 작업은 [합성 Agent MVP 로드맵](docs/ai-mini-project-roadmap.md)에 정리했습니다. 기존 엔진과 이번 과제의 신규 Agent 층을 구분하고, 로컬 Ollama·검증된 출력·웹/MCP·평가 순으로 진행합니다. [R2 주입 그래프](docs/injected-agent-graph.md) 이후 후보 ID 선택·qwen3:8b 소량 비교, HTTP/SSE·실제 브라우저 연결, 로컬 stdio MCP를 구현·검증했습니다. [W6 평가 실행기](docs/stage-w6-evaluation-implementation.md)의25문장 대역 검증은25/25이며 [실모델 평가](docs/stage-w6-model-evaluation.md)는 전체E2E24/25, 모델 호출 대상근거/의미15/16이었습니다. 준비 차단9개와실모델측정을구분합니다.
 
 [강화 능력치 파생 설계](docs/reinforcement-derivation-contract.md)의 [R0 순수 계산기](docs/reinforcement-derivation-implementation.md)는 1강 값에 누적 보너스를 더해 1~13강 능력치를 계산합니다. MVP 추천 범위는 5~11강을 유지하고 가격·급여 등은 별도 자료로 다룹니다. R1 합성 자료에 연결했고 기존 관측/모델 변환이나 실제 수집은 실행하지 않았습니다.
 
-웹 작업 인계는 [웹 담당 설계도](docs/web-agent-blueprint.md)와 [에이전트 공용 기록](docs/agent-collaboration.md)을 사용합니다. Vue 3·Vite·TypeScript의 화면/통신 클라이언트는 웹 담당이, 엔진·Agent·API와 실제 연결은 통합 담당이 맡습니다. 웹 앱/채팅 API는 미구현이며 백엔드에서는 [R1 합성 자료 공급기](docs/synthetic-agent-material.md)까지 진행했습니다.
+웹 작업 인계는 [웹 담당 설계도](docs/web-agent-blueprint.md)와 [에이전트 공용 기록](docs/agent-collaboration.md)을 사용합니다. Vue 3·Vite·TypeScript의 화면/통신 클라이언트는 웹 담당이, 엔진·Agent·API와 실제 연결은 통합 담당이 맡습니다. 웹 앱·Agent HTTP/SSE·MCP와 합성/관측 자료 공급기를 구현했습니다. 현재 웹 계약은 `web-agent.v1`, health는 `agent-health.v2`입니다. [소스 통합 기록](docs/real-data-mainline-integration.md)에 최신 상태와 실행 경계를 정리했습니다.
 
-[R3 코드 출력](docs/validated-agent-presentation.md)은 검증된 합성 스쿼드 표·정확한 문자열 금액/급여·상태 안내를 만들고 출력 직전 기한을 확인합니다. 현재 설명은 코드 템플릿이며 실제 LLM 서술·웹/API 연결은 후속입니다.
+[R3 코드 출력](docs/validated-agent-presentation.md)은 검증된 합성 스쿼드 표·정확한 문자열 금액/급여·상태 안내를 만들고 출력 직전 기한을 확인합니다. 설명은 검증된 코드 템플릿이며 웹/API는 검증된 최종 결과를 전달합니다.
 
 ## 추천 급여 상한
 
-`feat/real-data`의 새 웹/API·MCP 스쿼드 요청은 **급여 상한310 고정**입니다. 급여를 생략하면310을 적용하고, 다른 값을 쓰면 수정 안내로 종료합니다. 예산·클럽·포메이션·강화만 입력하면 됩니다. 11명의 합계는310 이하여야 하며, 선수별 관측 급여와 과거 평가/실행 기록은 유지합니다. [급여310 계약·구현](docs/fixed-salary-310-contract.md)을 확인하세요.
+통합된 웹/API·MCP 스쿼드 요청은 **급여 상한310 고정**입니다. 급여를 생략하면310을 적용하고, 다른 값을 쓰면 수정 안내로 종료합니다. 예산·클럽·포메이션·강화만 입력하면 됩니다. 11명의 합계는310 이하여야 하며, 선수별 관측 급여와 과거 평가/실행 기록은 유지합니다. [급여310 계약·구현](docs/fixed-salary-310-contract.md)을 확인하세요.
 
-## 실데이터 브랜치의 로컬 DB
+## 명시 관측 배치와 로컬 DB
 
-`feat/real-data`에서는 기존 리버풀 관측 배치 `real-data-20261021-b`의 **35,948행과 적재 기록1건**을 로컬 MongoDB에 저장하고 파일과 전량 대조했습니다. unknown 가격91건과 원래 시각·기한을 유지하며, 같은 배치의 중복 적재는 거부합니다. [적재·검색·재확인 기록](docs/observed-db-load-validation.md)을 따릅니다. Agent의 관측 공급기는 기존 명시 파일 경로를 사용합니다.
+3클럽(리버풀·첼시·바이에른 뮌헨) 배치 `real-data-20261022-b`는 **5,445카드·120,202행**이며 파일과 로컬 MongoDB를 전량 대조했습니다. unknown 가격245건과 원래 관측 시각·기한을 유지합니다. 기존 리버풀 `real-data-20261021-b`(35,948행·unknown 가격91건)도 보존합니다. [DB 공급기 계약](docs/observed-db-provider.md)과 [통합 기록](docs/real-data-mainline-integration.md)을 따릅니다.
 
-후속 [DB 공급기 연결](docs/observed-db-provider.md)은 `AGENT_DATA_MODE=observed`·`AGENT_MATERIAL_SOURCE=mongodb`·명시 run-id일 때 DB를 읽습니다. 기본값은 기존 파일 공급기입니다. 요청마다 원본과 전량 대조하며 DB 장애·불일치 시 중단합니다. 실제 로컬 DB+선택기 대역의3사례 HTTP 응답은 파일 공급기와 같았고, DB를 연결한 실제 모델·브라우저 E2E는 후속 검증입니다.
+`AGENT_DATA_MODE=observed`·`AGENT_MATERIAL_SOURCE=mongodb`·명시 run-id/자료 경로를 설정할 때 DB 공급기를 사용합니다. 합성 모드와 파일 공급기 기본값을 유지하며, DB 장애·파일 대조 불일치·만료 시 중단합니다. 최신 배치를 자동 선택하지 않습니다.
 
 ```sh
-python -m FRS.utils.db.load_observed --root /path/to/data-checkout --run-id real-data-20261021-b
+python -m FRS.utils.db.load_observed --root /path/to/data-checkout --run-id real-data-20261022-b
 ```
 
-기본 명령은 DB 연결 없이 계획만 출력합니다. `--write`는 명시한 로컬 DB에 적재하며, 이미 적재한 동일 배치를 다시 쓰지 않습니다. 가격의 가장 이른 기한은2026-10-22 17:03:29 KST이고 DB 적재 시각으로 연장하지 않습니다.
+기본 명령은 DB 연결 없이 계획만 출력합니다. 실제 적재는 별도 승인 범위이며 이미 적재한 배치를 다시 쓰지 않습니다. 새 배치 가격의 가장 이른 기한은 **2026-10-23 08:27:17 KST**이고 적재·소스 병합으로 연장하지 않습니다. 기존 배치의 기한과 종료 기록도 변경하지 않습니다.
+
+실제 모델·DB 추천 결과와 브라우저 실행 전체의 성공 판정은 구분합니다. 최근 시연에서 백엔드 추천·독립 검증은 성공했지만 health 호출 상한 초과로 브라우저 실행은 중단됐습니다. 수동으로 연 다른 탭의 영향 가능성은 미확인입니다. 상세는 [통합 기록](docs/real-data-mainline-integration.md)에 정리했습니다.
 
 ## 문서 Q&A와 관측 확장
 

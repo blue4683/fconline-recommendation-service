@@ -626,6 +626,13 @@
 
 - 수집 종료 후 사용자 재개: PR#126의 3클럽 완료 기록 `616d39a`를 일반 merge로 반영했다. data담당 checkout clean·completed5,531회·활성수집 없음 확인. 전체pytest1,829(74.22초)·Ruff/format262·환경/pip 통과. 기존리버풀b(1,656회/1,634장·54.030초)와 새3클럽b(5,531회/5,445장·387.140초)를 새 검증기로 전체재생/독립대조해 가공5파일 일치를 확인했다. 소켓차단·네트워크0, 원본/가공해시·기한·이전실행/잠금·타담당checkout·기존v0/DB 보존. 이전 중단된 부분재생은 통과로 세지 않았다. 새실제수집/모델/DB0, B/C는 설계만·개선후실수집속도 미측정. PR#125 최신head CI·최종diff·base/head를 확인한 뒤 사용자 확정 feat/real-data로 Squash하며 결과는 별도 로컬receipt로 보관한다.
 
+## INT-RD-INTEGRATE-001 — 실데이터 소스의 mainline 통합 (2026-10-22)
+
+- 사용자 요청: feat/real-data → develop → master 순서의 PR·검증·Squash 병합. 과거 합성/실데이터 브랜치 분리보다 이번 명시 요청을 우선하며 배포·새 실제 실행은 포함하지 않는다.
+- 기준: develop 67adaa1 / feat/real-data bfd6b6a / master 3862a8b. 별도 worktree의 chore/real-data-integration에서 준비하며 최신 develop 테스트 개선 두 개와 급여310 문서 결정을 모두 보존한다. Python CI에 master 대상도 추가한다.
+- 검증: Python1,829(24.41초/4 worker)·Ruff/format263·환경/pip·고정 의존성86건 대조 통과. 웹 타입/129테스트/빌드 통과. 첫 환경의 의존성 누락 실패는 통합 기록에 보존하고 올바른 경로로 전체 재검증했다.
+- 범위·결과·제한은 [통합 기록](real-data-mainline-integration.md)을 따른다. 실제 자료/비밀값·기존 프로세스·다른 담당 체크아웃·사용자 파일·종료 승인/잠금/기한을 보존한다. E2E007은 백엔드 성공/전체 stopped를 구분하고, 사용자 별도 탭 클릭 가능성을 미확정 원인으로 기록한다.
+
 ## 인계/병합 체크
 
 1. 양쪽은 각자 최신 develop과 이 기록을 읽고 자기 범위/의존 버전을 확인한다. 공유 파일은 실시간 채널이 아니므로 기준 SHA를 남긴다.

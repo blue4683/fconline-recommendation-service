@@ -1,6 +1,6 @@
-# FRS 실데이터 브랜치 웹 클라이언트
+# FRS 합성·관측 웹 클라이언트
 
-`feat/real-data` 전용 Vue 3 + Vite + TypeScript 화면·통신 클라이언트다. 확정 계약은 `web-agent.v1`과 `agent-health.v2`이며 합성/관측 자료를 구분한다. master/develop의 v0 웹은 변경하지 않는다. 기준은 [실데이터 설계](../docs/real-data-branch-design.md) §7·§12.2와 [공용 기록](../docs/agent-collaboration.md)의 INT-RD-001·WEB-008이다.
+Vue 3 + Vite + TypeScript 화면·통신 클라이언트다. 확정 계약은 `web-agent.v1`과 `agent-health.v2`이며 합성/관측 자료를 구분한다. 2026-10-22 사용자 요청으로 feat/real-data → develop → master에 같은 v1 소스를 통합한다. 실행 중인 기존 v0 서버를 교체하는 작업은 포함하지 않는다. 기준은 [실데이터 설계](../docs/real-data-branch-design.md) §7·§12.2와 [공용 기록](../docs/agent-collaboration.md)의 INT-RD-001·WEB-008이다.
 
 ## 환경·명령
 
@@ -50,6 +50,6 @@ v1 앱을 FastAPI TestClient로 호출한다. 기존 합성 리그를 임시 파
 
 ## 실행 경계
 
-이번 웹 타입 검사·125테스트·빌드는 통과했다. 루트 Python 결과와 CI는 공용 기록/PR에서 확인한다. 웹 자동 CI는 아직 없으며 로컬 검사와 구분한다. 통합 담당은 기존 Python CI의 대상을 feat/real-data로 확장한다.
+당시 웹 타입 검사·125테스트·빌드를 통과했고 이후 최신 검증은 [통합 기록](../docs/real-data-mainline-integration.md)과 공용 기록/PR을 따른다. 웹 자동 CI는 아직 없으며 로컬 검사와 구분한다. Python CI는 develop·master·feat/real-data PR/push를 대상으로 한다.
 
-실제 모델·metadata·Ollama/Agent/Vite 임시 실행·브라우저 E2E는 새 실행 범위와 상한을 승인받은 뒤 통합 담당이 수행한다. 수집 b의 가격은2026-10-22 17:03 KST에 만료된다. 재수집·시각/기한 변경·소진 승인 재사용은 하지 않는다. 발표는 master의 합성 경로를 유지한다.
+실제 모델·metadata·Ollama/Agent/Vite 임시 실행·브라우저 E2E는 새 실행 범위와 상한을 승인받은 뒤 통합 담당이 수행한다. 3클럽 real-data-20261022-b 가격은2026-10-23 08:27:17 KST에 만료된다. 기존 리버풀 배치의 기한은 보존한다. 재수집·시각/기한 변경·소진 승인 재사용은 하지 않는다. 소스 병합은 서버 기동·새 실제 추천·배포 승인이 아니다.

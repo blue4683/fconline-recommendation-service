@@ -40,6 +40,11 @@ ELIGIBILITY_BASIS = "club_career_search"
 # 국가 팀컬러는 국적 검색 결과를 자격 근거로 쓴다(2026-10-22 사용자 결정). 클럽만 담은
 # 실행은 기존 근거 문자열을 그대로 써서 이전 실행의 재생·검증 결과가 바뀌지 않게 한다.
 MIXED_ELIGIBILITY_BASIS = "club_career_and_nationality_search"
+# 공식 목록의 결과 없음 화면(2026-10-22 real-data-20261022-measure-b 66번째 응답에서 확인).
+# 이 구조 하나만 빈 칸으로 인정하고, 행도 이 구조도 없는 응답은 멈춘다.
+EMPTY_LIST = re.compile(
+    r'<div class="tr empty">\s*<span class="txt">\s*검색 결과가 없습니다\.\s*</span>\s*</div>'.encode()
+)
 NATION_FLAG = re.compile(
     rb'<div class="nation">\s*<img src="[^"]*/smallflags/([0-9]+)\.png"'
 )
@@ -127,6 +132,11 @@ def eligibility_basis(teams):
     if any(team.kind == "nation" for team in teams):
         return MIXED_ELIGIBILITY_BASIS
     return ELIGIBILITY_BASIS
+
+
+def is_empty_list(body):
+    """행이 없고 결과 없음 구조가 정확히 한 번 있는 목록 응답인지 본다."""
+    return b"area_playerunit_" not in body and len(EMPTY_LIST.findall(body)) == 1
 
 
 def nation_flag(body):
@@ -412,10 +422,10 @@ class RealDataRun:
             skill_fields=tuple(form[f"strSkill{i}"] for i in range(1, 5)),
         )
         if b"area_playerunit_" not in body:
-            if not self.allow_empty_cells:
+            if not (is_empty_list(body) or self.allow_empty_cells):
                 raise CatalogStopped(
                     "empty_list_unverified",
-                    "빈 목록 구조가 확인되기 전에는 빈 칸을 허용하지 않습니다.",
+                    "행도 확인된 결과 없음 구조도 없는 목록 응답입니다.",
                 )
             return (), entry
         try:
@@ -659,6 +669,7 @@ class RealDataRun:
             ),
             profile_cards=len(self.records["player_card"]),
             split_cells=len(self.split_log),
+            empty_cells=sum(1 for _, rows in self.accepted if not rows),
             truncated_cells=self.truncated,
             salary_parity=self.state.get("salary_parity"),
             price_conflicts=len(self.price_conflicts),
@@ -778,7 +789,7 @@ def main(argv=None):
     parser.add_argument(
         "--allow-empty-cells",
         action="store_true",
-        help="빈 목록 HTML 구조를 확인한 뒤에만 지정",
+        help="합성 시험용. 확인된 결과 없음 구조는 이 옵션 없이도 빈 칸으로 인정한다",
     )
     parser.add_argument(
         "--catalog-only",

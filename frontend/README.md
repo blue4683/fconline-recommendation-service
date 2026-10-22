@@ -50,6 +50,6 @@ v1 앱을 FastAPI TestClient로 호출한다. 기존 합성 리그를 임시 파
 
 ## 실행 경계
 
-당시 웹 타입 검사·125테스트·빌드를 통과했고 이후 최신 검증은 [통합 기록](../docs/real-data-mainline-integration.md)과 공용 기록/PR을 따른다. 웹 자동 CI는 아직 없으며 로컬 검사와 구분한다. Python CI는 develop·master·feat/real-data PR/push를 대상으로 한다.
+당시 웹 타입 검사·125테스트·빌드를 통과했고 이후 최신 검증은 [통합 기록](../docs/real-data-mainline-integration.md)과 공용 기록/PR을 따른다. 후속 [웹 CI](../docs/frontend-ci.md)는 Node22.23.3·npm10.9.9로 lock 설치·타입 검사·테스트·빌드를 자동 실행한다. 기존 Python CI와 같은 develop·master·feat/real-data PR/push가 대상이며, 로컬/실제 CI/브라우저 E2E 결과를 구별한다.
 
 실제 모델·metadata·Ollama/Agent/Vite 임시 실행·브라우저 E2E는 새 실행 범위와 상한을 승인받은 뒤 통합 담당이 수행한다. 3클럽 real-data-20261022-b 가격은2026-10-23 08:27:17 KST에 만료된다. 기존 리버풀 배치의 기한은 보존한다. 재수집·시각/기한 변경·소진 승인 재사용은 하지 않는다. 소스 병합은 서버 기동·새 실제 추천·배포 승인이 아니다.

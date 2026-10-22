@@ -53,6 +53,9 @@ PROCESSED_FILES = (
 )
 ROW_ID = re.compile(rb'id="area_playerunit_([0-9]{7,9})"')
 # 수집기의 국기 정규식과 독립으로 읽는다. 카드 머리의 국기만 본다.
+# 수집기의 결과 없음 정규식과 따로, 표시 문구와 빈 행 표시를 각각 센다.
+NO_RESULT = "검색 결과가 없습니다.".encode()
+EMPTY_ROW = b'class="tr empty"'
 FLAG = re.compile(rb'class="nation">\s*<img[^>]*/countries/smallflags/([0-9]+)\.png')
 
 
@@ -283,6 +286,7 @@ def replay(
             "cards_by_club",
             "profile_cards",
             "split_cells",
+            "empty_cells",
             "truncated_cells",
             "salary_parity",
             "price_conflicts",
@@ -319,7 +323,9 @@ def _club_names(state):
     return dict(zip(ids, state["clubs"], strict=True))
 
 
-def check_independently(state, report, bodies, processed_path, position_field):
+def check_independently(
+    state, report, bodies, processed_path, position_field, allow_empty_cells=False
+):
     """3단계. 주 파서 없이 원본에서 읽은 값으로 분할·카드·능력치·파생을 대조한다."""
     names = _club_names(state)
     split = {
@@ -352,6 +358,11 @@ def check_independently(state, report, bodies, processed_path, position_field):
             None if position == blank else position,
         )
         rows = set(ROW_ID.findall(body))
+        if not rows and not allow_empty_cells:
+            require(
+                body.count(EMPTY_ROW) == 1 and body.count(NO_RESULT) == 1,
+                "행 없는 목록이 결과 없음 화면이 아닙니다",
+            )
         if cell in split:
             require(len(rows) == LIST_CAP, "200장이 아닌 칸을 나눴습니다")
             continue
@@ -467,7 +478,14 @@ def verify(
         position_field=position_field,
         allow_empty_cells=allow_empty_cells,
     )
-    leaves = check_independently(state, report, bodies, processed_path, position_field)
+    leaves = check_independently(
+        state,
+        report,
+        bodies,
+        processed_path,
+        position_field,
+        allow_empty_cells=allow_empty_cells,
+    )
     return dict(
         run_id=state["run_id"],
         verified=True,

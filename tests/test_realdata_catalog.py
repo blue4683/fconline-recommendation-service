@@ -30,6 +30,11 @@ OBSERVED = datetime(2026, 10, 21, tzinfo=timezone.utc)
 CLUB = ClubSpec("가상클럽", 13, 9)
 NATION = NationSpec("가상국가", 27)
 CLUB_CARD, NATION_CARD = 123000001, 123000002
+# 공식 목록의 결과 없음 화면 구조만 남긴 합성 응답이다.
+EMPTY_LIST_HTML = (
+    '<div class="tr empty">\n  <span class="txt">\n    검색 결과가 없습니다.\n'
+    "  </span>\n</div>\n<script></script>"
+).encode()
 SKILLS = ("sprintspeed", "acceleration", "strength", "stamina")
 
 
@@ -82,7 +87,7 @@ class Server:
         key = (low, high, form.get("strPosition", ""))
         size = self.sizes.get(key, 1 if (low, high) == (21, 25) else 0)
         if size == 0:
-            return b"<html>empty</html>"
+            return EMPTY_LIST_HTML
         salary = low
         if grade == 11 and self.parity_salary is not None:
             salary = self.parity_salary
@@ -246,7 +251,7 @@ class TwoClubServer:
             html = ability_html(form["n1Strong"], form["spid"])
             return html.replace("<span>20</span>", "<span>21</span>").encode()
         if (int(form["n4SalaryMin"]), int(form["n4SalaryMax"])) != (21, 25):
-            return b"<html>empty</html>"
+            return EMPTY_LIST_HTML
         grade = int(form["n1Strong"])
         spids = {"9": [123000001, SHARED], "5": [SHARED, 123000003]}[form["n4TeamId"]]
         html = ""
@@ -308,11 +313,35 @@ def test_catalog_only_measures_cards_without_ability_requests(make, tmp_path):
     assert list((tmp_path / "out").glob("*.jsonl")) == []
 
 
-def test_empty_cell_stops_unless_structure_was_verified(make):
-    run = make(Server(), allow_empty_cells=False)
-    report = run.execute()
-    assert report["status"] == "stopped"
-    assert report["stop_reason"]["kind"] == "empty_list_unverified"
+def test_only_the_confirmed_no_result_page_counts_as_an_empty_cell(make, tmp_path):
+    report = make(Server(), allow_empty_cells=False).execute()
+    assert report["status"] == "completed" and report["empty_cells"] == 4
+
+    class OtherEmpty(Server):
+        def __init__(self, body):
+            super().__init__()
+            self.body = body
+
+        def __call__(self, url, form, resource):
+            answer = super().__call__(url, form, resource)
+            return self.body if answer == EMPTY_LIST_HTML else answer
+
+    for index, body in enumerate(
+        (b"<html>empty</html>", EMPTY_LIST_HTML + EMPTY_LIST_HTML)
+    ):
+        run = RealDataRun(
+            tmp_path / f"raw{index}",
+            tmp_path / f"out{index}",
+            OtherEmpty(body),
+            run_id="real-data-synthetic",
+            clubs=[CLUB],
+            template=template(),
+            max_attempts=200,
+            clock=lambda: OBSERVED,
+        )
+        report = run.execute()
+        assert report["status"] == "stopped"
+        assert report["stop_reason"]["kind"] == "empty_list_unverified"
 
 
 def test_salary_mismatch_between_grades_stops_the_run(make):
@@ -432,7 +461,7 @@ class NationServer:
             return (flag_html(flag) + html).encode()
         low, high = int(form["n4SalaryMin"]), int(form["n4SalaryMax"])
         if (low, high) != (21, 25):
-            return b"<html>empty</html>"
+            return EMPTY_LIST_HTML
         spid = NATION_CARD if form["n4NationId"] == "27" else CLUB_CARD
         return rows_html([spid], low, int(form["n1Strong"])).encode()
 

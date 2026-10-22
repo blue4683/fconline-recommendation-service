@@ -89,6 +89,7 @@ def snapshot_spec():
         material="single_read_validated_copy",
         candidate_search="exact_registered_position_union_by_placement_family",
         reinforcements="explicit_allowed_set_per_card",
+        salary_link="direct_version_or_same_source_derived_v1",
         expiry="earliest_used_observation_deadline_inclusive",
         expired_response="data_expired_without_candidates_or_recomputation",
         empty="no_candidates_in_provided_material_not_global_infeasibility",

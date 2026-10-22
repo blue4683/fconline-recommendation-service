@@ -1,6 +1,7 @@
 """탐색기와 독립적으로 같은 스냅샷의 원래 관측과 11인 제약을 검증한다."""
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Annotated
@@ -118,6 +119,40 @@ def _aware(when):
     return when.astimezone(timezone.utc)
 
 
+def _salary_provenance_valid(card, salary, reinforcement):
+    ability = reinforcement or card
+    if salary.version == ability.version:
+        return True
+    # 후보 검색 함수를 재사용하지 않고 동일 원본의 파생 연결을 다시 확인한다.
+    if reinforcement is None or re.fullmatch(r"[0-9a-f]{64}", card.version) is None:
+        return False
+    grade = salary.reinforce_level
+    if (
+        card.source != "nexon_web"
+        or card.base_reinforce_level != 5
+        or grade not in range(6, 12)
+        or reinforcement.reinforce_level != grade
+        or reinforcement.baseline_reinforce_level != 5
+        or reinforcement.baseline_card_version != card.version
+        or (salary.version, reinforcement.version)
+        != (f"{card.version}-same-salary-{grade}", f"{card.version}-derived-{grade}")
+    ):
+        return False
+    fields = (
+        "spid",
+        "batch_id",
+        "source",
+        "observed_at",
+        "valid_until",
+        "delete_after",
+    )
+    origin = tuple(getattr(card, name) for name in fields)
+    return (
+        tuple(getattr(salary, name) for name in fields) == origin
+        and tuple(getattr(reinforcement, name) for name in fields) == origin
+    )
+
+
 def _read(snapshot, when):
     if not isinstance(snapshot, RequestSnapshot):
         raise SnapshotError("invalid_snapshot")
@@ -170,9 +205,8 @@ def _read(snapshot, when):
         reinforcement = observations.reinforce_stats
         if candidate.reinforce_level == 5 and reinforcement is not None:
             raise SnapshotError("unused_reinforcement")
-        ability = reinforcement or card
         if (
-            salary.version != ability.version
+            not _salary_provenance_valid(card, salary, reinforcement)
             or salary.salary > query.salary_cap
             or price.price > query.price_cap
         ):

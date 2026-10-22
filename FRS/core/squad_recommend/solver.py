@@ -4,6 +4,7 @@ import hashlib
 import json
 from collections import defaultdict
 from datetime import datetime, timezone
+from time import monotonic
 from typing import Annotated, Callable, Literal
 
 import ortools
@@ -39,6 +40,10 @@ def engine_spec():
         uniqueness="at_most_one_spid_and_person_id",
         club="all_11_positive_membership_without_bonus",
         objective="sum_absolute_position_ovr",
+        secondary_objective="maximum_total_price_at_proven_optimal_ovr",
+        secondary_precision="exact_safe_integer_objective_or_price_slack_digits",
+        search_time_budget="shared_across_primary_and_secondary_solves",
+        optimal_status="primary_ovr_proven_price_status_separate",
         budget="exact_base_1000000_digits_with_nonnegative_slack",
         return_solution="independent_validator_and_response_expiry_pass",
         greedy_order="formation_order_then_cost_or_negative_ovr_then_spid_then_grade",
@@ -66,6 +71,7 @@ class EngineResult(BaseModel):
     ortools_version: str = ortools.__version__
     config: SolverConfig | None = None
     solver_status: str | None = None
+    price_optimization_status: Literal["not_run", "optimal", "incomplete"] | None = None
     validation: ValidationReport | None = None
     coverage: tuple[tuple[str, int], ...] = ()
     reasons: tuple[str, ...] = ()
@@ -113,6 +119,7 @@ def _finish(
     reasons=(),
     bound=None,
     config=None,
+    price_optimization_status=None,
 ):
     report = None
     if status in ("optimal", "feasible"):
@@ -144,6 +151,7 @@ def _finish(
         status=status,
         snapshot_id=prepared.snapshot_id,
         solver_status=solver_status,
+        price_optimization_status=price_optimization_status if report else None,
         validation=report,
         coverage=_coverage(prepared),
         reasons=tuple(reasons),
@@ -159,9 +167,11 @@ def _add_exact_cap(model, variables, values, cap, name):
     base = 1_000_000
     count = max(1, (len(str(cap)) + 5) // 6)
     carry = 0
+    digits = []
     for digit in range(count):
         power = base**digit
         slack = model.new_int_var(0, base - 1, f"{name}_slack_{digit}")
+        digits.append(slack)
         next_carry = (
             model.new_int_var(0, 11, f"{name}_carry_{digit}")
             if digit + 1 < count
@@ -173,6 +183,74 @@ def _add_exact_cap(model, variables, values, cap, name):
         )
         model.add(amount + slack + carry == (cap // power) % base + base * next_carry)
         carry = next_carry
+    return tuple(digits)
+
+
+def _maximize_price(
+    model, variables, candidates, slack_digits, chosen, price_cap, config, deadline
+):
+    """OVR 고정 후 사용액을 최대화한다. 큰 BP는 잔액의 높은 자리부터 비교한다."""
+    prices = [c.observations.card_price.price for c in candidates]
+    best = tuple(chosen)
+    best_price = sum(price * x for price, x in zip(prices, best, strict=True))
+    by_slot = defaultdict(list)
+    for c, price in zip(candidates, prices, strict=True):
+        by_slot[c.slot].append(price)
+    # 자리별 최대액은 중복/급여를 무시한 상한이다. 이미 도달했다면 추가 탐색 불필요.
+    ceiling = min(price_cap, sum(max(values) for values in by_slot.values()))
+    ovr = sum(c.raw_ovr * x for c, x in zip(candidates, best, strict=True))
+    model.add(
+        sum(c.raw_ovr * x for c, x in zip(candidates, variables, strict=True)) == ovr
+    )
+    if sum(prices) <= 2**53 - 1:
+        # 목적값/경계의 double 운반도 정수 정밀도를 잃지 않는 작은 금액만 사용한다.
+        objectives = [
+            (sum(p * x for p, x in zip(prices, variables, strict=True)), None)
+        ]
+    else:
+        floor = sum(min(values) for values in by_slot.values())
+        objectives = []
+        for index in reversed(range(len(slack_digits))):
+            digit = slack_digits[index]
+            power = 1_000_000**index
+            lo, hi = (price_cap - ceiling) // power, (price_cap - floor) // power
+            if lo == hi:
+                # 상한/하한으로 이미 고정된 잔액 자리는 다시 탐색하지 않는다.
+                model.add(digit == lo % 1_000_000)
+            else:
+                objectives.append((digit, digit))
+    for objective, digit in objectives:
+        if best_price == ceiling:
+            return best, "optimal"
+        if digit is None:
+            model.maximize(objective)
+        else:
+            model.minimize(objective)
+        model.clear_hints()
+        for variable, value in zip(variables, best, strict=True):
+            model.add_hint(variable, value)
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            return best, "incomplete"
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = remaining
+        solver.parameters.num_search_workers = config.workers
+        solver.parameters.random_seed = config.seed
+        raw = solver.solve(model)
+        if raw == cp_model.UNKNOWN:
+            return best, "incomplete"
+        if raw not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            raise RuntimeError("가격 보조 탐색이 이미 확인한 유효해와 모순됩니다.")
+        values = tuple(solver.value(x) for x in variables)
+        price = sum(p * x for p, x in zip(prices, values, strict=True))
+        # 시간 내 찾은 동점 해가 더 저렴하면 기존 유효해를 유지한다.
+        if price >= best_price:
+            best, best_price = values, price
+        if raw != cp_model.OPTIMAL:
+            return best, "incomplete"
+        if digit is not None:
+            model.add(digit == solver.value(digit))
+    return best, "optimal"
 
 
 def solve_squad(
@@ -213,7 +291,7 @@ def solve_squad(
         model.add_exactly_one(slots[slot])
     for group in (*cards.values(), *people.values()):
         model.add(sum(group) <= 1)
-    _add_exact_cap(
+    price_digits = _add_exact_cap(
         model,
         variables,
         [c.observations.card_price.price for c in prepared.candidates],
@@ -245,6 +323,7 @@ def solve_squad(
     solver.parameters.max_time_in_seconds = config.max_time_seconds
     solver.parameters.num_search_workers = config.workers
     solver.parameters.random_seed = config.seed
+    deadline = monotonic() + config.max_time_seconds
     try:
         raw = solver.solve(model)
     except (ValueError, RuntimeError, OverflowError):
@@ -266,13 +345,38 @@ def solve_squad(
     }
     status = statuses.get(raw, "internal_error")
     picks, bound = (), None
+    price_status = None
     if status in ("optimal", "feasible"):
+        chosen = tuple(solver.value(x) for x in variables)
+        bound = solver.best_objective_bound
+        price_status = "not_run"
+        if status == "optimal":
+            try:
+                chosen, price_status = _maximize_price(
+                    model,
+                    variables,
+                    prepared.candidates,
+                    price_digits,
+                    chosen,
+                    prepared.query.price_cap,
+                    config,
+                    deadline,
+                )
+            except (ValueError, RuntimeError, OverflowError):
+                return _finish(
+                    snapshot,
+                    prepared,
+                    config=config,
+                    method="cp_sat",
+                    status="internal_error",
+                    clock=clock,
+                    reasons=("solver_failure",),
+                )
         picks = tuple(
             SquadPick(spid=c.spid, slot=c.slot, reinforce_level=c.reinforce_level)
-            for c, x in zip(prepared.candidates, variables, strict=True)
-            if solver.value(x)
+            for c, x in zip(prepared.candidates, chosen, strict=True)
+            if x
         )
-        bound = solver.best_objective_bound
     return _finish(
         snapshot,
         prepared,
@@ -283,6 +387,7 @@ def solve_squad(
         picks=picks,
         solver_status=solver.status_name(raw),
         bound=bound,
+        price_optimization_status=price_status,
     )
 
 

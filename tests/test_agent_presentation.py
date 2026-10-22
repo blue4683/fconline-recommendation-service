@@ -198,3 +198,25 @@ def test_declared_data_mode_must_match_every_candidate_source(success):
     )
     with pytest.raises(ValueError):
         present_agent_result(success, clock=lambda: OBSERVED, data_mode="real")
+
+
+@pytest.mark.parametrize("price_status", ["optimal", "incomplete"])
+def test_price_search_notice_does_not_confuse_proven_ovr_with_price_optimality(
+    success, price_status
+):
+    result = with_engine(success, price_optimization_status=price_status)
+    output = render(result)
+    assert output["status"] == "optimal" and output["squad"]
+    assert (
+        "동일 OVR 내 최대 예산 활용은 시간 내 확인하지 못했습니다." in output["answer"]
+    ) == (price_status == "incomplete")
+
+
+def test_price_search_notice_is_not_shown_after_expiry(success):
+    result = with_engine(success, price_optimization_status="incomplete")
+    deadline = datetime.fromisoformat(
+        success.build.snapshot.to_dict()["metadata"]["valid_until"]
+    )
+    output = render(result, clock=lambda: deadline)
+    assert output["status"] == "data_expired" and output["squad"] is None
+    assert "최대 예산 활용" not in output["answer"]

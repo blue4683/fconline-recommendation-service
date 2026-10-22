@@ -1,0 +1,168 @@
+{
+  "policy_id": "draft-core-stat-foot-20261022",
+  "status": "experimental",
+  "mode": "core-stat-foot",
+  "groups": [
+    {"name": "pace", "stats": [
+      {"name": "speed", "weight": 55, "upper": 200},
+      {"name": "accelartion", "weight": 45, "upper": 200}
+    ]},
+    {"name": "shooting", "stats": [
+      {"name": "goal_determination", "weight": 30, "upper": 200},
+      {"name": "positioning", "weight": 20, "upper": 200},
+      {"name": "shooting_power", "weight": 15, "upper": 200},
+      {"name": "mid-distance_shot", "weight": 15, "upper": 200},
+      {"name": "volley_shot", "weight": 5, "upper": 200},
+      {"name": "penalty_kick", "weight": 5, "upper": 200},
+      {"name": "composure", "weight": 10, "upper": 200}
+    ]},
+    {"name": "passing", "stats": [
+      {"name": "short_pass", "weight": 30, "upper": 200},
+      {"name": "long_pass", "weight": 20, "upper": 200},
+      {"name": "field_of_vision", "weight": 20, "upper": 200},
+      {"name": "cross", "weight": 15, "upper": 200},
+      {"name": "curve", "weight": 10, "upper": 200},
+      {"name": "free_kick", "weight": 5, "upper": 200}
+    ]},
+    {"name": "control", "stats": [
+      {"name": "dribble", "weight": 25, "upper": 200},
+      {"name": "ball_control", "weight": 25, "upper": 200},
+      {"name": "agility", "weight": 20, "upper": 200},
+      {"name": "balance", "weight": 15, "upper": 200},
+      {"name": "reaction_speed", "weight": 15, "upper": 200}
+    ]},
+    {"name": "defending", "stats": [
+      {"name": "man-to-man_defense", "weight": 30, "upper": 200},
+      {"name": "tackle", "weight": 30, "upper": 200},
+      {"name": "intercept", "weight": 30, "upper": 200},
+      {"name": "sliding_tackle", "weight": 10, "upper": 200}
+    ]},
+    {"name": "physical", "stats": [
+      {"name": "struggle", "weight": 30, "upper": 200},
+      {"name": "stamina", "weight": 30, "upper": 200},
+      {"name": "jump", "weight": 15, "upper": 200},
+      {"name": "header", "weight": 15, "upper": 200},
+      {"name": "positiveness", "weight": 10, "upper": 200}
+    ]},
+    {"name": "gk", "stats": [
+      {"name": "gk_diving", "weight": 25, "upper": 200},
+      {"name": "gk_handling", "weight": 20, "upper": 200},
+      {"name": "gk_reaction_speed", "weight": 30, "upper": 200},
+      {"name": "gk_positioning", "weight": 20, "upper": 200},
+      {"name": "gk_kick", "weight": 5, "upper": 200}
+    ]}
+  ],
+  "profiles": [
+    {"name": "st", "weights": [
+      {"name": "pace", "weight": 14},
+      {"name": "shooting", "weight": 28},
+      {"name": "passing", "weight": 6},
+      {"name": "control", "weight": 14},
+      {"name": "defending", "weight": 0},
+      {"name": "physical", "weight": 12},
+      {"name": "weak_foot", "weight": 16},
+      {"name": "body", "weight": 10},
+      {"name": "gk", "weight": 0}
+    ], "body": null},
+    {"name": "wide", "weights": [
+      {"name": "pace", "weight": 24},
+      {"name": "shooting", "weight": 12},
+      {"name": "passing", "weight": 12},
+      {"name": "control", "weight": 22},
+      {"name": "defending", "weight": 0},
+      {"name": "physical", "weight": 6},
+      {"name": "weak_foot", "weight": 16},
+      {"name": "body", "weight": 8},
+      {"name": "gk", "weight": 0}
+    ], "body": null},
+    {"name": "cam", "weights": [
+      {"name": "pace", "weight": 10},
+      {"name": "shooting", "weight": 14},
+      {"name": "passing", "weight": 22},
+      {"name": "control", "weight": 22},
+      {"name": "defending", "weight": 2},
+      {"name": "physical", "weight": 6},
+      {"name": "weak_foot", "weight": 16},
+      {"name": "body", "weight": 8},
+      {"name": "gk", "weight": 0}
+    ], "body": null},
+    {"name": "cm", "weights": [
+      {"name": "pace", "weight": 10},
+      {"name": "shooting", "weight": 8},
+      {"name": "passing", "weight": 24},
+      {"name": "control", "weight": 16},
+      {"name": "defending", "weight": 14},
+      {"name": "physical", "weight": 12},
+      {"name": "weak_foot", "weight": 10},
+      {"name": "body", "weight": 6},
+      {"name": "gk", "weight": 0}
+    ], "body": null},
+    {"name": "cdm", "weights": [
+      {"name": "pace", "weight": 10},
+      {"name": "shooting", "weight": 2},
+      {"name": "passing", "weight": 18},
+      {"name": "control", "weight": 10},
+      {"name": "defending", "weight": 30},
+      {"name": "physical", "weight": 20},
+      {"name": "weak_foot", "weight": 4},
+      {"name": "body", "weight": 6},
+      {"name": "gk", "weight": 0}
+    ], "body": null},
+    {"name": "cb", "weights": [
+      {"name": "pace", "weight": 18},
+      {"name": "shooting", "weight": 0},
+      {"name": "passing", "weight": 4},
+      {"name": "control", "weight": 4},
+      {"name": "defending", "weight": 36},
+      {"name": "physical", "weight": 26},
+      {"name": "weak_foot", "weight": 2},
+      {"name": "body", "weight": 10},
+      {"name": "gk", "weight": 0}
+    ], "body": null},
+    {"name": "fb", "weights": [
+      {"name": "pace", "weight": 24},
+      {"name": "shooting", "weight": 0},
+      {"name": "passing", "weight": 16},
+      {"name": "control", "weight": 12},
+      {"name": "defending", "weight": 22},
+      {"name": "physical", "weight": 16},
+      {"name": "weak_foot", "weight": 4},
+      {"name": "body", "weight": 6},
+      {"name": "gk", "weight": 0}
+    ], "body": null},
+    {"name": "gk", "weights": [
+      {"name": "pace", "weight": 0},
+      {"name": "shooting", "weight": 0},
+      {"name": "passing", "weight": 0},
+      {"name": "control", "weight": 0},
+      {"name": "defending", "weight": 0},
+      {"name": "physical", "weight": 0},
+      {"name": "weak_foot", "weight": 0},
+      {"name": "body", "weight": 10},
+      {"name": "gk", "weight": 90}
+    ], "body": null}
+  ],
+  "slots": [
+    {"slot": "ST", "profile_id": "st"},
+    {"slot": "RS", "profile_id": "st"},
+    {"slot": "LS", "profile_id": "st"},
+    {"slot": "LW", "profile_id": "wide"},
+    {"slot": "RW", "profile_id": "wide"},
+    {"slot": "LM", "profile_id": "wide"},
+    {"slot": "RM", "profile_id": "wide"},
+    {"slot": "CAM", "profile_id": "cam"},
+    {"slot": "RAM", "profile_id": "cam"},
+    {"slot": "LAM", "profile_id": "cam"},
+    {"slot": "RCM", "profile_id": "cm"},
+    {"slot": "LCM", "profile_id": "cm"},
+    {"slot": "CDM", "profile_id": "cdm"},
+    {"slot": "RDM", "profile_id": "cdm"},
+    {"slot": "LDM", "profile_id": "cdm"},
+    {"slot": "RCB", "profile_id": "cb"},
+    {"slot": "LCB", "profile_id": "cb"},
+    {"slot": "LB", "profile_id": "fb"},
+    {"slot": "RB", "profile_id": "fb"},
+    {"slot": "GK", "profile_id": "gk"}
+  ],
+  "weak_foot_scores": [0, 15, 35, 80, 100]
+}

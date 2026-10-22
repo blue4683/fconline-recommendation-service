@@ -44,6 +44,13 @@
 
 ## 진행·변경·질문 기록
 
+### INT-SCORE-004 — MF-2 실제 선호 평가 결정·준비 (2026-10-22)
+
+- 통합 / 사용자 결정: MF2-D1~D6 모두 권장안(배치 b·원래 유효 구간, core-stat-foot, 24쌍·사용자 단독·규칙 추출 후 검토, 프로필별 2:1·시드123, 현재 지표, 측정만, ability만). 기준 develop b568efbacc50a8d1c4bb2f541c4de4e5aca272a4. docs/multi-factor-preference-pilot.md에 결정·도구·실제 준비 결과·판단 방법을 기록한다.
+- FRS/evaluation/preference_prep.py에 명시 선정 규칙(mf-pair-selection.v1)·결정적 쌍 추출·블라인드 판단 양식·판단 파일(mf-judgment-sheet.v1) 가져오기를 추가하고, 평가기의 필드 감사를 field_issues로 분리했다(예제 보고서 해시 불변). 다요소 점수는 선정에 쓰지 않는다.
+- 실제 준비: real-data-20261022-b 읽기 전용, 24쌍·인물48·조정16/보류8·필드 문제0, 판단 전 세트44becdaf. 쌍별 OVR/점수는 판단자인 사용자에게 공개하지 않았다. 사람 판단 없음, 실제 일치율 미평가. 상세 자료는 Git 제외 artifacts/multi-factor-evaluation/mf2-pilot-20261022-b.
+- 검증: 신규21/전체pytest2,110·Ruff lint·format283파일·환경/pip 통과, 합성 양식 jsdom 저장→가져오기 확인. 최신 head CI/PR은 실제 상태로 확인한다. 웹·frontend/·WEB-*·운영 엔진/API/MCP 변경 없음, 상대 수신 주장 없음. 수집·모델·DB 쓰기·학습·서버·배포0, 관측 상태/기한·종료 실행·타 담당 체크아웃·master PR#143 보존.
+
 ### INT-CI-001 — 웹 타입·테스트·빌드 자동 검증 (2026-10-22)
 
 - 통합 / 사용자가 MF-2 실제 평가 준비를 다른 담당에게 맡겼음을 확인한 후 독립 웹 CI를 진행했다. 기준 developb568efbacc50a8d1c4bb2f541c4de4e5aca272a4의 공용 기록/웹 설계도 확인. docs/frontend-ci.md에 기존 미구축 상태의 후속과 검증 한계를 기록한다.

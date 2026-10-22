@@ -270,6 +270,57 @@ def _case_kind(verdict, outcome):
     return "method_tie" if outcome == "tie" else "opposite"
 
 
+def field_issues(card, reinforcement, policy, profile_id, *, level):
+    """한 카드·프로필에서 정책이 요구하는 필드의 누락·범위 오류를 모두 반환한다."""
+    role = next(p for p in policy.profiles if p.name == profile_id)
+    weights = {w.name: w.weight for w in role.weights}
+    needs_delta = level != card.base_reinforce_level
+    found = set()
+    for group in policy.groups:
+        if not weights[group.name] or (needs_delta and reinforcement is None):
+            continue
+        for stat in group.stats:
+            if not stat.weight:
+                continue
+            if stat.name not in card.stats:
+                found.add((stat.name, "missing"))
+                continue
+            raw = card.stats[stat.name]
+            if needs_delta:
+                if stat.name not in reinforcement.stats_delta:
+                    found.add((stat.name, "missing_delta"))
+                    continue
+                raw += reinforcement.stats_delta[stat.name]
+            if not 0 <= raw <= stat.upper:
+                found.add((stat.name, "out_of_range"))
+    if weights["weak_foot"]:
+        for field in ("left_foot", "right_foot"):
+            foot = getattr(card, field)
+            if foot is None:
+                found.add((field, "missing"))
+            elif not 1 <= foot <= 5:
+                found.add((field, "out_of_range"))
+    if policy.mode == "body-aware" and weights["body"]:
+        body = role.body
+        for field, weight, curve in (
+            ("height", body.height_weight, body.height_curve),
+            ("weight", body.weight_weight, body.weight_curve),
+        ):
+            value = getattr(card, field)
+            if not weight:
+                continue
+            if value is None:
+                found.add((field, "missing"))
+            elif not curve.points[0].value <= value <= curve.points[-1].value:
+                found.add((field, "out_of_range"))
+        if body.shape_weight:
+            if card.physical is None:
+                found.add(("physical", "missing"))
+            elif card.physical not in {s.name for s in body.shapes}:
+                found.add(("physical", "unknown_shape"))
+    return sorted(found)
+
+
 def _audit(pset, policies, material, scored):
     """정책이 요구하는 필드를 scorer와 별도로 모두 확인한다. 첫 오류에서 멈추지 않는다."""
     issues, presence, references = set(), Counter(), set()
@@ -288,61 +339,14 @@ def _audit(pset, policies, material, scored):
                 if getattr(card, field) is None:
                     presence[field] += 1
             needs_delta = side.reinforce_level != card.base_reinforce_level
-            unrestorable = needs_delta and reinforcement is None
-            if unrestorable:
+            if needs_delta and reinforcement is None:
                 issues.add((*ref, "*", "*", "reinforcement", "missing_observation"))
             for policy in policies:
                 profile_id = scored[policy.policy_id][pair.slot]
-                role = next(p for p in policy.profiles if p.name == profile_id)
-                weights = {w.name: w.weight for w in role.weights}
-
-                def issue(field, kind):
+                for field, kind in field_issues(
+                    card, reinforcement, policy, profile_id, level=side.reinforce_level
+                ):
                     issues.add((*ref, policy.policy_id, profile_id, field, kind))
-
-                for group in policy.groups:
-                    if not weights[group.name] or unrestorable:
-                        continue
-                    for stat in group.stats:
-                        if not stat.weight:
-                            continue
-                        if stat.name not in card.stats:
-                            issue(stat.name, "missing")
-                            continue
-                        raw = card.stats[stat.name]
-                        if needs_delta:
-                            if stat.name not in reinforcement.stats_delta:
-                                issue(stat.name, "missing_delta")
-                                continue
-                            raw += reinforcement.stats_delta[stat.name]
-                        if not 0 <= raw <= stat.upper:
-                            issue(stat.name, "out_of_range")
-                if weights["weak_foot"]:
-                    for field in ("left_foot", "right_foot"):
-                        foot = getattr(card, field)
-                        if foot is None:
-                            issue(field, "missing")
-                        elif not 1 <= foot <= 5:
-                            issue(field, "out_of_range")
-                if policy.mode == "body-aware" and weights["body"]:
-                    body = role.body
-                    for field, weight, curve in (
-                        ("height", body.height_weight, body.height_curve),
-                        ("weight", body.weight_weight, body.weight_curve),
-                    ):
-                        value = getattr(card, field)
-                        if not weight:
-                            continue
-                        if value is None:
-                            issue(field, "missing")
-                        elif not (
-                            curve.points[0].value <= value <= curve.points[-1].value
-                        ):
-                            issue(field, "out_of_range")
-                    if body.shape_weight:
-                        if card.physical is None:
-                            issue("physical", "missing")
-                        elif card.physical not in {s.name for s in body.shapes}:
-                            issue("physical", "unknown_shape")
     counts = Counter((p, f, k) for *_, p, _profile, f, k in issues)
     return dict(
         references=len(references),

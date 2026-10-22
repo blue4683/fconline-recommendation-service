@@ -13,6 +13,8 @@ from FRS.utils.crawling.realdata_catalog import (
     BANDS,
     LIST_CAP,
     MIXED_ELIGIBILITY_BASIS,
+    OVR_MAX,
+    OVR_MIN,
     CannotSplit,
     CatalogStopped,
     Cell,
@@ -571,3 +573,145 @@ def test_generated_observations_are_searchable_at_all_supported_grades(make, tmp
             supported_clubs=(CLUB.name,),
         )
         assert len(result.candidates) == 1, (grade, result.exclusion_counts)
+
+
+def ovr_template():
+    return template(n4OvrMin=str(OVR_MIN), n4OvrMax=str(OVR_MAX))
+
+
+class OvrServer:
+    """급여 7·ST 300장(OVR 90~119에 10장씩)·GK 20장과 급여 22 대조용 5장.
+
+    칸마다 앞 200장만 돌려준다.
+    """
+
+    def __init__(self, mode="filter", spread=30):
+        self.mode, self.calls = mode, []
+        self.cards = (
+            [(123100000 + i, 7, "ST", 90 + i % spread) for i in range(300)]
+            + [(123200000 + i, 7, "GK", 80) for i in range(20)]
+            + [(123300000 + i, 22, "GK", 70) for i in range(5)]
+        )
+
+    def __call__(self, url, form, resource):
+        self.calls.append((resource, form))
+        if resource == "ability":
+            html = ability_html(form["n1Strong"], form["spid"])
+            pay = next(s for spid, s, _, _ in self.cards if spid == form["spid"])
+            return html.replace("<span>20</span>", f"<span>{pay}</span>").encode()
+        low, high = int(form["n4SalaryMin"]), int(form["n4SalaryMax"])
+        lo, hi = int(form["n4OvrMin"]), int(form["n4OvrMax"])
+        position = form["strPosition"]
+        found = [
+            (spid, pay)
+            for spid, pay, pos, ovr in self.cards
+            if low <= pay <= high
+            and position in ("", pos)
+            and (self.mode == "ignore" or lo <= ovr <= hi)
+            and not (self.mode == "drop" and (lo, hi) != (0, 200) and ovr == 95)
+        ][:LIST_CAP]
+        if not found:
+            return EMPTY_LIST_HTML
+        pays = {pay for _, pay in found}
+        assert len(pays) == 1, "합성 서버는 한 칸에 한 급여만 둔다"
+        spids = [spid for spid, _ in found]
+        return rows_html(spids, pays.pop(), int(form["n1Strong"])).encode()
+
+
+def ovr_run(make, server, **options):
+    return make(
+        server,
+        template=ovr_template(),
+        positions=("ST", "GK"),
+        position_field="strPosition",
+        allow_empty_cells=False,
+        max_attempts=500,
+        **options,
+    )
+
+
+def test_ovr_split_reaches_every_card_of_a_full_position_cell(make, tmp_path):
+    server = OvrServer()
+    report = ovr_run(make, server, split_ovr=True, catalog_only=True).execute()
+    assert report["status"] == "catalog_measured", report
+    assert report["catalog_cards"] == 325 and report["truncated_cells"] == []
+    manifest = json.loads((tmp_path / "raw/manifest.json").read_text())
+    assert manifest["split_ovr"] is True
+    # 포지션 칸 ST(200장)만 OVR 0~100·101~200으로 나눴고, 두 칸은 200장 미만이다.
+    assert manifest["split_log"][-1] == dict(
+        club="가상클럽", low=7, high=7, position="ST", rows=200, into=2
+    )
+    spans = [
+        (f["n4OvrMin"], f["n4OvrMax"], f["strPosition"])
+        for r, f in server.calls
+        if r == "player_list" and (f["n4OvrMin"], f["n4OvrMax"]) != ("0", "200")
+    ]
+    assert spans == [("0", "100", "ST"), ("101", "200", "ST")]
+
+
+def test_without_split_ovr_the_position_cell_stays_truncated(make, tmp_path):
+    report = ovr_run(make, OvrServer(), catalog_only=True).execute()
+    assert report["status"] == "catalog_measured"
+    assert report["truncated_cells"] == [
+        dict(
+            club="가상클럽",
+            low=7,
+            high=7,
+            position="ST",
+            reason="포지션까지 나눈 칸은 더 나눌 수 없습니다.",
+        )
+    ]
+    manifest = json.loads((tmp_path / "raw/manifest.json").read_text())
+    assert "split_ovr" not in manifest
+    assert all("ovr_low" not in s for s in manifest["split_log"])
+
+
+def test_a_single_ovr_value_with_200_cards_is_flagged_with_its_range(make):
+    # ST 300장이 모두 OVR 90이면 90~90 한 값 칸까지 나눠도 200장이라 잘림으로 남는다.
+    report = ovr_run(
+        make, OvrServer(spread=1), split_ovr=True, catalog_only=True
+    ).execute()
+    assert report["status"] == "catalog_measured"
+    assert report["truncated_cells"] == [
+        dict(
+            club="가상클럽",
+            low=7,
+            high=7,
+            position="ST",
+            ovr_low=90,
+            ovr_high=90,
+            reason="OVR 한 값까지 나눈 칸은 더 나눌 수 없습니다.",
+        )
+    ]
+
+
+@pytest.mark.parametrize("mode", ["ignore", "drop"])
+def test_an_ovr_filter_that_does_not_partition_cards_stops(make, mode):
+    report = ovr_run(make, OvrServer(mode), split_ovr=True, catalog_only=True).execute()
+    assert report["status"] == "stopped"
+    assert report["stop_reason"]["kind"] == "ovr_filter"
+
+
+def test_ovr_split_needs_positions_and_the_default_ovr_form(make):
+    with pytest.raises(ValueError, match="포지션"):
+        make(OvrServer(), template=ovr_template(), split_ovr=True)
+    with pytest.raises(ValueError, match="n4OvrMin"):
+        make(
+            OvrServer(),
+            positions=("ST",),
+            position_field="strPosition",
+            split_ovr=True,
+        )
+    single = Cell(CLUB, 7, 7, "ST", (95, 95))
+    with pytest.raises(CannotSplit):
+        split_cell(single, ("ST",), split_ovr=True)
+    low, high = split_cell(Cell(CLUB, 7, 7, "ST"), ("ST",), split_ovr=True)
+    assert (low.ovr, high.ovr) == ((0, 100), (101, 200))
+
+
+def test_cli_plan_shows_the_ovr_split_step(tmp_path, capsys):
+    assert (
+        main(["--club", "가상클럽:13:9", "--split-ovr", "--root", str(tmp_path)]) == 0
+    )
+    plan = json.loads(capsys.readouterr().out)
+    assert plan["split_order"] == ["salary", "position", "ovr"]

@@ -33,6 +33,9 @@ from FRS.utils.crawling.refresh_observations import (
 from FRS.utils.crawling.request_timing import SECOND_NS, SendStartPacer, TimedBody
 
 LIST_CAP = 200
+# 포지션까지 나눠도 200장인 칸을 나누는 OVR 범위다(2026-10-22 사용자 결정 1-나). 저장된
+# 공식 폼의 기본값과 같아야 하며, 범위 칸은 이 안에서 반씩 나눈다.
+OVR_MIN, OVR_MAX = 0, 200
 BANDS = ((4, 20), (21, 25), (26, 30), (31, 35), (36, 99))
 SALARY_MIN, SALARY_MAX = BANDS[0][0], BANDS[-1][1]
 ABILITY_URL = "https://fconline.nexon.com/datacenter/PlayerAbility"
@@ -153,14 +156,23 @@ class Cell:
     low: int
     high: int
     position: str | None = None
+    ovr: tuple[int, int] | None = None
 
     def key(self):
+        return (self.club.name, self.low, self.high, self.position, self.ovr)
+
+    def group(self):
+        """OVR로 나눈 칸끼리 묶는 키(같은 팀·급여·포지션)."""
         return (self.club.name, self.low, self.high, self.position)
 
     def describe(self):
-        return dict(
+        described = dict(
             club=self.club.name, low=self.low, high=self.high, position=self.position
         )
+        if self.ovr is not None:
+            # OVR 분할 전 실행의 기록 형식을 바꾸지 않도록 범위 칸에만 남긴다.
+            described.update(ovr_low=self.ovr[0], ovr_high=self.ovr[1])
+        return described
 
 
 def initial_cells(clubs):
@@ -170,10 +182,22 @@ def initial_cells(clubs):
     return tuple(Cell(club, lo, hi) for club in clubs for lo, hi in BANDS)
 
 
-def split_cell(cell, positions=()):
-    """정확히 200장이라 잘렸을 수 있는 칸만 나눈다. 더 나눌 수 없으면 CannotSplit."""
+def split_cell(cell, positions=(), *, split_ovr=False):
+    """정확히 200장이라 잘렸을 수 있는 칸만 나눈다. 더 나눌 수 없으면 CannotSplit.
+
+    순서: 급여 범위 → 급여 한 값의 포지션 → (`split_ovr`일 때) 포지션 칸의 OVR 범위.
+    """
     if cell.position is not None:
-        raise CannotSplit("포지션까지 나눈 칸은 더 나눌 수 없습니다.")
+        if not split_ovr:
+            raise CannotSplit("포지션까지 나눈 칸은 더 나눌 수 없습니다.")
+        low, high = cell.ovr or (OVR_MIN, OVR_MAX)
+        if low == high:
+            raise CannotSplit("OVR 한 값까지 나눈 칸은 더 나눌 수 없습니다.")
+        mid = (low + high) // 2
+        return tuple(
+            Cell(cell.club, cell.low, cell.high, cell.position, span)
+            for span in ((low, mid), (mid + 1, high))
+        )
     if cell.low < cell.high:
         mid = (cell.low + cell.high) // 2
         return (
@@ -223,6 +247,15 @@ def build_form(template, cell, *, level=5, position_field=None):
         if position_field not in template:
             raise ValueError("포지션 필드가 저장된 공식 폼에 없습니다.")
         form[position_field] = cell.position
+    if cell.ovr is not None:
+        if (template.get("n4OvrMin"), template.get("n4OvrMax")) != (
+            str(OVR_MIN),
+            str(OVR_MAX),
+        ):
+            raise ValueError(
+                "OVR 분할에는 n4OvrMin=0·n4OvrMax=200인 저장된 폼이 필요합니다."
+            )
+        form.update(n4OvrMin=str(cell.ovr[0]), n4OvrMax=str(cell.ovr[1]))
     return form
 
 
@@ -287,6 +320,7 @@ class RealDataRun:
         position_field=None,
         allow_empty_cells=False,
         catalog_only=False,
+        split_ovr=False,
         clock=_now,
         timing_version=1,
     ):
@@ -314,6 +348,19 @@ class RealDataRun:
             raise ValueError("포지션 목록에는 확인된 필드 이름이 필요합니다.")
         self.allow_empty_cells = allow_empty_cells
         self.catalog_only = catalog_only
+        self.split_ovr = split_ovr
+        if split_ovr:
+            if not self.positions:
+                raise ValueError(
+                    "OVR 분할은 포지션 분할 다음 단계라 포지션 목록이 필요합니다."
+                )
+            build_form(
+                self.template,
+                Cell(self.cells[0].club, 1, 1, self.positions[0], (OVR_MIN, OVR_MAX)),
+                position_field=position_field,
+            )
+        # 같은 팀·급여·포지션 칸 안에서 요청한 OVR 범위와 받은 카드
+        self.ovr_seen = {}  # group -> [(범위, spid 집합)]
         self.run_id, self.max_attempts = run_id, max_attempts
         self.fetch_body, self.clock = fetch, clock
         raw_path.mkdir(parents=True, exist_ok=False)
@@ -354,6 +401,8 @@ class RealDataRun:
         nations = [t.name for t in self.teams.values() if t.kind == "nation"]
         if nations:
             self.state["nations"] = nations
+        if split_ovr:
+            self.state["split_ovr"] = True
         if timing_version == 2:
             self.state["timing_version"] = 2
         self.flush()
@@ -451,9 +500,12 @@ class RealDataRun:
                 raise CatalogStopped(
                     "salary_range", "요청 급여 구간과 응답이 다릅니다."
                 )
+            self.check_ovr_cell(cell, rows)
             if len(rows) == LIST_CAP:
                 try:
-                    children = split_cell(cell, self.positions)
+                    children = split_cell(
+                        cell, self.positions, split_ovr=self.split_ovr
+                    )
                 except CannotSplit as error:
                     # 잘림 가능 칸은 버리지 않고 표시해 둔다(설계 §10).
                     self.truncated.append(dict(cell.describe(), reason=str(error)))
@@ -465,6 +517,7 @@ class RealDataRun:
                 queue[0:0] = children
                 continue
             self.accept(cell, rows, entry)
+        self.check_ovr_coverage()
         self.state["split_log"] = self.split_log
         self.state["truncated_cells"] = self.truncated
         self.state["price_conflicts"] = [
@@ -472,6 +525,34 @@ class RealDataRun:
             for (spid, level), prices in sorted(self.price_conflicts.items())
         ]
         self.flush()
+
+    def check_ovr_cell(self, cell, rows):
+        """겹치지 않는 OVR 범위가 같은 카드를 돌려주면 서버가 조건을 무시한 것이다."""
+        if not self.split_ovr or cell.position is None:
+            return
+        span = cell.ovr or (OVR_MIN, OVR_MAX)
+        spids = {row.spid for row in rows}
+        seen = self.ovr_seen.setdefault(cell.group(), [])
+        for (low, high), known in seen:
+            if (high < span[0] or span[1] < low) and known & spids:
+                raise CatalogStopped(
+                    "ovr_filter", "서로 다른 OVR 범위 칸이 같은 카드를 돌려줬습니다."
+                )
+        seen.append((span, spids))
+
+    def check_ovr_coverage(self):
+        """나눈 OVR 칸의 카드는 모두 그 안의 더 좁은 범위 칸에서 다시 보여야 한다."""
+        for group, seen in self.ovr_seen.items():
+            for (low, high), spids in seen:
+                inner = set()
+                for (a, b), known in seen:
+                    if low <= a and b <= high and (a, b) != (low, high):
+                        inner |= known
+                if inner and not spids <= inner:
+                    raise CatalogStopped(
+                        "ovr_filter",
+                        f"{group}: OVR {low}~{high} 칸의 카드가 나눈 칸에 없습니다.",
+                    )
 
     def accept(self, cell, rows, entry):
         self.accepted.append((cell, rows))
@@ -685,7 +766,7 @@ class RealDataRun:
         return report
 
 
-def plan(clubs, *, max_attempts=None, catalog_only=False):
+def plan(clubs, *, max_attempts=None, catalog_only=False, split_ovr=False):
     cells = initial_cells(clubs)
     return dict(
         scope="real_data_branch_single_run",
@@ -693,6 +774,7 @@ def plan(clubs, *, max_attempts=None, catalog_only=False):
         eligibility_basis=eligibility_basis(c.club for c in cells),
         initial_list_requests=len(cells),
         split_rule="only_when_exactly_200_rows",
+        split_order=["salary", "position", *(["ovr"] if split_ovr else [])],
         parity_requests=len(tuple(dict.fromkeys(c.club for c in cells))),
         ability_requests=0 if catalog_only else "one_per_unique_card_at_reinforce_5",
         price_conflict="mark_key_unknown_and_report",
@@ -796,6 +878,11 @@ def main(argv=None):
         action="store_true",
         help="목록·급여 대조만 요청해 카드 수를 잰다. 능력치·가공 파일 없음",
     )
+    parser.add_argument(
+        "--split-ovr",
+        action="store_true",
+        help="포지션까지 나눠도 200장인 칸을 OVR 범위로 더 나눈다",
+    )
     args = parser.parse_args(argv)
     teams = [*args.club, *args.nation]
     if not teams:
@@ -807,6 +894,7 @@ def main(argv=None):
                     teams,
                     max_attempts=args.max_attempts,
                     catalog_only=args.catalog_only,
+                    split_ovr=args.split_ovr,
                 ),
                 ensure_ascii=False,
                 indent=2,
@@ -834,6 +922,7 @@ def main(argv=None):
             position_field=args.position_field,
             allow_empty_cells=args.allow_empty_cells,
             catalog_only=args.catalog_only,
+            split_ovr=args.split_ovr,
             timing_version=2,
         )
         report = run.execute()

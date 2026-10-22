@@ -34,6 +34,7 @@ from FRS.utils.crawling.realdata_catalog import (
     ability_form,
     validate_run_id,
 )
+from FRS.utils.crawling.request_timing import SECOND_NS, SendStamp, TimedBody
 from FRS.utils.crawling.verify_pilot import (
     VerificationError,
     displayed_stats,
@@ -63,6 +64,50 @@ def _sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def timing_version(state):
+    version = state.get("timing_version", 1)
+    require(type(version) is int and version in (1, 2), "지원하지 않는 요청 시각 형식")
+    return version
+
+
+def check_intervals(state, responses):
+    version = timing_version(state)
+    interval = state["min_request_interval_seconds"]
+    require(type(interval) is int and interval >= 1, "요청 간격 설정이 잘못됐습니다")
+    if version == 1:
+        require(
+            all("sent_at" not in e and "send_started_ns" not in e for e in responses),
+            "기존 형식에 새 전송 시각이 섞여 있습니다",
+        )
+        times = [_time(e["observed_at"]) for e in responses]
+        # 이미 종료한 실행의 기록·원래 허용 오차는 바꾸지 않는다.
+        valid = all(
+            (b - a).total_seconds() >= interval - 0.001
+            for a, b in zip(times, times[1:])
+        )
+    else:
+        for entry in responses:
+            require(
+                isinstance(entry.get("sent_at"), str)
+                and entry["sent_at"] == entry.get("observed_at")
+                and type(entry.get("send_started_ns")) is int
+                and entry["send_started_ns"] >= 0,
+                "전송 시작 시각이 없거나 잘못됐습니다",
+            )
+            try:
+                sent_at = _time(entry["sent_at"])
+            except ValueError:
+                raise VerificationError(
+                    "전송 시작 시각의 ISO 형식이 잘못됐습니다"
+                ) from None
+            require(
+                sent_at.utcoffset() is not None, "전송 시작 시각에 시간대가 없습니다"
+            )
+        starts = [e["send_started_ns"] for e in responses]
+        valid = all(b - a >= interval * SECOND_NS for a, b in zip(starts, starts[1:]))
+    require(valid, "요청 간격이 1초보다 짧습니다")
+
+
 def check_records(raw_path, processed_path):
     """1단계. manifest·원본·보고서의 형식과 해시를 대조하고 원본 본문을 돌려준다."""
     state = json.loads((raw_path / "manifest.json").read_text(encoding="utf-8"))
@@ -77,6 +122,7 @@ def check_records(raw_path, processed_path):
         state["status"] == report["status"] == "completed",
         "완료한 실행만 검증합니다",
     )
+    require(timing_version(state) == timing_version(report), "요청 시각 형식 불일치")
     require("pending" not in state, "결과를 모르는 요청이 남아 있습니다")
     require(
         state["eligibility_basis"] == report["eligibility_basis"] == ELIGIBILITY_BASIS,
@@ -117,20 +163,12 @@ def check_records(raw_path, processed_path):
         {p.name for p in raw_path.glob("*.body")} == {e["path"] for e in responses},
         "기록에 없는 원본 파일이 있습니다",
     )
+    check_intervals(state, responses)
     times = [_time(entry["observed_at"]) for entry in responses]
     require(
         _time(state["started_at"]) <= times[0]
         and times[-1] <= _time(state["finished_at"]),
         "관측 시각이 실행 시간 밖입니다",
-    )
-    interval = state["min_request_interval_seconds"]
-    require(
-        interval >= 1
-        and all(
-            (b - a).total_seconds() >= interval - 0.001
-            for a, b in zip(times, times[1:])
-        ),
-        "요청 간격이 1초보다 짧습니다",
     )
     hashes = report["processed_hashes"]
     require(
@@ -187,6 +225,11 @@ def replay(
             == (entry["url"], entry["resource"], _canonical(entry["form"])),
             f"{attempt}번째 요청이 기록과 다릅니다",
         )
+        if timing_version(state) == 2:
+            return TimedBody(
+                bodies[attempt - 1],
+                SendStamp(_time(entry["sent_at"]), entry["send_started_ns"]),
+            )
         return bodies[attempt - 1]
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -203,6 +246,7 @@ def replay(
             position_field=position_field,
             allow_empty_cells=allow_empty_cells,
             clock=clock,
+            timing_version=timing_version(state),
         )
         holder["run"] = run
         replayed = run.execute()

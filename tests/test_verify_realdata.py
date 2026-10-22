@@ -8,7 +8,17 @@ from itertools import count
 
 import pytest
 from test_ability_parser import ability_html
-from test_realdata_catalog import CLUB, OBSERVED, OTHER, Server, TwoClubServer, template
+from test_realdata_catalog import (
+    CLUB,
+    NATION,
+    NATION_CARD,
+    OBSERVED,
+    OTHER,
+    NationServer,
+    Server,
+    TwoClubServer,
+    template,
+)
 
 from FRS.utils.crawling.realdata_catalog import RealDataRun
 from FRS.utils.crawling.verify_pilot import VerificationError
@@ -42,9 +52,14 @@ def collect(root, server=None, *, step=2, **options):
         root / "data/processed" / RUN_ID,
         server or PayServer({(4, 20, ""): 200, (4, 12, ""): 120, (13, 20, ""): 80}),
         run_id=RUN_ID,
-        template=template(),
         clock=lambda: OBSERVED + timedelta(seconds=next(ticks)),
-        **{"clubs": [CLUB], "max_attempts": 300, "allow_empty_cells": True, **options},
+        **{
+            "clubs": [CLUB],
+            "template": template(),
+            "max_attempts": 300,
+            "allow_empty_cells": True,
+            **options,
+        },
     )
     report = run.execute()
     return root / "data/raw" / RUN_ID, root / "data/processed" / RUN_ID, report
@@ -200,4 +215,38 @@ def test_two_clubs_with_a_price_conflict_verify(tmp_path):
     state, report, bodies = check_records(raw, processed)
     rewrite(processed, "card_price", revive)
     with pytest.raises(VerificationError, match="unknown"):
+        check_independently(state, report, bodies, processed, None)
+
+
+def test_a_club_and_nation_run_verifies_and_checks_nationality(tmp_path):
+    raw, processed, report = collect(
+        tmp_path,
+        NationServer(),
+        clubs=[CLUB, NATION],
+        template=template(n4NationId="0"),
+    )
+    assert report["status"] == "completed"
+    result = verify(raw, processed, allow_empty_cells=True)
+    assert result["verified"] and result["catalog_cards"] == 2
+
+    # 원본 해시를 지나도 상세 국기가 국적 조건과 다르면 독립 대조에서 거부한다.
+    state, report, bodies = check_records(raw, processed)
+    index = next(
+        i
+        for i, entry in enumerate(state["responses"])
+        if entry["resource"] == "ability" and entry["form"]["spid"] == NATION_CARD
+    )
+    changed = list(bodies)
+    changed[index] = bodies[index].replace(b"smallflags/27.png", b"smallflags/21.png")
+    with pytest.raises(VerificationError, match="상세 국적"):
+        check_independently(state, report, changed, processed, None)
+
+    # 국가 자격을 클럽 자격으로 바꾸면(해시는 맞춰도) 거부한다.
+    def as_club(lines):
+        for line in lines:
+            line["type"] = "club"
+
+    rewrite(processed, "team_color", as_club)
+    state, report, bodies = check_records(raw, processed)
+    with pytest.raises(VerificationError, match="자격 관측"):
         check_independently(state, report, bodies, processed, None)

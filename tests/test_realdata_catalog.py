@@ -12,10 +12,12 @@ from FRS.utils.crawling.realdata_catalog import (
     ABILITY_URL,
     BANDS,
     LIST_CAP,
+    MIXED_ELIGIBILITY_BASIS,
     CannotSplit,
     CatalogStopped,
     Cell,
     ClubSpec,
+    NationSpec,
     RealDataRun,
     build_form,
     initial_cells,
@@ -26,6 +28,8 @@ from FRS.utils.crawling.realdata_catalog import (
 
 OBSERVED = datetime(2026, 10, 21, tzinfo=timezone.utc)
 CLUB = ClubSpec("가상클럽", 13, 9)
+NATION = NationSpec("가상국가", 27)
+CLUB_CARD, NATION_CARD = 123000001, 123000002
 SKILLS = ("sprintspeed", "acceleration", "strength", "stamina")
 
 
@@ -404,3 +408,95 @@ def test_attempt_cap_must_be_an_integer_within_the_code_limit(make, attempts):
 
 def test_a_three_club_sized_cap_is_accepted(make):
     assert make(Server(), max_attempts=5800).max_attempts == 5800
+
+
+def flag_html(nation_id):
+    return (
+        '<div class="nation"><img src="https://example.invalid/live/externalAssets/'
+        f'common/countries/smallflags/{nation_id}.png" alt=""></div>'
+    )
+
+
+class NationServer:
+    """클럽 칸과 국적 칸이 서로 다른 카드를 돌려준다. 상세 국기 번호를 정할 수 있다."""
+
+    def __init__(self, flag=27):
+        self.flag, self.calls = flag, []
+
+    def __call__(self, url, form, resource):
+        self.calls.append((resource, form))
+        if resource == "ability":
+            html = ability_html(form["n1Strong"], form["spid"])
+            html = html.replace("<span>20</span>", "<span>21</span>")
+            flag = self.flag if form["spid"] == NATION_CARD else 21
+            return (flag_html(flag) + html).encode()
+        low, high = int(form["n4SalaryMin"]), int(form["n4SalaryMax"])
+        if (low, high) != (21, 25):
+            return b"<html>empty</html>"
+        spid = NATION_CARD if form["n4NationId"] == "27" else CLUB_CARD
+        return rows_html([spid], low, int(form["n1Strong"])).encode()
+
+
+def test_nation_cells_search_by_nationality_and_keep_a_nation_membership(
+    make, tmp_path
+):
+    server = NationServer()
+    run = make(server, clubs=[CLUB, NATION], template=template(n4NationId="0"))
+    report = run.execute()
+    assert report["status"] == "completed", report
+    assert report["eligibility_basis"] == MIXED_ELIGIBILITY_BASIS
+    assert report["cards_by_club"] == {"가상클럽": 1, "가상국가": 1}
+    lists = [form for resource, form in server.calls if resource == "player_list"]
+    club_forms = [f for f in lists if f["n4TeamId"] == "9"]
+    nation_forms = [f for f in lists if f["n4NationId"] == "27"]
+    assert len(club_forms) + len(nation_forms) == len(lists) == 12
+    assert all(f["n4LeagueId"] == "13" and f["n4NationId"] == "0" for f in club_forms)
+    assert all(f["n4LeagueId"] == f["n4TeamId"] == "0" for f in nation_forms)
+    colors = [
+        json.loads(line)
+        for line in (tmp_path / "out/team_color.jsonl").read_text().splitlines()
+    ]
+    assert {(c["name"], c["type"], c["spid"]) for c in colors} == {
+        ("가상클럽", "club", CLUB_CARD),
+        ("가상국가", "nation", NATION_CARD),
+    }
+    manifest = json.loads((tmp_path / "raw/manifest.json").read_text())
+    assert manifest["nations"] == ["가상국가"]
+    assert manifest["eligibility_basis"] == MIXED_ELIGIBILITY_BASIS
+
+
+def test_a_nation_card_with_another_flag_stops_the_run(make):
+    run = make(
+        NationServer(flag=21), clubs=[CLUB, NATION], template=template(n4NationId="0")
+    )
+    report = run.execute()
+    assert report["status"] == "stopped"
+    assert report["stop_reason"]["kind"] == "nationality"
+
+
+def test_nation_search_needs_a_clean_nation_key_in_the_saved_form(make):
+    with pytest.raises(ValueError, match="n4NationId"):
+        make(NationServer(), clubs=[NATION])
+    with pytest.raises(ValueError, match="n4NationId=0"):
+        validate_template(template(n4NationId="27"))
+    with pytest.raises(ValueError):
+        NationSpec("가상국가", 0)
+
+
+def test_cli_accepts_nations_and_needs_at_least_one_team(tmp_path, capsys):
+    argv = [
+        "--club",
+        "가상클럽:13:9",
+        "--nation",
+        "가상국가:27",
+        "--root",
+        str(tmp_path),
+    ]
+    assert main(argv) == 0
+    plan = json.loads(capsys.readouterr().out)
+    assert plan["eligibility_basis"] == MIXED_ELIGIBILITY_BASIS
+    assert plan["initial_list_requests"] == 2 * len(BANDS)
+    for bad in ([], ["--nation", "가상국가"], ["--nation", "가상국가:x"]):
+        with pytest.raises(SystemExit):
+            main([*bad, "--root", str(tmp_path)])
+    assert not (tmp_path / "data").exists()

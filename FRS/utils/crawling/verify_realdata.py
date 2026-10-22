@@ -29,7 +29,9 @@ from FRS.utils.crawling.realdata_catalog import (
     CATALOG_URL,
     ELIGIBILITY_BASIS,
     LIST_CAP,
+    MIXED_ELIGIBILITY_BASIS,
     ClubSpec,
+    NationSpec,
     RealDataRun,
     ability_form,
     validate_run_id,
@@ -50,6 +52,8 @@ PROCESSED_FILES = (
     "team_color",
 )
 ROW_ID = re.compile(rb'id="area_playerunit_([0-9]{7,9})"')
+# 수집기의 국기 정규식과 독립으로 읽는다. 카드 머리의 국기만 본다.
+FLAG = re.compile(rb'class="nation">\s*<img[^>]*/countries/smallflags/([0-9]+)\.png')
 
 
 def _canonical(value):
@@ -125,8 +129,10 @@ def check_records(raw_path, processed_path):
     require(timing_version(state) == timing_version(report), "요청 시각 형식 불일치")
     require("pending" not in state, "결과를 모르는 요청이 남아 있습니다")
     require(
-        state["eligibility_basis"] == report["eligibility_basis"] == ELIGIBILITY_BASIS,
-        "자격 근거가 클럽 경력 검색이 아닙니다",
+        state["eligibility_basis"] == report["eligibility_basis"]
+        and state["eligibility_basis"]
+        == (MIXED_ELIGIBILITY_BASIS if state.get("nations") else ELIGIBILITY_BASIS),
+        "자격 근거가 클럽 경력·국적 검색 기록과 다릅니다",
     )
     require(report["auto_activation"] is False, "자동 활성화 표시가 있습니다")
     responses = state["responses"]
@@ -196,14 +202,19 @@ def replay(
     lists = [e for e in responses if e["resource"] == "player_list"]
     require(bool(lists) and lists[0]["url"] == CATALOG_URL, "목록 요청이 없습니다")
     template = dict(lists[0]["form"])
-    ids = list(
-        dict.fromkeys((e["form"]["n4LeagueId"], e["form"]["n4TeamId"]) for e in lists)
-    )
+    ids = list(dict.fromkeys(_team_ids(e["form"]) for e in lists))
     require(len(ids) == len(state["clubs"]), "클럽 기록과 목록 요청이 다릅니다")
-    clubs = [
-        ClubSpec(name, int(league), int(team))
-        for name, (league, team) in zip(state["clubs"], ids, strict=True)
-    ]
+    clubs = [_team(name, key) for name, key in zip(state["clubs"], ids, strict=True)]
+    require(
+        [c.name for c in clubs if c.kind == "nation"] == state.get("nations", []),
+        "국가 기록과 목록 요청이 다릅니다",
+    )
+    # 클럽 칸의 폼은 템플릿 값을, 국가 칸의 폼은 리그·클럽 0을 쓴다. 클럽 칸에서 다시 만든다.
+    first = next((e for e in lists if _team_ids(e["form"])[2] == "0"), None)
+    if first is not None:
+        template = dict(first["form"])
+    else:
+        template.update(n4LeagueId="0", n4TeamId="0", n4NationId="0")
     holder = {}
 
     def clock():
@@ -267,6 +278,7 @@ def replay(
                 f"재생한 {key}가 다릅니다",
             )
         for key in (
+            "eligibility_basis",
             "catalog_cards",
             "cards_by_club",
             "profile_cards",
@@ -288,11 +300,22 @@ def replay(
             )
 
 
+def _team_ids(form):
+    # 국적 조건이 생기기 전 실행의 폼에도 n4NationId=0이 들어 있다.
+    return (form["n4LeagueId"], form["n4TeamId"], form.get("n4NationId", "0"))
+
+
+def _team(name, key):
+    league, team, nation = key
+    if league == team == "0":
+        return NationSpec(name, int(nation))
+    require(nation == "0", f"{name}: 클럽 칸에 국적 조건이 있습니다")
+    return ClubSpec(name, int(league), int(team))
+
+
 def _club_names(state):
     lists = [e for e in state["responses"] if e["resource"] == "player_list"]
-    ids = list(
-        dict.fromkeys((e["form"]["n4LeagueId"], e["form"]["n4TeamId"]) for e in lists)
-    )
+    ids = list(dict.fromkeys(_team_ids(e["form"]) for e in lists))
     return dict(zip(ids, state["clubs"], strict=True))
 
 
@@ -323,7 +346,7 @@ def check_independently(state, report, bodies, processed_path, position_field):
             continue  # 11강 급여 대조 요청. 카드 목록에 넣지 않는다.
         position = form.get(position_field) if position_field else None
         cell = (
-            names[(form["n4LeagueId"], form["n4TeamId"])],
+            names[_team_ids(form)],
             int(form["n4SalaryMin"]),
             int(form["n4SalaryMax"]),
             None if position == blank else position,
@@ -375,6 +398,14 @@ def check_independently(state, report, bodies, processed_path, position_field):
         )
         shown = {labels[label]: value for label, value in displayed_stats(body).items()}
         require(card.stats == shown, f"{spid}: 능력치 직접 표시 숫자와 다릅니다")
+        nations = {
+            int(nation)
+            for (league, team, nation), name in names.items()
+            if league == team == "0" and (name, spid) in memberships
+        }
+        if nations:
+            flags = {int(flag) for flag in FLAG.findall(body)}
+            require(flags == nations, f"{spid}: 상세 국적이 국적 검색 조건과 다릅니다")
 
     derived = read_jsonl(processed_path / "reinforce_stats.jsonl", ReinforceStats)
     require(len(derived) == len(cards) * 6, "6~11강 파생 행 수가 다릅니다")
@@ -393,7 +424,10 @@ def check_independently(state, report, bodies, processed_path, position_field):
     require(
         {(c.name, c.spid) for c in colors} == memberships
         and len(colors) == len(memberships)
-        and all(c.type == "club" for c in colors),
+        and all(
+            c.type == ("nation" if c.name in state.get("nations", []) else "club")
+            for c in colors
+        ),
         "클럽 자격 관측이 클럽별 목록 카드와 다릅니다",
     )
     prices = {

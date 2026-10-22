@@ -1,4 +1,4 @@
-"""실데이터 브랜치의 클럽 경력 검색 수집기.
+"""실데이터 브랜치의 클럽 경력·국적 검색 수집기.
 
 설계: docs/real-data-branch-design.md §4. 이 모듈은 요청 계획·분할 규칙·관측 변환·
 실행 상태를 담당한다. 네트워크 전송은 주입한 `fetch`가 맡으므로 단위 테스트는
@@ -37,6 +37,12 @@ BANDS = ((4, 20), (21, 25), (26, 30), (31, 35), (36, 99))
 SALARY_MIN, SALARY_MAX = BANDS[0][0], BANDS[-1][1]
 ABILITY_URL = "https://fconline.nexon.com/datacenter/PlayerAbility"
 ELIGIBILITY_BASIS = "club_career_search"
+# 국가 팀컬러는 국적 검색 결과를 자격 근거로 쓴다(2026-10-22 사용자 결정). 클럽만 담은
+# 실행은 기존 근거 문자열을 그대로 써서 이전 실행의 재생·검증 결과가 바뀌지 않게 한다.
+MIXED_ELIGIBILITY_BASIS = "club_career_and_nationality_search"
+NATION_FLAG = re.compile(
+    rb'<div class="nation">\s*<img src="[^"]*/smallflags/([0-9]+)\.png"'
+)
 SKILLS = ("sprintspeed", "acceleration", "strength", "stamina")
 RUN_ID_PATTERN = r"real-data-[a-z0-9]+(?:-[a-z0-9]+)*"
 # 코드의 안전 상한이다. 실행마다 승인받은 --max-attempts가 실제 상한이다.
@@ -88,10 +94,52 @@ class ClubSpec:
                 "클럽 이름과 리그·클럽 ID는 확인한 값으로 명시해야 합니다."
             )
 
+    kind = "club"
+
+    def form_ids(self):
+        return dict(n4LeagueId=str(self.league_id), n4TeamId=str(self.team_id))
+
+
+@dataclass(frozen=True)
+class NationSpec:
+    """국가 팀컬러 대상. 리그·클럽 없이 국적 ID로만 목록을 거른다."""
+
+    name: str
+    nation_id: int
+
+    def __post_init__(self):
+        if (
+            not isinstance(self.name, str)
+            or not self.name.strip()
+            or type(self.nation_id) is not int
+            or self.nation_id <= 0
+        ):
+            raise ValueError("국가 이름과 국적 ID는 확인한 값으로 명시해야 합니다.")
+
+    kind = "nation"
+
+    def form_ids(self):
+        return dict(n4LeagueId="0", n4TeamId="0", n4NationId=str(self.nation_id))
+
+
+def eligibility_basis(teams):
+    teams = tuple(teams)
+    if any(team.kind == "nation" for team in teams):
+        return MIXED_ELIGIBILITY_BASIS
+    return ELIGIBILITY_BASIS
+
+
+def nation_flag(body):
+    """능력치 상세 카드 머리의 국기 이미지 번호(=국적 ID)를 읽는다."""
+    found = NATION_FLAG.findall(body)
+    if len(found) != 1:
+        return None
+    return int(found[0])
+
 
 @dataclass(frozen=True)
 class Cell:
-    club: ClubSpec
+    club: ClubSpec | NationSpec
     low: int
     high: int
     position: str | None = None
@@ -108,7 +156,7 @@ class Cell:
 def initial_cells(clubs):
     clubs = tuple(clubs)
     if not clubs or len({c.name for c in clubs}) != len(clubs):
-        raise ValueError("서로 다른 클럽을 하나 이상 명시해야 합니다.")
+        raise ValueError("서로 다른 클럽·국가를 하나 이상 명시해야 합니다.")
     return tuple(Cell(club, lo, hi) for club in clubs for lo, hi in BANDS)
 
 
@@ -139,6 +187,10 @@ def validate_template(template):
         raise ValueError(
             "클럽 경력 검색 폼(n1History=0, teamcolorid=0)이 아닙니다. 소속 팀컬러 폼은 쓰지 않습니다."
         )
+    if template.get("n4NationId", "0") != "0":
+        raise ValueError(
+            "클럽 칸에 국적 조건이 섞이지 않도록 n4NationId=0 폼이어야 합니다."
+        )
     if sorted(template[f"strSkill{i}"] for i in range(1, 5)) != sorted(SKILLS):
         raise ValueError("선택 능력치 열이 확인된 네 열과 다릅니다.")
     return dict(template)
@@ -147,8 +199,7 @@ def validate_template(template):
 def build_form(template, cell, *, level=5, position_field=None):
     form = dict(template)
     form.update(
-        n4LeagueId=str(cell.club.league_id),
-        n4TeamId=str(cell.club.team_id),
+        **cell.club.form_ids(),
         n4SalaryMin=str(cell.low),
         n4SalaryMax=str(cell.high),
         n4PageNo="1",
@@ -238,6 +289,14 @@ class RealDataRun:
                 "invalid_run", f"요청 상한은 1~{MAX_ATTEMPTS_LIMIT}의 정수여야 합니다."
             )
         self.cells = initial_cells(clubs)
+        self.teams = {cell.club.name: cell.club for cell in self.cells}
+        if (
+            any(team.kind == "nation" for team in self.teams.values())
+            and "n4NationId" not in template
+        ):
+            raise ValueError(
+                "국적 검색에는 n4NationId가 있는 저장된 공식 폼이 필요합니다."
+            )
         self.template = validate_template(template)
         self.positions = tuple(positions)
         self.position_field = position_field
@@ -275,13 +334,16 @@ class RealDataRun:
             max_attempts=max_attempts,
             retries=0,
             min_request_interval_seconds=1,
-            eligibility_basis=ELIGIBILITY_BASIS,
+            eligibility_basis=eligibility_basis(self.teams.values()),
             provider_permission="unconfirmed",
             user_decisions=["RD-1", "RD-2"],
             clubs=[c.club.name for c in self.cells[:: len(BANDS)]],
             responses=[],
             started_at=clock().isoformat(),
         )
+        nations = [t.name for t in self.teams.values() if t.kind == "nation"]
+        if nations:
+            self.state["nations"] = nations
         if timing_version == 2:
             self.state["timing_version"] = 2
         self.flush()
@@ -417,7 +479,7 @@ class RealDataRun:
                     delete_after=None,
                     spid=row.spid,
                     version=entry["sha256"],
-                    type="club",
+                    type=cell.club.kind,
                     name=cell.club.name,
                     **_policy_values(Resource.TEAM_COLOR, row.observed_at, at),
                 ),
@@ -494,7 +556,22 @@ class RealDataRun:
                 raise CatalogStopped(
                     "conflict", f"{spid}: 목록과 상세 급여가 다릅니다."
                 )
+            self.check_nationality(spid, body)
             self.add_card(parsed)
+
+    def check_nationality(self, spid, body):
+        """국적 칸에서 받은 카드는 상세의 국기 번호가 그 국적 ID와 같아야 한다."""
+        expected = {
+            self.teams[name].nation_id
+            for card, name in self.memberships
+            if card == spid and self.teams[name].kind == "nation"
+        }
+        if not expected:
+            return
+        if {nation_flag(body)} != expected:
+            raise CatalogStopped(
+                "nationality", f"{spid}: 상세 국적이 국적 검색 조건과 다릅니다."
+            )
 
     def add_card(self, parsed):
         card, salary = parsed.card, parsed.salary
@@ -575,7 +652,7 @@ class RealDataRun:
             stop_reason=self.state.get("stop_reason"),
             attempts=self.state["attempts"],
             max_attempts=self.max_attempts,
-            eligibility_basis=ELIGIBILITY_BASIS,
+            eligibility_basis=self.state["eligibility_basis"],
             catalog_cards=len(self.rows),
             cards_by_club=dict(
                 Counter(color.name for color in self.memberships.values())
@@ -602,7 +679,7 @@ def plan(clubs, *, max_attempts=None, catalog_only=False):
     return dict(
         scope="real_data_branch_single_run",
         mode="catalog_only" if catalog_only else "full",
-        eligibility_basis=ELIGIBILITY_BASIS,
+        eligibility_basis=eligibility_basis(c.club for c in cells),
         initial_list_requests=len(cells),
         split_rule="only_when_exactly_200_rows",
         parity_requests=len(tuple(dict.fromkeys(c.club for c in cells))),
@@ -621,6 +698,16 @@ def _club(value):
         raise argparse.ArgumentTypeError("클럽은 이름:리그ID:클럽ID 형식이어야 합니다.")
     try:
         return ClubSpec(parts[0], int(parts[1]), int(parts[2]))
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from None
+
+
+def _nation(value):
+    parts = value.split(":")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("국가는 이름:국적ID 형식이어야 합니다.")
+    try:
+        return NationSpec(parts[0], int(parts[1]))
     except ValueError as error:
         raise argparse.ArgumentTypeError(str(error)) from None
 
@@ -670,7 +757,10 @@ def live_fetch(session, *, pacer=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--club", action="append", type=_club, required=True)
+    parser.add_argument("--club", action="append", type=_club, default=[])
+    parser.add_argument(
+        "--nation", action="append", type=_nation, default=[], help="이름:국적ID"
+    )
     parser.add_argument(
         "--run", action="store_true", help="별도 승인된 범위에서만 실행"
     )
@@ -696,11 +786,14 @@ def main(argv=None):
         help="목록·급여 대조만 요청해 카드 수를 잰다. 능력치·가공 파일 없음",
     )
     args = parser.parse_args(argv)
+    teams = [*args.club, *args.nation]
+    if not teams:
+        parser.error("--club 또는 --nation을 하나 이상 명시해야 합니다.")
     if not args.run:
         print(
             json.dumps(
                 plan(
-                    args.club,
+                    teams,
                     max_attempts=args.max_attempts,
                     catalog_only=args.catalog_only,
                 ),
@@ -723,7 +816,7 @@ def main(argv=None):
             args.root / "data/processed" / args.run_id,
             live_fetch(session),
             run_id=args.run_id,
-            clubs=args.club,
+            clubs=teams,
             template=template,
             max_attempts=args.max_attempts,
             positions=args.position,

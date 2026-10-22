@@ -1,4 +1,4 @@
-"""별도 합성 Agent HTTP 앱. 서버를 실행하기 전까지 모델/자료를 준비하지 않는다."""
+"""별도 Agent HTTP 앱(합성/명시 관측 자료). 서버를 실행하기 전까지 모델/자료를 준비하지 않는다."""
 
 import asyncio
 import threading
@@ -21,7 +21,13 @@ from FRS.api.agent_events import (
     parse_request,
 )
 from FRS.api.agent_projection import error_outcome, project_result
-from FRS.api.agent_runtime import AgentService, AgentSettings, build_service, utc_now
+from FRS.api.agent_runtime import (
+    HEALTH_SCHEMA,
+    AgentService,
+    AgentSettings,
+    build_service,
+    utc_now,
+)
 
 
 class RunStopped(RuntimeError):
@@ -99,6 +105,7 @@ def execute(service, body, lease, clock, t0):
             material=GuardedMaterial(service.material, lease),
             batches=service.batches,
             clock=guarded_clock,
+            fixed_salary_cap=service.fixed_salary_cap,
         ).run(body.message, t0=t0)
         lease.check()
         lease.rendering.set()
@@ -108,6 +115,8 @@ def execute(service, body, lease, clock, t0):
             clock=guarded_clock,
             provenance=None if result.outcome == "input_issues" else service.provenance,
             material_id=service.material_id,
+            data_mode=service.data_mode,
+            fixed_salary_cap=service.fixed_salary_cap,
         )
     except RunStopped:
         return error_outcome("request_deadline")
@@ -162,7 +171,7 @@ def create_agent_app(
                 active.close()
             app.state.executor.shutdown(wait=False, cancel_futures=True)
 
-    app = FastAPI(title="FRS Synthetic Agent", version="1.0", lifespan=lifespan)
+    app = FastAPI(title="FRS Agent", version="1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(ALLOWED_ORIGINS),
@@ -175,10 +184,10 @@ def create_agent_app(
         service = app.state.service
         if service is None:
             return dict(
-                schema_version="agent-health.v1",
+                schema_version=HEALTH_SCHEMA,
                 status="unavailable",
                 reason="not_configured",
-                data_mode="synthetic",
+                data_mode=None,
                 model=None,
                 material=None,
             )
@@ -235,7 +244,7 @@ def create_agent_app(
         service = app.state.service
 
         async def events():
-            sequence = EventSequence(body.request_id)
+            sequence = EventSequence(body.request_id, service.data_mode)
             try:
                 yield sequence.started()
                 lease.check()

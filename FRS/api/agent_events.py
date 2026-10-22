@@ -8,7 +8,7 @@ from pydantic import Field, TypeAdapter, field_validator
 
 from FRS.agent.candidates import canonical
 from FRS.agent.json_contract import strict_json
-from FRS.api.agent_contract import WEB_CONTRACT, WireModel
+from FRS.api.agent_contract import WEB_CONTRACT, DataMode, WireModel
 from FRS.api.agent_projection import WebOutcome, error_outcome, projection_spec
 
 MAX_BODY_BYTES = 65536
@@ -18,13 +18,13 @@ RequestId = Annotated[
     str, Field(strict=True, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
 ]
 PROGRESS = {
-    "agent": "조건 확인과 합성 스쿼드 구성을 시작합니다.",
+    "agent": "조건 확인과 스쿼드 구성을 시작합니다.",
     "render": "결과와 응답 기한을 확인합니다.",
 }
 
 
 class StreamRequest(WireModel):
-    contract_version: Literal["web-agent.v0"]
+    contract_version: Literal["web-agent.v1"]
     request_id: RequestId
     message: Annotated[str, Field(min_length=1, max_length=4000)]
 
@@ -73,8 +73,9 @@ def event_spec():
 
 
 class EventSequence:
-    def __init__(self, request_id):
+    def __init__(self, request_id, data_mode="synthetic"):
         self.request_id = TypeAdapter(RequestId).validate_python(request_id)
+        self.data_mode = TypeAdapter(DataMode).validate_python(data_mode)
         self._seq, self._started, self._terminal = 0, False, False
 
     def _encode(self, kind, payload):
@@ -95,7 +96,7 @@ class EventSequence:
     def started(self):
         if self._started:
             raise ValueError("중복 시작 이벤트입니다.")
-        output = self._encode("started", dict(data_mode="synthetic"))
+        output = self._encode("started", dict(data_mode=self.data_mode))
         self._started = True
         return output
 

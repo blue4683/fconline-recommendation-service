@@ -34,6 +34,15 @@ _INTEGER = re.compile(r"(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)\Z")
 _LEVEL = re.compile(r"([0-9]+)\s*강\Z")
 _RANGE = re.compile(r"([0-9]+)\s*~\s*([0-9]+)\s*강\Z")
 MAX_SALARY = 2**63 - 1
+GAME_SALARY_CAP = 310
+GAME_REQUIRED_FIELDS = tuple(field for field in _FIELDS if field != "salary_cap")
+
+
+def validate_salary_policy(fixed_salary_cap):
+    if fixed_salary_cap is not None and (
+        type(fixed_salary_cap) is not int or fixed_salary_cap != GAME_SALARY_CAP
+    ):
+        raise ValueError("고정 급여 정책은310만 허용합니다.")
 
 
 class _FrozenModel(BaseModel):
@@ -177,7 +186,8 @@ def _exact(text, supported, code, message):
     return value
 
 
-def conditions_spec():
+def conditions_spec(*, fixed_salary_cap=None):
+    validate_salary_policy(fixed_salary_cap)
     spec = dict(
         version=1,
         amount_normalizer=normalization_spec()["normalizer_version"],
@@ -201,15 +211,31 @@ def conditions_spec():
         evidence="only_exact_original_spans_including_invalid_values",
         scope="manual_or_synthetic_extraction_only_no_io_or_snapshot",
     )
+    if fixed_salary_cap is not None:
+        spec.update(
+            version=2,
+            required_fields=list(GAME_REQUIRED_FIELDS),
+            salary=dict(
+                fixed=GAME_SALARY_CAP, source="system_policy", explicit="310_only"
+            ),
+            defaults=dict(salary_cap=GAME_SALARY_CAP),
+            evidence="exact_original_spans_only_system_salary_has_no_fabricated_span",
+        )
     encoded = json.dumps(
         spec, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     )
     return {**spec, "normalizer_version": hashlib.sha256(encoded.encode()).hexdigest()}
 
 
-def normalize_conditions(original: str, extracted: ExtractedConditions):
+def normalize_conditions(
+    original: str, extracted: ExtractedConditions, *, fixed_salary_cap=None
+):
     """검증된 근거와 모든 사유를 반환한다. 원문 전체의 의미를 추출/보증하지 않는다."""
+    validate_salary_policy(fixed_salary_cap)
+    required = _FIELDS if fixed_salary_cap is None else GAME_REQUIRED_FIELDS
     issues, verified, values = [], {}, {}
+    if fixed_salary_cap is not None:
+        values["salary_cap"] = GAME_SALARY_CAP
 
     def issue(field, kind, code, message, occurrence=None):
         issues.append(
@@ -228,8 +254,10 @@ def normalize_conditions(original: str, extracted: ExtractedConditions):
             conditions=None if issues else NormalizedConditions(**values),
             issues=tuple(issues),
             evidence=ExtractedConditions(**verified),
-            supported=SupportedConditions(),
-            normalizer_version=conditions_spec()["normalizer_version"],
+            supported=SupportedConditions(required_fields=required),
+            normalizer_version=conditions_spec(fixed_salary_cap=fixed_salary_cap)[
+                "normalizer_version"
+            ],
         )
 
     if not isinstance(original, str) or len(original) > MAX_SOURCE_LENGTH:
@@ -256,7 +284,7 @@ def normalize_conditions(original: str, extracted: ExtractedConditions):
     for field in (*_FIELDS, "unsupported"):
         verified[field], occurrences[field] = [], []
         spans = getattr(extracted, field)
-        if field in _FIELDS and not spans:
+        if field in required and not spans:
             issue(
                 field,
                 "missing",
@@ -293,7 +321,20 @@ def normalize_conditions(original: str, extracted: ExtractedConditions):
         parsed = []
         for index, span in occurrences[field]:
             try:
-                parsed.append(parsers[field](span.text))
+                value = parsers[field](span.text)
+                parsed.append(value)
+                if (
+                    field == "salary_cap"
+                    and fixed_salary_cap is not None
+                    and value != GAME_SALARY_CAP
+                ):
+                    issue(
+                        field,
+                        "unsupported",
+                        "fixed_salary_cap",
+                        "급여 상한은310으로 고정됩니다. 급여를 생략하거나310으로 수정해 주세요.",
+                        index,
+                    )
             except NormalizationError as error:
                 kind = "ambiguous" if error.code == "ambiguous_amount" else "invalid"
                 issue(field, kind, error.code, str(error), index)

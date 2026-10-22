@@ -41,7 +41,15 @@ class CollectionStopped(RuntimeError):
         super().__init__(f"수집 중단: {failure['kind']}")
 
 
-def fetch_url(chunked_url, *, policy=None, method="GET", data=None, transport=None):
+def fetch_url(
+    chunked_url,
+    *,
+    policy=None,
+    method="GET",
+    data=None,
+    transport=None,
+    wait_before_attempt=None,
+):
     if method not in ("GET", "POST") or (method == "GET" and data is not None):
         raise ValueError("GET 또는 폼 POST 요청만 지원합니다.")
     policy = policy or RequestPolicy()
@@ -52,7 +60,11 @@ def fetch_url(chunked_url, *, policy=None, method="GET", data=None, transport=No
 
     for attempt in range(policy.max_retries + 1):
         # 모든 시도 사이에 간격을 둔다. UA·출처 헤더를 임의 생성하지 않는다.
-        time.sleep(policy.request_interval)
+        if wait_before_attempt is None:
+            time.sleep(policy.request_interval)
+        else:
+            # 명시한 전송 시작 페이서만 대체한다. 기본 수집기의 대기는 그대로다.
+            wait_before_attempt()
         started = time.monotonic()
         try:
             options = {

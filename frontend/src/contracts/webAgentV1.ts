@@ -1,15 +1,15 @@
 /**
- * web-agent.v0 — 모의 응답용 웹 경계 제안 (docs/web-agent-blueprint.md §4).
- *
- * 이 파일은 현재 구현된 백엔드 API나 확정 계약이 아니다. 통합 담당이 INT-001로
- * 확정하기 전까지 모의 개발과 검토를 위한 구조 검사만 수행한다. 서버 독립 검증기를
- * 대신하지 않으며, 값을 보정하지 않고 맞지 않으면 거부한다.
+ * web-agent.v1 — 실데이터 브랜치의 확정 웹 계약 (real-data-branch-design.md §12.2).
+ * 합성/관측 모드를 구분하며 서버 독립 검증기를 대신하지 않는다.
+ * 값을 보정하지 않고 맞지 않으면 거부한다. develop/master의 v0는 변경하지 않는다.
  *
  * 금액·급여·합계·ID는 정확한 10진 문자열로 다룬다. Number/parseFloat로 변환하지 않는다.
  * 비교가 필요한 곳은 BigInt로 문자열을 정확히 읽어 대조만 한다.
  */
 
-export const CONTRACT_VERSION = 'web-agent.v0';
+export const CONTRACT_VERSION = 'web-agent.v1';
+export const DATA_MODES = ['synthetic', 'observed'] as const;
+export type DataMode = (typeof DATA_MODES)[number];
 
 /** 서버 원문 한도(Python 코드포인트 기준). */
 export const MAX_MESSAGE_CODE_POINTS = 4000;
@@ -111,11 +111,11 @@ export interface FinalResult {
   versions: Record<string, string>;
   answer: string | null;
   narration_source: NarrationSource;
-  data_mode: 'synthetic';
+  data_mode: DataMode;
 }
 
 export interface StartedPayload {
-  data_mode: 'synthetic';
+  data_mode: DataMode;
 }
 export interface ProgressPayload {
   stage: string;
@@ -374,7 +374,7 @@ export function parseFinal(value: unknown): FinalResult {
     'data_mode',
   ]);
   const status = oneOf(o.status, FINAL_STATUSES, `${path}.status`);
-  if (o.data_mode !== 'synthetic') fail(`${path}.data_mode`, 'synthetic이 필요합니다');
+  const data_mode = oneOf(o.data_mode, DATA_MODES, `${path}.data_mode`);
   const conditions = o.conditions === null ? null : parseConditions(o.conditions, `${path}.conditions`);
   const issues = arr(o.issues, `${path}.issues`).map((v, i) => parseIssue(v, `${path}.issues[${i}]`));
   const snapshot = o.snapshot === null ? null : parseSnapshot(o.snapshot, `${path}.snapshot`);
@@ -406,7 +406,7 @@ export function parseFinal(value: unknown): FinalResult {
     versions: parseVersions(o.versions, `${path}.versions`),
     answer,
     narration_source,
-    data_mode: 'synthetic',
+    data_mode,
   };
 }
 
@@ -433,8 +433,7 @@ export function parseEnvelope(eventName: string, data: string): AgentEvent {
   switch (type) {
     case 'started': {
       exactKeys(p, 'started', ['data_mode']);
-      if (p.data_mode !== 'synthetic') fail('started.data_mode', 'synthetic이 필요합니다');
-      return { type, seq, request_id, payload: { data_mode: 'synthetic' } };
+      return { type, seq, request_id, payload: { data_mode: oneOf(p.data_mode, DATA_MODES, 'started.data_mode') } };
     }
     case 'progress': {
       exactKeys(p, 'progress', ['stage', 'message']);

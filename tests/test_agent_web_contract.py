@@ -296,7 +296,7 @@ def test_terminal_revalidates_payload_and_does_not_leak_invalid_success(
 def request_bytes(**changes):
     return json.dumps(
         dict(
-            contract_version="web-agent.v0",
+            contract_version="web-agent.v1",
             request_id="test-1",
             message=SOURCE,
             **changes,
@@ -308,7 +308,7 @@ def request_bytes(**changes):
 def test_request_preserves_unicode_and_whitespace():
     original = "  " + SOURCE + "  "
     raw = json.dumps(
-        dict(contract_version="web-agent.v0", request_id="id_1-A", message=original),
+        dict(contract_version="web-agent.v1", request_id="id_1-A", message=original),
         ensure_ascii=False,
     ).encode()
     assert parse_request(raw).message == original
@@ -316,7 +316,7 @@ def test_request_preserves_unicode_and_whitespace():
         parse_request(
             json.dumps(
                 dict(
-                    contract_version="web-agent.v0", request_id="x", message="⚽" * 4000
+                    contract_version="web-agent.v1", request_id="x", message="⚽" * 4000
                 )
             ).encode()
         ).message
@@ -357,7 +357,7 @@ def test_invalid_json_and_byte_limit_are_safe_before_model(raw):
     ],
 )
 def test_invalid_request_fields_are_rejected(changes):
-    values = dict(contract_version="web-agent.v0", request_id="x", message=SOURCE)
+    values = dict(contract_version="web-agent.v1", request_id="x", message=SOURCE)
     values.update(changes)
     raw = json.dumps(values).encode()
     with pytest.raises(RequestError):

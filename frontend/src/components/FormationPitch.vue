@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SquadRow } from '../contracts/webAgentV0';
+import type { SquadRow } from '../contracts/webAgentV1';
 
 /**
  * 검증된 11명을 공격 방향이 위쪽인 경기장에 배치해 보여 준다. 화면 오른쪽이 선수의 오른쪽이다.

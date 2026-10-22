@@ -1,8 +1,8 @@
-import type { StreamRequest } from '../contracts/webAgentV0';
+import type { StreamRequest } from '../contracts/webAgentV1';
 import { TransportError, type Transport } from './transport';
 
 /**
- * web-agent.v0 스트림 경로. INT-020 설계의 별도 합성 Agent 앱(127.0.0.1:8001) 경로와 같다.
+ * web-agent.v1 스트림 경로. INT-020 설계의 별도 Agent 앱(127.0.0.1:8001) 경로와 같다.
  * 서버(FRS.api.agent_app)는 develop 00623ba부터 있다. 상주 서버가 켜져 있다고 가정하지 않으며, 화면은 GET /health로 먼저 확인한다.
  * 스트림 전 거절(403·408·409·413·415·422·503)은 상태 코드만 전달하고 본문은 해석하지 않는다.
  */

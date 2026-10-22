@@ -33,3 +33,9 @@ PR이 실제 병합됐고 현재 브랜치 끝이 PR head와 일치하며 병합
 PR #62/#63/#64의 완료 작업 브랜치도 각각 병합 결과·현재 끝·사용 상태를 확인한 뒤 로컬·원격 정리했다. 최초 53개와 합쳐 현재 로컬 58개·원격 56개 정리다. 현재 사용 중인 이 문서 브랜치는 검증/병합 후 안전하게 분리해 삭제한다. 원래 작업 디렉터리의 docs/web-agent-handoff와 별도 웹 담당 feat/squad-web-ui는 보존한다.
 
 기능 묶음 PR [#65](https://github.com/blue4683/fconline-recommendation-service/pull/65)는 develop→master 방향으로 생성했다. 내부 합성 Agent 기반/기존 엔진·정규화·읽기 API와 웹 모의 앱을 포함하고, 실제 모델 비교·Agent API/SSE·웹 실연결·실데이터 전체 완료를 주장하지 않는다. master 밖 두 merge commit은 추가 파일 차이가 없으며 merge-tree 결과가 develop과 일치함을 확인했다. master에는 병합하지 않았다. 이후 develop 변경은 PR head에 반영되므로 본문에 최신 검증 SHA와 제한을 갱신한다.
+
+## 2026-10-22 실데이터 소스 통합 요청
+
+사용자가 `feat/real-data → develop → master`의 검증·PR·Squash 병합을 명시적으로 요청했다. 이전 합성 전용 분리와 master 병합 미승인 기록보다 이번 요청을 우선한다. 최신 develop의 두 테스트 개선을 별도 통합 작업 브랜치에서 보존하고, 실데이터 브랜치는 이력을 재작성하지 않는 fast-forward로 준비한다. 이후 두 PR을 순서대로 검증·병합한다. CI는 master 대상도 검사한다.
+
+이번 요청은 소스 통합 1회이며 배포·새 실제 실행·관측 자료/비밀값 커밋을 포함하지 않는다. 사용자 미추적 파일, 다른 담당 체크아웃, 기존 프로세스, 종료 실행과 잠금을 보존한다. 장기 브랜치 develop/master/feat/real-data는 삭제하지 않는다. [통합 기록](real-data-mainline-integration.md)을 따른다.

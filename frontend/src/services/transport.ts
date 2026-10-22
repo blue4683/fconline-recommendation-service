@@ -1,4 +1,4 @@
-import type { StreamRequest } from '../contracts/webAgentV0';
+import type { StreamRequest } from '../contracts/webAgentV1';
 
 export type TransportMode = 'mock' | 'live';
 

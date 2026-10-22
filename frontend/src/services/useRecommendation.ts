@@ -1,5 +1,5 @@
 import { computed, onBeforeUnmount, ref, shallowRef } from 'vue';
-import { MAX_MESSAGE_CODE_POINTS, type ProgressPayload } from '../contracts/webAgentV0';
+import { MAX_MESSAGE_CODE_POINTS, type ProgressPayload } from '../contracts/webAgentV1';
 import { codePointLength, isBlank } from '../utils/format';
 import { buildRequest, runStream, type Outcome } from './agentSession';
 import type { Transport } from './transport';
@@ -93,15 +93,25 @@ export function useRecommendation(options: RecommendationOptions = {}) {
     }
   }
 
-  function dispose(): void {
+  function reset(): void {
     generation += 1;
     controller?.abort();
     controller = null;
     stopTimer();
+    phase.value = 'idle';
+    started.value = false;
+    progress.value = [];
+    outcome.value = null;
+    expired.value = false;
+    lastRequestId.value = null;
+  }
+
+  function dispose(): void {
+    reset();
     if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
   }
 
   onBeforeUnmount(dispose);
 
-  return { phase, started, progress, outcome, expired, lastRequestId, canSend, send, checkExpiry, dispose };
+  return { phase, started, progress, outcome, expired, lastRequestId, canSend, send, checkExpiry, reset, dispose };
 }

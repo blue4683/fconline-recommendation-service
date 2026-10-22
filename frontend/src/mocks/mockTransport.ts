@@ -3,7 +3,7 @@
  * 실제 파서를 그대로 통과하도록 이벤트·줄·UTF-8 경계와 무관하게 청크를 자르고,
  * CRLF·주석 heartbeat·여러 data 행을 섞는다.
  */
-import { CONTRACT_VERSION, type StreamRequest } from '../contracts/webAgentV0';
+import { CONTRACT_VERSION, type StreamRequest } from '../contracts/webAgentV1';
 import type { Transport } from '../services/transport';
 import { finalFor, type ScenarioId } from './fixtures';
 

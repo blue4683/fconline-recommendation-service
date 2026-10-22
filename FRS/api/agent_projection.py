@@ -16,6 +16,7 @@ from FRS.api.agent_contract import WEB_CONTRACT, WebFinal
 from FRS.core.request_normalization import (
     ExtractedConditions,
     SupportedConditions,
+    conditions_spec,
     normalize_conditions,
 )
 from FRS.core.squad_recommend.snapshot import RequestSnapshot
@@ -35,6 +36,7 @@ ERROR_MESSAGES = {
 }
 CLARIFY = "필수 조건과 안내된 사유를 확인하고 완전한 요청을 다시 입력해 주세요."
 EXPIRED = "자료가 만료되어 추천을 반환하지 않습니다."
+DATA_MODES = ("synthetic", "observed")
 _PREPARATION_KINDS = {
     **dict.fromkeys(
         (
@@ -66,6 +68,7 @@ _PREPARATION_KINDS = {
     "unsupported_formation": "unsupported",
     "unsupported_club": "unsupported",
     "ambiguous_amount": "ambiguous",
+    "fixed_salary_cap": "unsupported",
 }
 
 
@@ -77,6 +80,7 @@ def projection_spec():
         preparation_kinds=dict(_PREPARATION_KINDS),
         errors=dict(ERROR_MESSAGES),
         messages=dict(clarification=CLARIFY, expiry=EXPIRED),
+        data_modes=list(DATA_MODES),
         presentation_version=presentation_spec()["presentation_version"],
         candidate_version=candidate_spec()["candidate_version"],
         selection_version=selection_spec()["selection_version"],
@@ -147,27 +151,43 @@ def error_outcome(code="internal_error"):
     return WebOutcome("error", canonical(dict(code=code, message=ERROR_MESSAGES[code])))
 
 
-def project_result(original, result, *, clock, provenance=None, material_id=None):
+def project_result(
+    original,
+    result,
+    *,
+    clock,
+    provenance=None,
+    material_id=None,
+    data_mode="synthetic",
+    fixed_salary_cap=None,
+):
     """복구/모델 호출 없이 원문-준비-도메인 결과의 결합을 검사한다."""
     try:
+        if data_mode not in DATA_MODES:
+            raise ValueError("명시한 자료 모드가 필요합니다.")
         return _project(
             original,
             result,
             clock=clock,
             provenance=provenance,
             material_id=material_id,
+            data_mode=data_mode,
+            fixed_salary_cap=fixed_salary_cap,
         )
     except (ValueError, TypeError, KeyError, ValidationError):
         return error_outcome()
 
 
-def _project(original, result, *, clock, provenance, material_id):
+def _project(
+    original, result, *, clock, provenance, material_id, data_mode, fixed_salary_cap
+):
     if (
         type(result) is not CandidateRunResult
-        or result.adapter_version != candidate_agent_spec()["adapter_version"]
+        or result.adapter_version
+        != candidate_agent_spec(fixed_salary_cap=fixed_salary_cap)["adapter_version"]
     ):
         raise ValueError("결과 wrapper가 일치하지 않습니다.")
-    preparation = prepare_candidates(original)
+    preparation = prepare_candidates(original, fixed_salary_cap=fixed_salary_cap)
     if preparation != result.preparation:
         raise ValueError("원문/준비 결과가 일치하지 않습니다.")
     versions = dict(
@@ -209,13 +229,17 @@ def _project(original, result, *, clock, provenance, material_id):
             status="needs_clarification",
             conditions=None,
             issues=issues,
-            supported=SupportedConditions().model_dump(mode="json"),
+            supported=SupportedConditions(
+                required_fields=conditions_spec(fixed_salary_cap=fixed_salary_cap)[
+                    "required_fields"
+                ]
+            ).model_dump(mode="json"),
             squad=None,
             snapshot=None,
             versions=versions,
             answer=CLARIFY,
             narration_source="template",
-            data_mode="synthetic",
+            data_mode=data_mode,
         )
         return WebOutcome(
             "final", canonical(WebFinal.model_validate(body).model_dump(mode="json"))
@@ -234,7 +258,8 @@ def _project(original, result, *, clock, provenance, material_id):
         raise ValueError("기존 Agent 결과가 없습니다.")
     agent = result.agent_result
     if (
-        agent.graph_version != agent_spec()["graph_version"]
+        agent.graph_version
+        != agent_spec(fixed_salary_cap=fixed_salary_cap)["graph_version"]
         or agent.normalization is None
     ):
         raise ValueError("그래프 출처가 일치하지 않습니다.")
@@ -247,9 +272,11 @@ def _project(original, result, *, clock, provenance, material_id):
         }
     )
     # 선택을 대신 수행하는 것이 아니라 이미 반환된 전체 근거의 일치만 대조한다.
-    if agent.normalization != normalize_conditions(original, evidence):
+    if agent.normalization != normalize_conditions(
+        original, evidence, fixed_salary_cap=fixed_salary_cap
+    ):
         raise ValueError("요청의 전체 출현 근거가 일치하지 않습니다.")
-    presented = present_agent_result(agent, clock=clock).to_dict()
+    presented = present_agent_result(agent, clock=clock, data_mode=data_mode).to_dict()
     versions.update(
         selection=selection_spec()["selection_version"],
         graph=agent.graph_version,
@@ -269,7 +296,7 @@ def _project(original, result, *, clock, provenance, material_id):
             not isinstance(material_id, str)
             or re.fullmatch(r"[0-9a-f]{64}", material_id) is None
         ):
-            raise ValueError("명시 합성 자료 ID가 필요합니다.")
+            raise ValueError("명시 자료 ID가 필요합니다.")
         versions["material"] = material_id
         if presented["snapshot"] is not None:
             snapshot = agent.build.snapshot
@@ -289,6 +316,10 @@ def _project(original, result, *, clock, provenance, material_id):
     }
     body["versions"] = versions
     if body["supported"] is None:
-        body["supported"] = SupportedConditions().model_dump(mode="json")
+        body["supported"] = SupportedConditions(
+            required_fields=conditions_spec(fixed_salary_cap=fixed_salary_cap)[
+                "required_fields"
+            ]
+        ).model_dump(mode="json")
     final = WebFinal.model_validate(body)
     return WebOutcome("final", canonical(final.model_dump(mode="json")), snapshot)

@@ -11,7 +11,8 @@ import httpx2
 import pytest
 from fastapi.testclient import TestClient
 from starlette.requests import ClientDisconnect
-from test_candidate_selection import SOURCE, selection
+from test_candidate_selection import SOURCE as LEGACY_SOURCE
+from test_candidate_selection import selection
 from test_schema import OBSERVED
 from test_synthetic_material import config
 
@@ -24,6 +25,8 @@ from FRS.api.agent_runtime import (
     build_service,
     verify_model,
 )
+
+SOURCE = LEGACY_SOURCE.replace("급여 999", "급여 310")
 
 
 @pytest.fixture(scope="module")
@@ -53,7 +56,7 @@ def service(material):
 
 
 def request_body(message=SOURCE, request_id="request-1"):
-    return dict(contract_version="web-agent.v0", request_id=request_id, message=message)
+    return dict(contract_version="web-agent.v1", request_id=request_id, message=message)
 
 
 def parsed(response):
@@ -92,7 +95,7 @@ def test_http_success_uses_real_synthetic_engine_and_exact_wire(service):
     "message,expected",
     [
         (SOURCE.replace("리버풀", "리버풀 제외"), "prepare.unrecognized_context"),
-        (SOURCE.replace("급여 999, ", ""), "missing_condition"),
+        (SOURCE.replace("예산 1조 5천억, ", ""), "missing_condition"),
     ],
 )
 def test_http_clarification_preserves_source_and_blocks_irrelevant_work(

@@ -2,7 +2,7 @@
   "name": "frs-web",
   "private": true,
   "version": "0.1.0",
-  "description": "FRS 합성 가상 리그 스쿼드 추천 웹 클라이언트 (web-agent.v0 모의 계약)",
+  "description": "FRS 합성·관측 자료 스쿼드 웹 클라이언트 (합성·관측 web-agent.v1)",
   "type": "module",
   "engines": {
     "node": ">=22.12.0 <23",

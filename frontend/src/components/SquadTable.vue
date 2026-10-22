@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Squad } from '../contracts/webAgentV0';
+import type { Squad } from '../contracts/webAgentV1';
 import { formatScore, groupDigits } from '../utils/format';
 
 /** 서버가 확정한 행과 합계를 그대로 표시한다. 정렬·재계산하지 않는다. */

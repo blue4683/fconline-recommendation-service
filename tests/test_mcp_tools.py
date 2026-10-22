@@ -12,17 +12,24 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from mcp import Client, StdioServerParameters
-from test_candidate_selection import SOURCE, selection
+from test_candidate_selection import SOURCE as LEGACY_SOURCE
+from test_candidate_selection import selection
 from test_schema import OBSERVED
 from test_synthetic_material import config
 
-from FRS.agent.candidates import prepare_candidates
+from FRS.agent.candidates import prepare_candidates as prepare
 from FRS.agent.material import generate_synthetic_material
 from FRS.mcp.client import call_build
 from FRS.mcp.contract import BuildRequest, MCPResponse, error_response
 from FRS.mcp.server import create_server
 from FRS.mcp.service import MCPService
 from FRS.schema.scope import FORMATION_SLOTS, PRIORITY_CLUBS
+
+SOURCE = LEGACY_SOURCE.replace("급여 999", "급여 310")
+
+
+def prepare_candidates(original):
+    return prepare(original, fixed_salary_cap=310)
 
 
 @pytest.fixture(scope="module")
@@ -102,7 +109,7 @@ def test_preparation_blocks_material_clock_and_engine(service, original, code):
 @pytest.mark.parametrize(
     "original,field,code",
     [
-        (SOURCE.replace("급여 999, ", ""), "salary_cap", "missing_condition"),
+        (SOURCE.replace("예산 1조 5천억, ", ""), "price_cap", "missing_condition"),
         (
             SOURCE.replace("예산 1조 5천억", "예산 1조, 예산 2조"),
             "price_cap",
@@ -393,7 +400,9 @@ def test_real_stdio_subprocess_negotiation_prompt_tool_and_exit_without_network(
             )
             prompt = await client.get_prompt("select_conditions", {"original": SOURCE})
             assert json.loads(prompt.messages[0].content.text)["model_invoked"] is False
-            result = await call_build(client, request(SOURCE.replace("급여 999, ", "")))
+            result = await call_build(
+                client, request(SOURCE.replace("예산 1조 5천억, ", ""))
+            )
             assert content(result)["presentation"]["status"] == "needs_clarification"
 
     asyncio.run(exercise())

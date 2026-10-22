@@ -1,4 +1,7 @@
-"""웹 v0 응답 경계. 도메인 정수/검증기를 바꾸지 않고 엄격히 검사한다."""
+"""웹 v1 응답 경계. 도메인 정수/검증기를 바꾸지 않고 엄격히 검사한다.
+
+v1은 합성/관측 자료 모드를 구분한다. 통합된 프론트엔드와 같은 계약을 사용한다.
+"""
 
 import re
 from datetime import datetime
@@ -7,9 +10,11 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from FRS.core.request_normalization import SupportedConditions
+from FRS.core.request_normalization.conditions import GAME_REQUIRED_FIELDS
 from FRS.schema.scope import FORMATION_SLOTS, PRIORITY_CLUBS
 
-WEB_CONTRACT = "web-agent.v0"
+WEB_CONTRACT = "web-agent.v1"
+DataMode = Literal["synthetic", "observed"]
 Text = Annotated[str, Field(min_length=1)]
 BP = Annotated[str, Field(max_length=34, pattern=r"^(0|[1-9][0-9]*)$")]
 Salary = Annotated[str, Field(max_length=19, pattern=r"^(0|[1-9][0-9]*)$")]
@@ -68,7 +73,12 @@ class WebSupported(WireModel):
 
     @model_validator(mode="after")
     def fixed_scope(self):
-        if self.model_dump() != SupportedConditions().model_dump(mode="json"):
+        if self.model_dump() not in (
+            SupportedConditions().model_dump(mode="json"),
+            SupportedConditions(required_fields=GAME_REQUIRED_FIELDS).model_dump(
+                mode="json"
+            ),
+        ):
             raise ValueError("고정 지원 목록이 일치하지 않습니다.")
         return self
 
@@ -141,7 +151,7 @@ class WebFinal(WireModel):
     versions: dict[Text, Text]
     answer: Text
     narration_source: Literal["template"]
-    data_mode: Literal["synthetic"]
+    data_mode: DataMode
 
     @model_validator(mode="after")
     def consistent(self):

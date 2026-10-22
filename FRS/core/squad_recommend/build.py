@@ -42,10 +42,12 @@ class SquadBuildResult:
     engine: EngineResult | None = None
 
 
-def build_spec():
+def build_spec(*, fixed_salary_cap=None):
     spec = dict(
         version=1,
-        normalizer_version=conditions_spec()["normalizer_version"],
+        normalizer_version=conditions_spec(fixed_salary_cap=fixed_salary_cap)[
+            "normalizer_version"
+        ],
         snapshot_policy_version=snapshot_spec()["snapshot_policy_version"],
         engine_version=engine_spec()["engine_version"],
         solver_config=SolverConfig().model_dump(),
@@ -79,9 +81,12 @@ def build_squad_request(
     prices: Iterable[CardPrice],
     reinforcements: Iterable[ReinforceStats],
     team_colors: Iterable[TeamColor],
+    fixed_salary_cap=None,
 ) -> SquadBuildResult:
-    normalized = normalize_conditions(original, extracted)
-    version = build_spec()["build_policy_version"]
+    normalized = normalize_conditions(
+        original, extracted, fixed_salary_cap=fixed_salary_cap
+    )
+    version = build_spec(fixed_salary_cap=fixed_salary_cap)["build_policy_version"]
     if normalized.issues:
         return SquadBuildResult(normalized, version)
     if not isinstance(batches, BatchSelection):

@@ -3,10 +3,11 @@ import {
   ContractError,
   parseEnvelope,
   type AgentEvent,
+  type DataMode,
   type FinalResult,
   type ProgressPayload,
   type StreamRequest,
-} from '../contracts/webAgentV0';
+} from '../contracts/webAgentV1';
 import { SseParser } from './sse';
 import { TransportError, type Transport } from './transport';
 
@@ -62,6 +63,7 @@ export async function runStream(
   const reader = stream.getReader();
   const parser = new SseParser();
   let expectedSeq = 0;
+  let dataMode: DataMode | null = null;
   const state: { terminal: Outcome | null } = { terminal: null };
 
   const handle = (event: AgentEvent): Outcome | null => {
@@ -73,12 +75,14 @@ export async function runStream(
     expectedSeq += 1;
     switch (event.type) {
       case 'started':
+        dataMode = event.payload.data_mode;
         handlers.onStarted?.();
         return null;
       case 'progress':
         handlers.onProgress?.(event.payload);
         return null;
       case 'final':
+        if (event.payload.data_mode !== dataMode) throw new ContractError('final.data_mode: started의 자료 모드와 다릅니다');
         return { kind: 'final', result: event.payload };
       case 'error':
         return { kind: 'server_error', code: event.payload.code, message: event.payload.message };

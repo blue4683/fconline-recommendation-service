@@ -185,3 +185,16 @@ def test_output_is_immutable_and_requires_no_file_network_or_material_reload(suc
 def test_invalid_response_clock_is_rejected_after_validation(success):
     with pytest.raises(ValueError, match="시간대"):
         render(success, lambda: OBSERVED.replace(tzinfo=None))
+
+
+def test_declared_data_mode_must_match_every_candidate_source(success):
+    shown = present_agent_result(
+        success, clock=lambda: OBSERVED, data_mode="observed"
+    ).to_dict()
+    assert (shown["status"], shown["squad"], shown["data_mode"]) == (
+        "internal_error",
+        None,
+        "observed",
+    )
+    with pytest.raises(ValueError):
+        present_agent_result(success, clock=lambda: OBSERVED, data_mode="real")

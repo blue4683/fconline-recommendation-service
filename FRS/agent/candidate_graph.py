@@ -19,11 +19,11 @@ from FRS.agent.graph import AgentRunResult, SquadAgent, agent_spec
 from FRS.core.request_normalization import ExtractedConditions
 
 
-def candidate_agent_spec():
+def candidate_agent_spec(*, fixed_salary_cap=None):
     spec = dict(
         version=1,
         selection_version=selection_spec()["selection_version"],
-        graph_version=agent_spec()["graph_version"],
+        graph_version=agent_spec(fixed_salary_cap=fixed_salary_cap)["graph_version"],
         preparation_issues="stop_before_selector_context_material_clock_engine",
         provider_error="safe_error_no_retry_or_fallback",
         valid_selection="fixed_evidence_into_existing_squad_agent",
@@ -57,19 +57,32 @@ class _FixedExtractor:
 
 
 class CandidateSquadAgent:
-    def __init__(self, selector: CandidateSelector, *, material, batches, clock):
+    def __init__(
+        self,
+        selector: CandidateSelector,
+        *,
+        material,
+        batches,
+        clock,
+        fixed_salary_cap=None,
+    ):
         if not callable(getattr(selector, "select", None)):
             raise TypeError("후보 ID selector를 명시해야 합니다.")
         self._selector, self._material = selector, material
         self._batches, self._clock = batches, clock
+        self._fixed_salary_cap = fixed_salary_cap
 
     def run(self, original, *, t0):
         with tracing_context(enabled=False):
             return self._run(original, t0=t0)
 
     def _run(self, original, *, t0):
-        version = candidate_agent_spec()["adapter_version"]
-        preparation = prepare_candidates(original)
+        version = candidate_agent_spec(fixed_salary_cap=self._fixed_salary_cap)[
+            "adapter_version"
+        ]
+        preparation = prepare_candidates(
+            original, fixed_salary_cap=self._fixed_salary_cap
+        )
         if preparation.issues:
             return CandidateRunResult(
                 version, "input_issues", preparation, stages=("prepare",)
@@ -100,6 +113,7 @@ class CandidateSquadAgent:
                 self._material,
                 self._batches,
                 self._clock,
+                self._fixed_salary_cap,
             )
         )
         result = graph.run(original, t0=t0)

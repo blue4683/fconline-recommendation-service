@@ -84,3 +84,5 @@ assert result.display_score == "63.78"
 로컬 Python3.11.15에서 전체 `python -m pytest` **2,052개 통과(36.94초/4 worker)**, `python -m ruff check .`, `python -m ruff format --check .`(Python273개·Markdown코드예제1개), 환경 import/pip check를 통과했다. 새 예제와 설명은 합성 값뿐이며 문서 링크/사용 예/설계 표와 설정 일치·Git diff도 확인한다. 첫 CI39763434123은2,052테스트/린트 통과 뒤 마지막에 추가한 Markdown 코드 블록 포맷으로 실패했다. 문서 예제를 포맷하고 전체 Ruff/format274개를 다시 통과했으며 수정 head CI는 PR에서 확인한다.
 
 MF-1은 공통 계산 계약의 합성 검증이며 MF-2 선호 세트의 작성·배치 선택·분할·품질 기준, 상세 범위 감사, MF-3 탐색/스냅샷/독립 검증/출력 연결은 후속이다. 운영에 적용할 가중치·체형 함수·새 점수 동점 예산 정책·wire 계약은 아직 확정하지 않았다. 새 실제 추천·수집·학습·모델·DB 실행 승인을 이 증분에서 만들지 않는다.
+
+후속 MF-2(2026-10-22): 이 계산기를 OVR 기준과 같은 판단 자료로 비교하는 평가 계약·도구를 [선호 평가 기록](multi-factor-preference-evaluation.md)에 구현했다. 계산기 동작은 바꾸지 않았다.

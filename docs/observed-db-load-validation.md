@@ -62,3 +62,64 @@ python -m FRS.utils.db.load_observed \
 이번 증분은 기존 적재기의 실제 로컬 검증과 문서 정리다. 새 수집·Ollama metadata/추론·LangSmith 전송0회이며 E2E003의 소진 승인을 재사용하지 않았다. Agent의 관측 자료 공급은 기존 명시 파일 경로를 유지한다. API/웹의 DB 공급기로 교체하거나 실제 모델 API의 DB 추천을 검증한 작업은 아니다. master/develop·다른 담당 체크아웃/브랜치·기존 종료 기록과 사용자 파일은 보존했다.
 
 기능 코드를 변경하지 않아 로컬 전체 pytest/Ruff/웹 검사를 재실행하지 않았다. 문서 내용·링크·diff와 실제 전량 대조/증거 해시를 검토하고, PR의 최신 head CI는 별도로 확인한다. 전체1-D/1-F·클럽/강화/포메이션 커버리지나 운영SLA 완료로 확대하지 않는다.
+
+## 3클럽 배치 `real-data-20261022-b` 적재·서비스 전환 (2026-10-22)
+
+사용자가 서비스 자료를 리버풀 배치 `real-data-20261021-b`에서 3클럽 배치 `real-data-20261022-b`([수집·오프라인 검증](real-data-branch-design.md) §12.15)로 바꾸도록 요청했다. 범위는 로컬 DB 적재·대조, Agent 설정 변경·임시 시작, 전환 확인이다. 새 수집, 모델 추론, 자동 최신 선택, master 병합, 배포는 포함하지 않는다. 기존 배치는 보존했다.
+
+### 적재 `observed-db-load-20261022-001`
+
+기준 코드는 `feat/real-data` `616d39a`다. 적재기 `load_observed.py`는 이전 적재(`e0cf3a6`)와 같다. 자료 체크아웃의 가공 파일을 직접 읽었고 복사·재수집은 하지 않았다. 실행 시각은 2026-10-22 10:40:25~10:40:52 KST이며 결과는 `completed`다.
+
+- 적재 전: `report.json`·원본 `manifest.json` 해시가 §12.15와 같았다. 기본 CLI의 적재 계획(DB 미접속)은 5컬렉션 120,202건이고 material ID는 `e0b726768439375d70a3f6ea9180af40b0876783f71cacab648c88929c7bcdc0`다. DB에는 새 배치의 행과 `observed_load` 기록이 없었다. 기존 배치 35,948건은 해당 파일과 전량 일치했고, BSON 인코딩·복원 결과도 typed model과 같았다.
+- 요청 전 소진 잠금과 시도 기록을 만들었고 기존 `load_observed_run()`을 1회 호출했다. 재시도와 재실행은 하지 않았다.
+
+| 컬렉션 | 적재·전량 대조 | 상태 |
+|---|---:|---|
+| player_card | 5,445 | ok 5,445 |
+| card_salary | 38,115 | ok 38,115 |
+| card_price | 38,115 | ok 37,870·unknown 245 |
+| reinforce_stats | 32,670 | ok 32,670 |
+| team_color | 5,857 | ok 5,857 (리버풀 1,634·첼시 2,275·바이에른 뮌헨 1,948) |
+| 합계 | **120,202** | 원래 상태 유지 |
+
+각 컬렉션의 DB 행을 기존 스키마로 복원했다. 순서와 `_id`를 제외한 정규 SHA256으로 파일의 모든 행과 대조해 전부 일치했다. 출처는 모두 `nexon_web`, 배치는 새 run-id 하나다. 관측 시각은 2026-10-21 23:27:17Z~2026-10-22 01:14:21Z이며 기한도 원래 값 그대로다. unknown 가격 245건은 `valid_until=null`을 유지했다. 가격의 가장 이른 기한은 **2026-10-22 23:27:17.372Z(2026-10-23 08:27 KST)**이고, 나머지 자료의 가장 이른 기한은 2026-10-28이다. 새 `observed_load` 기록 1건의 건수·해시가 원본과 같다. 전체 감사 기록은 2건이다.
+
+기존 배치의 5컬렉션 정규 SHA256과 감사 기록은 적재 전후로 같았다. `candidate_lookup` 비유일 인덱스 5개도 검색 계약과 같다. 3클럽 × ST·CB × 5·11강, 급여 310, 가격 130,000 BP, 같은 기준 시각의 조건에서 `MongoCandidateRepository.search()` 결과가 파일 기반 순수 검색과 순서까지 같았다. 5강 후보 수는 다음과 같다.
+
+| 클럽 | ST | CB |
+|---|---:|---:|
+| 리버풀 | 263 | 204 |
+| 첼시 | 399 | 288 |
+| 바이에른 뮌헨 | 181 | 347 |
+
+11강은 모두 0후보였고 첫 제외 사유는 `card_salary:version_mismatch`다. 기존 배치에서도 11강은 0후보였으며, 이번 전환은 검색 계약을 바꾸지 않는다. 동일 배치 재적재는 쓰기·인덱스 진입을 차단한 읽기 전용 probe에서 `LoadRefused`로 거부됐고 건수는 그대로였다. Agent의 `MongoObservedMaterial`로도 새 배치 120,202건을 읽어 원본과 대조했다.
+
+### Agent 설정과 시작 확인
+
+- **모델 없는 확인 `observed-db-agent-switch-20261022-001`:** `AgentSettings.from_env()`와 `build_service()`를 MongoDB 공급기로 실제 실행하고, 모델 검증기만 네트워크 없이 실패하는 대역으로 바꿨다. TestClient의 `/health`는 503 `model_unverified`였다. material과 배치는 새 run-id이고 `valid_until`은 2026-10-22T23:27:17.372Z였다. 3클럽 자료 조회에서 카드 5,445장과 강화 5~11의 가격 상태 ok 37,870·unknown 245를 확인했다. DB 연결은 3회 열고 3회 모두 닫았다. Ollama 요청은 0회다.
+- **설정:** `feat/real-data` 체크아웃의 Git 제외 `.env`에 `AGENT_DATA_MODE=observed`, `AGENT_MATERIAL_SOURCE=mongodb`, `AGENT_RUN_ID=real-data-20261022-b`, `AGENT_OBSERVED_AT=`(빈 값), `AGENT_MODEL_DIGEST`(qwen3:8b digest)를 추가했다. 이 파일은 다른 작업자가 10:38에 주 체크아웃 `.env`를 복사해 만든 것이며, 기존 455바이트를 그대로 두고 뒤에 덧붙였다. 비밀값은 새로 복사하거나 기록하지 않았다. 이전에는 `AGENT_*` 상주 설정이 없었고, 각 E2E 실행기가 코드에서 직접 설정했다.
+- **실제 시작 `observed-db-agent-switch-20261022-002`:** 사용자 선택에 따라 설치된 Ollama(PID 67549)를 임시로 시작했다. 이어 `uvicorn FRS.api.agent_app:app`을 127.0.0.1:8001, worker 1개로 시작했다. MongoDB 값은 주 체크아웃 `.env`의 `MONGO_*`만 전달했고 tracing은 끈 상태였다.
+  - 첫 시작(PID 67651)은 `AGENT_*`를 추가하기 전이어서 503 `not_configured`였다. Ollama 요청은 0회였다.
+  - 설정을 추가한 뒤 재시작한 Agent(PID 67947)는 Ollama metadata GET 2회(`/api/version`, `/api/tags`)로 모델을 검증했다. `/health`는 **200 `ready`**, `data_mode=observed`, ollama 0.33.0이었고 material·배치·기한은 위와 같았다.
+- 확인 후 이번에 시작한 Agent와 Ollama만 종료했다. 8001·11434 listener가 없음을 확인했다. 기존 v0 Vite(PID 48865)와 MongoDB 컨테이너는 유지했다.
+
+추천 POST·모델 추론·브라우저 E2E는 0회다. 이전 E2E의 소진된 승인은 재사용하지 않았고, 새 배치의 실제 qwen3:8b 추천과 E2E는 별도 승인 범위로 남긴다. 넥슨·LangSmith 요청, 다운로드, 재시도는 모두 0회다. 기존 배치 35,948건(unknown 91)과 감사 기록 1건, 다른 담당의 브랜치·worktree·검증 프로세스는 건드리지 않았다.
+
+### 증거와 제한
+
+주 체크아웃의 Git 제외 경로에 증거를 보존했다. 관측 행, DB 덤프, 비밀값은 커밋하지 않는다.
+
+- `artifacts/observed-db-load/observed-db-load-20261022-001/manifest.json` — SHA256 `b80f69ffb04024aea06acda52c5eb714b968643d8eb5f99f4b473b08976d827c`, 잠금 `execution-consumed.lock`
+- `artifacts/observed-db-load/observed-db-agent-switch-20261022-001/result.json` — SHA256 `aeddf0bb2f43098eeeb909228173b5a71fc7b968cba143be6166eec1273d473b`. 이 파일의 `finds` 값은 계측하지 않은 항목이라 0으로 남아 있으며, 실제 조회가 없었다는 뜻이 아니다.
+- `artifacts/observed-db-load/observed-db-agent-switch-20261022-002/` — `summary.json`(SHA256 `a05ef6c3de58df08e530e391f9c2708b99214c5fb2eda31703c3f05c24a7f74f`), `health.json`, Ollama·Agent 로그
+- 실행기 `artifacts/handoff/observed-db-load-runner-20261022.py`, `observed-db-agent-switch-check-20261022.py`
+
+제한사항은 다음과 같다.
+
+- 가격 기한 2026-10-23 08:27 KST 이후에는 health가 `data_expired`로 바뀐다. 기한을 연장하지 않으며 새 수집도 하지 않는다.
+- health는 시작 시점의 스냅샷이므로 현재 상주 Agent는 없다. 다음 시작도 `.env`의 같은 run-id를 명시해 사용하며, 최신 배치를 자동으로 선택하지 않는다.
+- `.env`는 다른 작업자가 만든 로컬 파일이다. 이 파일이 교체되면 `AGENT_*` 설정을 다시 확인해야 한다.
+- 1-D·1-F 미완료, 제공자 허용 미확정, 운영 SLA 미정 상태는 그대로다.
+
+기능 코드는 바꾸지 않았다. 따라서 로컬 pytest·Ruff를 다시 실행하지 않았고, 문서 diff와 실제 대조·증거 해시를 확인했다.

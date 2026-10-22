@@ -362,3 +362,6 @@ metadata2/추론2·Agent POST2/health3/OPTIONS2, 실행DB4/28+중단후읽기감
 
 처리: 승인은 소진됐고 남은 269회를 재사용하지 않는다. 원본·가공 결과는 Git 제외 로컬에만 둔다. `real-data-20261022-a`의 중단 기록과 원본은 그대로 보존한다. **서비스 자료는 아직 바꾸지 않았다.** Agent·MongoDB 공급기는 여전히 `real-data-20261021-b`(리버풀, 가격 기한 2026-10-22 17:03 KST)를 명시해 쓰며, 3클럽 b로 바꾸려면 새 run-id로 DB 적재와 `AGENT` 설정 전환이 필요하다(DB 적재 담당과 조율, 자동 최신 선택 없음).
 
+### 12.16 서비스 자료를 3클럽 `real-data-20261022-b`로 전환 (2026-10-22)
+
+사용자 요청에 따라 새 배치를 로컬 MongoDB에 1회 적재했다(`observed-db-load-20261022-001`, 120,202건, unknown 가격 245). DB 행은 파일과 전량 일치했고 기존 리버풀 배치 35,948건은 보존했다. 이어 `feat/real-data` 체크아웃의 Git 제외 `.env`에 `AGENT_RUN_ID=real-data-20261022-b`와 MongoDB 공급기 설정을 추가했다. 임시로 시작한 Agent 8001의 `/health`는 200 `ready`였다(Ollama metadata 2회, 추론 0회). 확인 후 Agent와 Ollama를 종료했다. 가격의 가장 이른 기한은 2026-10-23 08:27 KST이며 연장하지 않는다. 실제 모델 추천과 E2E는 별도 승인이 필요하다. 상세 내용은 [DB 적재 검증](observed-db-load-validation.md)의 해당 절에 있다.

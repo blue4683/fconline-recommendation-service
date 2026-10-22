@@ -404,3 +404,45 @@ def test_attempt_cap_must_be_an_integer_within_the_code_limit(make, attempts):
 
 def test_a_three_club_sized_cap_is_accepted(make):
     assert make(Server(), max_attempts=5800).max_attempts == 5800
+
+
+def test_generated_observations_are_searchable_at_all_supported_grades(make, tmp_path):
+    from FRS.core.candidate_search import (
+        BatchSelection,
+        CandidateQuery,
+        candidate_search,
+    )
+    from FRS.schema.models import DOCUMENT_MODELS
+
+    report = make(Server()).execute()
+    assert report["status"] == "completed"
+    names = {
+        "cards": "player_card",
+        "salaries": "card_salary",
+        "prices": "card_price",
+        "reinforcements": "reinforce_stats",
+        "team_colors": "team_color",
+    }
+    data = {
+        key: [
+            DOCUMENT_MODELS[name].model_validate(json.loads(line))
+            for line in (tmp_path / "out" / f"{name}.jsonl").read_text().splitlines()
+        ]
+        for key, name in names.items()
+    }
+    batches = BatchSelection(**dict.fromkeys(names.values(), report["run_id"]))
+    for grade in range(5, 12):
+        result = candidate_search(
+            CandidateQuery(
+                position=data["cards"][0].positions[0],
+                salary_cap=310,
+                price_cap=10**30,
+                team_color=CLUB.name,
+                reinforce_level=grade,
+                when=OBSERVED + timedelta(hours=1),
+                batches=batches,
+            ),
+            **data,
+            supported_clubs=(CLUB.name,),
+        )
+        assert len(result.candidates) == 1, (grade, result.exclusion_counts)

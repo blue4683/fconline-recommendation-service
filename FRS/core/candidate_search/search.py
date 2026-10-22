@@ -1,5 +1,6 @@
 """I/O 없이 유효한 관측을 결합한다. 최신 배치 선택·점수 계산은 하지 않는다."""
 
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Annotated, Iterable
@@ -14,6 +15,7 @@ from FRS.schema.models import (
     PlayerCard,
     Position,
     ReinforceStats,
+    SourceKind,
     TeamColor,
     TeamColorType,
     Text,
@@ -117,6 +119,39 @@ def _one(rows, when):
     return row, None
 
 
+def _salary_matches_ability(card, salary, reinforcement):
+    ability = reinforcement or card
+    if salary.version == ability.version:
+        return True
+    # 완료된 관측 파일은 수정하지 않는다. 수집기가 같은 원본에서 만든 두
+    # 파생 버전만 연결하며, 단순 suffix 제거/기본 급여 대입은 허용하지 않는다.
+    if (
+        reinforcement is None
+        or card.source != SourceKind.WEB
+        or card.base_reinforce_level != 5
+        or not 6 <= salary.reinforce_level <= 11
+        or re.fullmatch(r"[0-9a-f]{64}", card.version) is None
+        or reinforcement.reinforce_level != salary.reinforce_level
+        or reinforcement.baseline_reinforce_level != 5
+        or reinforcement.baseline_card_version != card.version
+        or salary.version != f"{card.version}-same-salary-{salary.reinforce_level}"
+        or reinforcement.version != f"{card.version}-derived-{salary.reinforce_level}"
+    ):
+        return False
+    return all(
+        getattr(row, field) == getattr(card, field)
+        for row in (salary, reinforcement)
+        for field in (
+            "spid",
+            "batch_id",
+            "source",
+            "observed_at",
+            "valid_until",
+            "delete_after",
+        )
+    )
+
+
 def candidate_search(
     query: CandidateQuery,
     *,
@@ -190,8 +225,9 @@ def candidate_search(
                 failed = Exclusion(spid, resource, "baseline_mismatch")
                 break
             if resource == "card_salary":
-                ability = selected.get("reinforce_stats", card)
-                if row.version != ability.version:
+                if not _salary_matches_ability(
+                    card, row, selected.get("reinforce_stats")
+                ):
                     failed = Exclusion(spid, resource, "version_mismatch")
                     break
                 if row.salary > query.salary_cap:

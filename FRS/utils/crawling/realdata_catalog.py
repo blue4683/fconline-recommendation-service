@@ -30,6 +30,7 @@ from FRS.utils.crawling.refresh_observations import (
     _policy_values,
     adopt_ability,
 )
+from FRS.utils.crawling.request_timing import SECOND_NS, SendStartPacer, TimedBody
 
 LIST_CAP = 200
 BANDS = ((4, 20), (21, 25), (26, 30), (31, 35), (36, 99))
@@ -226,8 +227,12 @@ class RealDataRun:
         allow_empty_cells=False,
         catalog_only=False,
         clock=_now,
+        timing_version=1,
     ):
         validate_run_id(run_id)
+        if type(timing_version) is not int or timing_version not in (1, 2):
+            raise ValueError("지원하는 요청 시각 형식은 1 또는 2입니다.")
+        self.timing_version = timing_version
         if type(max_attempts) is not int or not 1 <= max_attempts <= MAX_ATTEMPTS_LIMIT:
             raise CatalogStopped(
                 "invalid_run", f"요청 상한은 1~{MAX_ATTEMPTS_LIMIT}의 정수여야 합니다."
@@ -277,6 +282,8 @@ class RealDataRun:
             responses=[],
             started_at=clock().isoformat(),
         )
+        if timing_version == 2:
+            self.state["timing_version"] = 2
         self.flush()
 
     def flush(self):
@@ -295,6 +302,21 @@ class RealDataRun:
         self.flush()  # 요청 전에 예약해 중단·예외도 상한에 포함한다.
         observed = self.clock()
         body = self.fetch_body(url, form, resource)
+        timing = {}
+        if self.timing_version == 2:
+            if not isinstance(body, TimedBody):
+                raise CatalogStopped("timing", "새 형식의 전송 시각이 없습니다.")
+            stamp = body.stamp
+            previous = self.state["responses"]
+            if previous and (
+                stamp.started_ns - previous[-1]["send_started_ns"] < SECOND_NS
+            ):
+                raise CatalogStopped("timing", "전송 시작 간격이 1초보다 짧습니다.")
+            observed = stamp.sent_at
+            timing = dict(
+                sent_at=observed.isoformat(), send_started_ns=stamp.started_ns
+            )
+            body = body.body
         if not isinstance(body, bytes) or not body.strip():
             raise CatalogStopped("unexpected_response", "빈 응답 또는 잘못된 형식")
         name = f"{attempt:04d}-{resource}-{spid or 0}-{level or 0}.body"
@@ -309,6 +331,7 @@ class RealDataRun:
             observed_at=observed.isoformat(),
             status_code=200,
             sha256=hashlib.sha256(body).hexdigest(),
+            **timing,
         )
         self.state["responses"].append(entry)
         self.state.pop("pending", None)
@@ -568,6 +591,8 @@ class RealDataRun:
                 for path in sorted(self.processed_path.glob("*.jsonl"))
             },
         )
+        if self.timing_version == 2:
+            report["timing_version"] = 2
         _write_json(self.processed_path / "report.json", report)
         return report
 
@@ -600,7 +625,7 @@ def _club(value):
         raise argparse.ArgumentTypeError(str(error)) from None
 
 
-def live_fetch(session):
+def live_fetch(session, *, pacer=None):
     """기본 UA, 리디렉션 금지, 재시도 0회, 초당 1회로 전송한다."""
     from FRS.utils.crawling.get_response import (
         CollectionStopped,
@@ -608,24 +633,35 @@ def live_fetch(session):
         fetch_url,
     )
 
+    pacer = pacer or SendStartPacer()
+
     def send(url, form, resource):
+        stamp = None
+
+        def transport(method, target, **options):
+            nonlocal stamp
+            # 실제 세션 호출 경계에서 기록한다. 응답/파일 기록 시간은 다음 대기에 흡수된다.
+            stamp = pacer.mark_started()
+            return session.request(method, target, **options)
+
         try:
             result = fetch_url(
                 (url, None, None),
                 policy=RequestPolicy(max_retries=0),
                 method="POST",
                 data=form,
-                transport=lambda method, target, **options: session.request(
-                    method, target, **options
-                ),
+                transport=transport,
+                wait_before_attempt=pacer.wait,
             )
         except CollectionStopped as error:
             raise CatalogStopped(error.failure["kind"], str(error.failure)) from None
+        except ValueError as error:
+            raise CatalogStopped("timing", str(error)) from None
         if result[0] is None:
             raise CatalogStopped(result[1]["kind"], "요청 실패")
         response = result[0]
         try:
-            return response.content
+            return TimedBody(response.content, stamp)
         finally:
             response.close()
 
@@ -694,6 +730,7 @@ def main(argv=None):
             position_field=args.position_field,
             allow_empty_cells=args.allow_empty_cells,
             catalog_only=args.catalog_only,
+            timing_version=2,
         )
         report = run.execute()
     print(json.dumps(report, ensure_ascii=False, indent=2))

@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App.vue';
+import ResultView from '../src/components/ResultView.vue';
 import { REQUEST_EXAMPLES } from '../src/contracts/requestFormat';
 import { finalFor, optimalWithNames, type ScenarioId } from '../src/mocks/fixtures';
 import { createMockTransport } from '../src/mocks/mockTransport';
@@ -39,9 +40,9 @@ async function submit(w: ReturnType<typeof mount>, text = REQUEST_EXAMPLES[0]!) 
 }
 
 describe('App', () => {
-  it('합성 자료 안내를 항상 보이고, 연결 방식을 고르기 전에는 보내지 않는다', async () => {
+  it('자료 모드를 추측하지 않고, 연결 방식을 고르기 전에는 보내지 않는다', async () => {
     const w = mountApp();
-    expect(w.get('[data-testid=data-note]').text()).toContain('합성 가상');
+    expect(w.get('[data-testid=data-note]').text()).toContain('서버 확인 결과');
     await w.get('textarea').setValue('리버풀');
     expect(w.get('button.send').attributes('disabled')).toBeDefined();
     expect(w.text()).toContain('연결 방식을 먼저 고르세요');
@@ -63,10 +64,9 @@ describe('App', () => {
   });
 
   it('34자리 BP와 2^53 초과 급여를 손실 없이 표시한다', async () => {
-    const w = mountApp();
-    await chooseMock(w, 'huge_numbers');
-    await submit(w);
-    await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
+    // 과거 wire의 큰 정수 운반 검사는 결과 컴포넌트에 직접 주입한다. 새 요청 예시에 노출하지 않는다.
+    const w = mount(ResultView, { props: { outcome: { kind: 'final', result: finalFor('huge_numbers', FIXED_NOW)! }, expired: false } });
+    mounted.push(w);
     const prices = w.findAll('[data-testid=row-price]').map((c) => c.text());
     expect(prices[0]).toBe('900,000,000,000,000,000,000,000,000,000,001');
     expect(w.findAll('[data-testid=row-salary]')[1]!.text()).toBe('9,007,199,254,740,993');
@@ -89,7 +89,7 @@ describe('App', () => {
     await vi.waitFor(() => expect(w.find('[data-testid=result-title]').exists()).toBe(true));
     expect(w.get('[data-testid=result-title]').text()).toContain(title);
     expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);
-    if (scenario === 'needs_clarification') expect(w.get('[data-testid=issues]').text()).toContain('급여 상한');
+    if (scenario === 'needs_clarification') expect(w.get('[data-testid=issues]').text()).toContain('예산');
   });
 
   it('final 전에는 진행 단계만 보이고 표·설명을 공개하지 않는다', async () => {
@@ -220,13 +220,16 @@ describe('App', () => {
     const w = mountApp();
     const help = w.get('#request-help').text();
     expect(help).toContain('쉼표로 나눠');
+    expect(help).toContain('310');
+    expect(help).toContain('입력을 생략');
     for (const label of ['예산', '급여 상한', '클럽', '포메이션', '강화']) expect(help).toContain(label);
     const shown = w.findAll('.example').map((b) => b.text());
     expect(shown).toEqual([...REQUEST_EXAMPLES]);
     for (const text of shown) {
       // 백엔드 후보 준비가 되묻는 형태(BP 접미사, "이하", 클럽·포메이션 한 절)를 예시에 쓰지 않는다.
       expect(text).not.toMatch(/BP|이하|짜줘/);
-      expect(text).toMatch(/^예산 [^,]+, 급여 [0-9]+, [^,]+, [0-9-]+, .+(으로|로) 구성해줘$/);
+      expect(text).toMatch(/^예산 [^,]+, [^,]+, [0-9-]+, .+(으로|로) 구성해줘$/);
+      expect(text).not.toContain('급여');
     }
   });
 

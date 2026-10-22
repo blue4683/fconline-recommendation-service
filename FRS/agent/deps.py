@@ -15,3 +15,4 @@ class AgentDependencies:
     material: MaterialProvider
     batches: BatchSelection
     clock: Callable[[], datetime]
+    fixed_salary_cap: int | None = None

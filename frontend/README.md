@@ -1,104 +1,55 @@
-# FRS 웹 클라이언트
+# FRS 실데이터 브랜치 웹 클라이언트
 
-합성 가상 리그 스쿼드 추천의 화면·통신 클라이언트다. 사용자 확정 스택인 Vue 3 + Vite + TypeScript로 만들었다. 기준 문서는 [웹 설계도](../docs/web-agent-blueprint.md), [프론트엔드 지침](AGENTS.md), [공용 기록](../docs/agent-collaboration.md)이다.
+`feat/real-data` 전용 Vue 3 + Vite + TypeScript 화면·통신 클라이언트다. 확정 계약은 `web-agent.v1`과 `agent-health.v2`이며 합성/관측 자료를 구분한다. master/develop의 v0 웹은 변경하지 않는다. 기준은 [실데이터 설계](../docs/real-data-branch-design.md) §7·§12.2와 [공용 기록](../docs/agent-collaboration.md)의 INT-RD-001·WEB-008이다.
 
-현재 상태는 **모의 응답 완료 단계**다. 실제 Agent 채팅 API·SSE 경로는 백엔드에 아직 없고, `web-agent.v0`은 모의 개발용 제안이다. 실제 연결 완료로 보고하지 않는다.
+## 환경·명령
 
-## 환경과 버전
-
-| 항목 | 고정값 | 근거 |
-|---|---|---|
-| Node.js | 22.x (`>=22.12.0 <23`, `.nvmrc`) | Vite 8·Vitest 5 요구(`^22.12`). 검증 환경 v22.22.0 |
-| npm | 10.9.x 이상 | 검증 환경 10.9.4, `package-lock.json` v3 |
-| Vue | 3.5.44 | |
-| Vite / @vitejs/plugin-vue | 8.3.4 / 6.0.10 | |
-| TypeScript / vue-tsc | 5.9.3 / 3.3.13 | TypeScript 7(네이티브)은 vue-tsc가 쓰는 JS API 호환을 확인하지 못해 5.9 계열로 고정 |
-| Vitest / jsdom / @vue/test-utils | 5.0.5 / 27.4.0 / 2.4.6 | jsdom 30·test-utils 2.5는 하위 의존성이 Node `^22.22.2`를 요구해 검증 환경(22.22.0)에서 설치 거부 |
-
-`.npmrc`의 `engine-strict=true`로 맞지 않는 Node에서 설치를 막고, 모든 버전을 정확히 고정한다.
-
-## 명령
+기존 lock과 의존성 버전을 유지한다. Node 22(`>=22.12.0 <23`), npm 10.9 이상이 필요하다. 이번 검증은 Node 22.23.3·npm 10.9.9·Python 3.11.15다. 기본 Node가 다른 버전이면 Node 22의 bin 디렉터리를 PATH 앞에 둔다.
 
 ```sh
 cd frontend
-npm ci              # lock 기준 설치
-npm run dev         # 개발 서버 (Vite 기본 포트)
-npm run typecheck   # 앱·테스트 타입 검사 (vue-tsc)
-npm test            # 동작 테스트 (Vitest + jsdom)
-npm run build       # 타입 검사 후 dist/ 생성
+npm ci
+npm run typecheck
+npm test
+npm run build
 ```
 
-웹 CI와 경로 자동 차단은 아직 없다(INT-004). 위 명령은 로컬에서만 실행했다.
+Vue 3.5.44·Vite 8.3.4·TypeScript 5.9.3·Vitest 5.0.5 등 정확한 버전은 package.json/lock을 따른다. 이번 작업은 새 의존성을 설치하지 않고 같은 lock의 기존 로컬 의존성을 복사해 검증했다.
 
-## 연결 방식
+## 자료 모드와 표시
 
-화면 위쪽에서 **모의 응답** 또는 **실제 연결**을 직접 고른다. 기본 선택은 없다.
+- 연결 방식은 모의 응답/실제 연결 중 명시적으로 고른다. 모의 응답은 항상 합성 가상 자료다. 실제 연결의 자료 모드는 검증한 서버 응답에 따른다. 모드를 바꾸면 이전 결과를 지운다.
+- 관측 자료에는 넥슨 데이터센터 관측 자료·관측 실행 ID(`/health.material.batches` 값)·관측 시각·유효 기한·참고가격/거래 보장 아님을 표시한다. 가격은 현재 기준 절대 BP다. 배율을 곱하거나 나누지 않는다.
+- `/health.material.observed_at`은 자료의 관측 시각이다. 결과의 `snapshot.t0`은 요청 기준 시각이므로 관측 시각으로 표시하지 않는다.
+- 관측 모드의 해 없음은 보유한 관측 자료의 범위로 설명한다. 수집하지 않은 클럽까지 게임 전체에서 해가 없다고 단정하지 않는다.
+- 서버가 자료 만료/모델 미확인/설정 실패를 반환하면 보내기를 막는다. 브라우저 시계의 기한 경과는 안내이며 최종 판단은 서버가 한다. 반환된 스쿼드가 만료되면 표를 거두고 기한을 늘리지 않는다.
 
-- 모의 응답: 서버에 요청하지 않는다. 원문을 해석하지 않고 고른 시나리오를 SSE 바이트로 재생한다. 불규칙한 청크·한글 분할·CRLF·여러 data 행·heartbeat를 섞어 실제 파서를 그대로 통과한다.
-- 실제 연결: `VITE_FRS_API_BASE_URL`(예시 `.env.example`)이 있을 때만 고를 수 있다. `POST {base}/recommend/squad/stream`으로 보낸다. INT-020/021 설계의 서버는 별도 합성 Agent 앱 `http://127.0.0.1:8001`이고 허용 origin은 `http://localhost:5173`·`http://127.0.0.1:5173` 두 개다. 그래서 개발 서버는 5173 포트로 고정했고(`strictPort`), 미리보기(`npm run preview`, 4173)에서는 실제 연결이 CORS로 막힌다. 서버(`FRS.api.agent_app`)는 develop `00623ba`부터 있고 상주 실행은 통합 담당의 승인 범위다. proxy는 설정하지 않았고, 실패를 모의 성공으로 바꾸지 않는다.
-- 서버 상태: 실제 연결을 고르면 `GET {base}/health`(agent-health.v1)를 한 번 읽어 준비됨(모델·확인 시각·자료 기준·유효 기한)이나 이유(자료 만료·모델 미확인·설정 없음·연결 실패)를 보인다. 준비되지 않았으면 보내기를 막고 "다시 확인"으로만 다시 읽는다. 요청이 끝날 때 한 번 더 읽으며 주기 조회는 하지 않는다. 브라우저 시계로 기한이 지났으면 안내만 하고, 최종 판단은 서버 응답이다.
-- 스트림 전 HTTP 거절은 상태 코드로만 구분한다: 403 허용되지 않은 화면 주소, 408 본문 수신 기한 초과, 409 다른 요청 진행 중(동시 1건·대기 없음), 413 본문 한도 초과(64KiB), 415 JSON 아님, 422 요청 형식 거절, 503 서버 미준비. 본문은 해석하지 않고 자동으로 다시 보내지 않는다.
+## 연결과 계약
 
-브라우저에 노출되는 설정이므로 API 키나 비밀값을 넣지 않는다.
+`VITE_FRS_API_BASE_URL`이 있을 때만 실제 연결을 고를 수 있다. 경로는 `POST {base}/recommend/squad/stream`, `GET {base}/health`다. Vite는 허용 origin인 localhost/127.0.0.1의 5173 포트만 사용하며 다른 포트로 자동 변경하지 않는다. 브라우저 설정에 비밀값을 넣지 않는다.
 
-## 요청 형식
+- 요청/이벤트와 versions.web_contract는 `web-agent.v1`이어야 한다. v0는 수용하지 않는다.
+- started/final의 data_mode는 synthetic/observed만 받으며 한 스트림에서 서로 다르면 결과를 거부한다.
+- health는 agent-health.v2다. not_configured일 때만 data_mode=null이고, 나머지는 명시한 자료 모드가 필요하다.
+- 원문·금액·ID·급여 문자열과 기존 엄격 검사를 유지한다. 값을 추측 보정하지 않는다. SSE/모델/전송 오류를 모의 성공으로 바꾸거나 재시도하지 않는다.
+- 상태 조회는 실제 연결 선택 시1회·다시 확인 버튼·요청 종료 후1회뿐이다. 주기 조회는 없다.
 
-백엔드 후보 준비(develop `7c56bbc`)는 쉼표로 나눈 정형 조건문만 받는다. 순서는 자유이고, 마지막에 `(으)로 구성해줘`를 붙일 수 있다.
+코드는 src/contracts/webAgentV1.ts·agentHealth.ts, services/의 세션/상태/전송, components/의 표시로 나뉜다. 엔진·정규화·서버 API는 수정하지 않았다.
 
-```
-예산 6조, 급여 210, 리버풀, 4-2-3-1, 5~8강으로 구성해줘
-```
+## 합성 대조 fixture
 
-`예산 6조 BP`, `급여 210 이하`, `리버풀 4-2-3-1`처럼 단위·꾸밈말을 붙이거나 두 조건을 한 절에 쓰면 되묻는다. 화면의 안내와 예시는 `src/contracts/requestFormat.ts`에 있으며, 예시 3개는 위 기준에서 ready를 확인했다(WEB-003). 브라우저는 형식을 검사하거나 원문을 고치지 않는다.
+저장소 루트에서 다음 명령으로 다시 만든다.
 
-## 구조
-
-```
-src/
-  contracts/webAgentV0.ts   v0 타입과 구조 검사 (금액은 10진 문자열, 상태별 불변 조건)
-  contracts/requestFormat.ts 입력 안내·예시 문장
-  contracts/agentHealth.ts  GET /health(agent-health.v1) 구조 검사
-  services/sse.ts           증분 SSE 파서
-  services/agentSession.ts  요청 하나의 스트림 처리 (seq·request_id·종료 이벤트 검사)
-  services/liveTransport.ts fetch 기반 POST 스트림. 재시도·재연결 없음
-  services/useRecommendation.ts 화면 상태, 중복 전송 차단, 만료 감지
-  services/health.ts        서버 상태 1회 조회 (재시도·주기 조회 없음)
-  mocks/                    가상 fixture와 모의 transport
-  components/               입력·진행·결과·경기장 배치도·표
-tests/                      Vitest 동작 테스트
+```sh
+PYTHONPATH=. python frontend/tests/fixtures/generate_backend_fixture.py > frontend/tests/fixtures/backend-agent-app.json
 ```
 
-## 지키는 경계
+v1 앱을 FastAPI TestClient로 호출한다. 기존 합성 리그를 임시 파일에 관측 형식으로 쓴 모드도 포함하지만, 이름·ID·가격·급여는 전부 가상 값이다. 실제 수집 파일을 읽거나 모델/DB/외부 네트워크/상주 서버를 호출하지 않는다. 생성기는 소켓 연결을 차단한다.
 
-- 엔진·정규화·강화 계산·검증기를 브라우저에 복제하지 않는다. 클라이언트 검사는 받은 결과의 구조·합계·자리·강화 집합을 대조해 **맞지 않으면 거부**할 뿐이며 서버 독립 검증기를 대신하지 않는다.
-- 금액·급여·합계·ID는 문자열로 받고 표시한다. JSON number로 온 금액은 거부한다. 비교가 필요한 곳만 `BigInt`로 정확히 읽는다.
-- 원문은 trim·치환·요약 없이 그대로 보낸다. 공백뿐이면 보내지 않고, Python 코드포인트 기준 4,000자를 넘으면 자르지 않고 전송을 막는다.
-- final 전에는 서버가 보낸 진행 단계만 보인다. 표와 설명은 final에서 한 번에 표시한다.
-- 오류·만료·늦은 이벤트를 성공으로 표시하지 않는다. 자동 재전송·재연결이 없고, 진행 중에는 중복 전송을 막는다. 읽기 중단이 서버 계산 취소를 뜻한다고 표시하지 않는다.
-- 성공 결과의 `valid_until`이 지나면 만료로 바꾸고 표를 거둔다. 화면 복귀 시에도 확인하며 되돌리거나 연장하지 않는다.
-- 이름·설명·오류는 텍스트로만 렌더링한다(`v-html` 미사용).
-- fixture의 선수명·ID·수치는 모두 지어낸 값이다.
+기준 backend SHA는2998c1c다. SSE12건(합성7·관측 형식5), 스트림 전 거절6건(v0 포함), health7건을 기록한다. 1/7바이트 재생과 파서·세션·화면을 검증한다. 상태별 모드/null 조합·버전 거부·정확한 수치·만료·모드 전환 시 이전 표 제거도 검사한다. 이 결과는 실제 qwen3:8b나 실제 관측 자료의 브라우저 E2E 성공을 뜻하지 않는다.
 
-## 테스트가 다루는 사례
+## 실행 경계
 
-설계도 §6 필수 사례를 기준으로 했다.
+이번 웹 타입 검사·125테스트·빌드는 통과했다. 루트 Python 결과와 CI는 공용 기록/PR에서 확인한다. 웹 자동 CI는 아직 없으며 로컬 검사와 구분한다. 통합 담당은 기존 Python CI의 대상을 feat/real-data로 확장한다.
 
-- 상태별 표시: optimal·feasible·needs_clarification·infeasible·unknown·data_expired·internal_error·llm_unavailable·스트림 error·프로토콜 오류·종료 전 끊김
-- 34자리 BP·2^53 초과 급여 무손실, 숫자형 금액·범위 초과·합계 불일치·상한 초과·자리/인물 중복·허용 밖 강화 거부
-- 이모지 포함 원문·4,000 코드포인트 경계·공백 보존·공백뿐인 입력
-- SSE: 1바이트 청크의 한글 분할, CRLF/CR, 여러 data 행, 한 청크 여러 이벤트, heartbeat, 잘못된 JSON·버전·type, seq 누락/역전, started 누락/중복, 종료 후 이벤트, 다른 request_id, 빈 줄 없는 마지막 이벤트, 잘못된 UTF-8
-- final 전 표·설명 미노출, 실패 시 이전 표 제거, 자동 재전송 없음, 진행 중 중복 전송 차단, 기한 경과 감지와 비가역성
-- HTML처럼 생긴 이름·설명의 텍스트 표시, Ctrl/Cmd+Enter 전송, 예시는 입력만 채움
-- 백엔드 내부 필드(`code`·`coverage`·`evaluated_at`·`kind`, issue의 `span`·`context_id` 등) 거부 (WEB-004)
-- 백엔드 대조: `tests/fixtures/backend-agent-app.json`은 실제 8001 앱 코드(develop `c0c47be`)를 FastAPI TestClient와 테스트 대역 모델로 호출해 기록한 SSE 7건(성공 3·준비 사유 2·정규화 사유 1·모델 오류 1), 스트림 전 거절 5건(403·415·413·422·503), `/health` 4건(ready·data_expired·model_unverified·not_configured)이다. 웹 테스트가 SSE 바이트·HTTP 응답·상태 본문을 그대로 재생해 파서·세션·화면을 확인한다. 다시 만들 때는 저장소 루트에서 `PYTHONPATH=. python frontend/tests/fixtures/generate_backend_fixture.py > frontend/tests/fixtures/backend-agent-app.json`. 상주 서버·실제 모델 연결 검증은 아니다.
-- 스트림 전 HTTP 403·408·409·413·415·422·503 구분 안내, 공개 error 코드별 제목
-- 서버 상태(`/health`): 상태 코드와 본문의 일치·모르는 필드/사유/버전 거부, 준비 안 됨·연결 실패 시 보내기 차단, 다시 확인으로 회복, 요청 종료 후 재확인
-- live transport: 본문 JSON 전송·query string 미사용·HTTP 비정상/비스트림 응답 구분·1회 호출
-
-화면은 빌드 결과를 headless Chromium으로 열어 데스크톱(1360px)·모바일(390px) 폭에서 정상·되묻기·큰 금액·프로토콜 오류 상태와, 정형 조건문이 아닌 요청·조건 추출 모델 사용 불가·HTTP 409 상태를 확인했다. 또 실제 8001 앱 코드를 테스트 대역 모델로 127.0.0.1:8001에 띄우고 Vite 개발 서버(5173)에서 실제 연결로 정상·급여 누락·형식 오류 요청과 서버 준비됨·모델 미확인·서버 꺼짐 상태를 확인했다(실제 Ollama 호출 없음). 좁은 화면에서 표는 가로 스크롤된다.
-
-## 남은 일
-
-- 8001 앱은 develop에 병합됐고 통합 담당이 실제 브라우저 3사례를 확인했다(INT-025, docs/agent-browser-e2e.md). 상주 데모 서버 운영과 새 실제 모델 호출은 별도 승인 범위다.
-- INT-003: 서버는 동시 1건·150초 기한으로 확정됐다. 클라이언트는 단일 진행 요청만 허용하고 409를 자동 재전송하지 않는다.
-- INT-004: 웹 CI(`npm ci`·typecheck·test·build)와 보호 경로 검사는 통합 담당이 추가한다.
+실제 모델·metadata·Ollama/Agent/Vite 임시 실행·브라우저 E2E는 새 실행 범위와 상한을 승인받은 뒤 통합 담당이 수행한다. 수집 b의 가격은2026-10-22 17:03 KST에 만료된다. 재수집·시각/기한 변경·소진 승인 재사용은 하지 않는다. 발표는 master의 합성 경로를 유지한다.

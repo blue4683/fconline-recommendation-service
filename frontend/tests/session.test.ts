@@ -6,6 +6,14 @@ import { createLiveTransport, normalizeBaseUrl, PROPOSED_STREAM_PATH } from '../
 import { envelope, FIXED_NOW, scriptedTransport, sse } from './helpers';
 
 const started = (id: string, seq = 0) => sse('started', envelope(id, seq, 'started', { data_mode: 'synthetic' }));
+
+it('started와 final의 자료 모드가 다르면 표를 반환하지 않는다', async () => {
+  const transport = scriptedTransport((id) => sse('started', envelope(id, 0, 'started', { data_mode: 'observed' })) +
+    sse('final', envelope(id, 1, 'final', finalFor('optimal', FIXED_NOW))));
+  const result = await runStream(transport, buildRequest('조건'), new AbortController().signal);
+  expect(result).toMatchObject({ kind: 'protocol_error' });
+  expect(transport.calls).toBe(1);
+});
 const progress = (id: string, seq: number, stage = 'build') =>
   sse('progress', envelope(id, seq, 'progress', { stage, message: '진행 중' }));
 const final = (id: string, seq: number, scenario: Parameters<typeof finalFor>[0] = 'optimal') =>
@@ -83,7 +91,7 @@ describe('buildRequest', () => {
   it('원문을 trim·치환하지 않고 그대로 담는다', () => {
     const message = '  리버풀\n\t4-2-3-1 😀  ';
     const req = buildRequest(message, 'fixed');
-    expect(req).toEqual({ contract_version: 'web-agent.v0', request_id: 'fixed', message });
+    expect(req).toEqual({ contract_version: 'web-agent.v1', request_id: 'fixed', message });
   });
 });
 

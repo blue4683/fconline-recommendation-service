@@ -14,6 +14,7 @@ from FRS.core.request_normalization import (
     normalize_conditions,
 )
 from FRS.core.request_normalization.amounts import MAX_SOURCE_LENGTH
+from FRS.core.request_normalization.conditions import validate_salary_policy
 from FRS.schema.scope import FORMATION_SLOTS, PRIORITY_CLUBS
 
 MAX_CANDIDATES = 128
@@ -45,14 +46,16 @@ def canonical(value):
     ).encode()
 
 
-def candidate_spec():
+def candidate_spec(*, fixed_salary_cap=None):
     spec = dict(
         version=1,
         source_encoding="utf-8",
         max_source_length=MAX_SOURCE_LENGTH,
         max_values=MAX_CANDIDATES,
         max_contexts=MAX_CONTEXTS,
-        normalization_version=conditions_spec()["normalizer_version"],
+        normalization_version=conditions_spec(fixed_salary_cap=fixed_salary_cap)[
+            "normalizer_version"
+        ],
         fields=FIELDS,
         separator="comma_with_numeric_and_reinforcement_list_protection",
         prefixes=["예산", "급여"],
@@ -102,6 +105,7 @@ class CandidateContext(_Frozen):
 
 
 class CandidateSet(_Frozen):
+    fixed_salary_cap: Literal[310] | None = None
     original: Annotated[
         str, Field(strict=True, min_length=1, max_length=MAX_SOURCE_LENGTH)
     ]
@@ -115,7 +119,10 @@ class CandidateSet(_Frozen):
 
     @property
     def candidate_set_id(self):
-        return hashlib.sha256(canonical(self.model_dump(mode="json"))).hexdigest()
+        data = self.model_dump(mode="json")
+        if self.fixed_salary_cap is None:
+            data.pop("fixed_salary_cap")
+        return hashlib.sha256(canonical(data)).hexdigest()
 
 
 class CandidatePreparation(_Frozen):
@@ -184,8 +191,9 @@ def _field(original, start, end):
     return None, start, end
 
 
-def prepare_candidates(original) -> CandidatePreparation:
-    version = candidate_spec()["candidate_version"]
+def prepare_candidates(original, *, fixed_salary_cap=None) -> CandidatePreparation:
+    validate_salary_policy(fixed_salary_cap)
+    version = candidate_spec(fixed_salary_cap=fixed_salary_cap)["candidate_version"]
 
     def early(code, message):
         return CandidatePreparation(
@@ -258,7 +266,9 @@ def prepare_candidates(original) -> CandidatePreparation:
                 )
             )
             parsed = normalize_conditions(
-                original, ExtractedConditions(**{field: (span,)})
+                original,
+                ExtractedConditions(**{field: (span,)}),
+                fixed_salary_cap=fixed_salary_cap,
             )
             issues.extend(
                 PreparationIssue(
@@ -285,6 +295,7 @@ def prepare_candidates(original) -> CandidatePreparation:
                 "후보 수 한도를 초과해 입력 전체를 처리하지 않습니다.",
             )
     registry = CandidateSet(
+        fixed_salary_cap=fixed_salary_cap,
         original=original,
         candidate_version=version,
         candidates=tuple(values),

@@ -1,10 +1,10 @@
 /**
- * 8001 합성 Agent 앱의 GET /health 응답(agent-health.v1, FRS/api/agent_app.py·agent_runtime.py, develop 00623ba).
+ * 실데이터 브랜치 Agent 앱의 GET /health 응답(agent-health.v2).
  * 화면 표시용 읽기 전용 검사다. 서버 준비 여부를 브라우저가 확정하지 않으며, 최종 판단은 실제 요청의 응답이다.
  */
-import { exactKeys, fail, isoTime, obj, oneOf, str } from './webAgentV0';
+import { DATA_MODES, exactKeys, fail, isoTime, obj, oneOf, str, type DataMode } from './webAgentV1';
 
-export const HEALTH_SCHEMA = 'agent-health.v1';
+export const HEALTH_SCHEMA = 'agent-health.v2';
 
 export type HealthReason = 'not_configured' | 'data_expired' | 'model_unverified';
 
@@ -24,6 +24,7 @@ export interface HealthMaterial {
 }
 
 export interface AgentHealth {
+  data_mode: DataMode | null;
   status: 'ready' | 'unavailable';
   reason: HealthReason | null;
   model: HealthModel | null;
@@ -71,7 +72,7 @@ export function parseHealth(value: unknown, httpStatus: number): AgentHealth {
   const o = obj(value, path);
   exactKeys(o, path, ['schema_version', 'status', 'reason', 'data_mode', 'model', 'material', 'busy']);
   if (o.schema_version !== HEALTH_SCHEMA) fail(`${path}.schema_version`, `${HEALTH_SCHEMA}가 필요합니다`);
-  if (o.data_mode !== 'synthetic') fail(`${path}.data_mode`, 'synthetic이 필요합니다');
+  const data_mode = o.data_mode === null ? null : oneOf(o.data_mode, DATA_MODES, `${path}.data_mode`);
   const status = oneOf(o.status, ['ready', 'unavailable'] as const, `${path}.status`);
   const reason =
     o.reason === null ? null : oneOf(o.reason, ['not_configured', 'data_expired', 'model_unverified'] as const, `${path}.reason`);
@@ -80,6 +81,7 @@ export function parseHealth(value: unknown, httpStatus: number): AgentHealth {
   const material = o.material === null ? null : parseMaterial(o.material, `${path}.material`);
 
   if (status === 'ready') {
+    if (data_mode === null) fail(`${path}.data_mode`, 'ready에는 자료 모드가 필요합니다');
     if (httpStatus !== 200) fail(path, 'ready는 HTTP 200이어야 합니다');
     if (reason !== null) fail(`${path}.reason`, 'ready에는 사유가 없어야 합니다');
     if (!model || model.checked_at === null || model.ollama_version === null) fail(`${path}.model`, 'ready에는 모델 확인 기록이 필요합니다');
@@ -88,8 +90,9 @@ export function parseHealth(value: unknown, httpStatus: number): AgentHealth {
     if (httpStatus !== 503) fail(path, 'unavailable은 HTTP 503이어야 합니다');
     if (reason === null) fail(`${path}.reason`, 'unavailable에는 사유가 필요합니다');
     if (reason === 'not_configured' && (model !== null || material !== null)) fail(path, '설정이 없으면 모델·자료 정보가 없어야 합니다');
+    if ((reason === 'not_configured') !== (data_mode === null)) fail(`${path}.data_mode`, '설정 실패일 때만 자료 모드가 null이어야 합니다');
     if (reason !== 'not_configured' && (model === null || material === null)) fail(path, '모델·자료 정보가 필요합니다');
   }
-  return { status, reason, model, material, busy: o.busy };
+  return { status, reason, data_mode, model, material, busy: o.busy };
 }
 

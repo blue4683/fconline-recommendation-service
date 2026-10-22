@@ -2,9 +2,9 @@ name: Python 검증
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, feat/real-data]
   push:
-    branches: [develop]
+    branches: [develop, feat/real-data]
 
 permissions:
   contents: read

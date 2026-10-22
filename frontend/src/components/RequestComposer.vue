@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { REQUEST_EXAMPLES, REQUEST_FORMAT } from '../contracts/requestFormat';
-import { MAX_MESSAGE_CODE_POINTS } from '../contracts/webAgentV0';
+import { MAX_MESSAGE_CODE_POINTS } from '../contracts/webAgentV1';
 import { codePointLength, isBlank } from '../utils/format';
 
 const props = defineProps<{
@@ -48,7 +48,7 @@ function onKeydown(event: KeyboardEvent): void {
   <form class="composer" @submit.prevent="submit">
     <label class="label" for="request-message">요청</label>
     <div id="request-help" class="help">
-      <p>다섯 가지 조건을 쉼표로 나눠 적어 주세요. 순서는 자유이고, 빠지거나 해석할 수 없는 조건은 추측하지 않고 되묻습니다.</p>
+      <p>예산·클럽·포메이션·강화 네 가지 조건을 쉼표로 나눠 적어 주세요. 급여 상한은310으로 고정되어 입력을 생략할 수 있습니다. 다른 급여 값은 수정 안내를 반환합니다.</p>
       <dl class="format">
         <div v-for="item in format" :key="item.label">
           <dt>{{ item.label }}</dt>

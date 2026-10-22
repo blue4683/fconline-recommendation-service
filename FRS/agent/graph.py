@@ -25,11 +25,13 @@ from FRS.core.squad_recommend.build import (
 )
 
 
-def agent_spec():
+def agent_spec(*, fixed_salary_cap=None):
     spec = dict(
         version=1,
         graph="extract_then_normalize_then_conditional_build",
-        build_version=build_spec()["build_policy_version"],
+        build_version=build_spec(fixed_salary_cap=fixed_salary_cap)[
+            "build_policy_version"
+        ],
         extraction="injected_once_no_retry",
         invalid_original="normalize_without_extractor_or_material",
         invalid_conditions="return_without_context_material_clock_or_engine",
@@ -81,7 +83,9 @@ class SquadAgent:
         def normalize(state):
             return {
                 "normalization": normalize_conditions(
-                    state["original"], state["extracted"]
+                    state["original"],
+                    state["extracted"],
+                    fixed_salary_cap=dependencies.fixed_salary_cap,
                 ),
                 "stages": state["stages"] + ("normalize",),
             }
@@ -107,6 +111,7 @@ class SquadAgent:
                     batches=batches,
                     t0=t0,
                     clock=dependencies.clock,
+                    fixed_salary_cap=dependencies.fixed_salary_cap,
                     **material,
                 ),
                 "stages": state["stages"] + ("build",),
@@ -129,7 +134,9 @@ class SquadAgent:
             self._graph = graph.compile()
 
     def run(self, original: str, *, t0: datetime) -> AgentRunResult:
-        version = agent_spec()["graph_version"]
+        version = agent_spec(fixed_salary_cap=self._dependencies.fixed_salary_cap)[
+            "graph_version"
+        ]
         # 모델 호출 전에 원문 타입/길이를 막는다. 정규화기는 기존 오류 계약을 반환한다.
         if (
             not isinstance(original, str)
@@ -138,7 +145,11 @@ class SquadAgent:
         ):
             return AgentRunResult(
                 graph_version=version,
-                normalization=normalize_conditions(original, ExtractedConditions()),
+                normalization=normalize_conditions(
+                    original,
+                    ExtractedConditions(),
+                    fixed_salary_cap=self._dependencies.fixed_salary_cap,
+                ),
                 stages=("normalize",),
             )
         with tracing_context(enabled=False):

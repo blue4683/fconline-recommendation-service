@@ -40,6 +40,7 @@ _OBSERVED_MESSAGES = {
     "feasible": "넥슨 데이터센터 관측 자료 기준으로 조건을 만족하는 11명을 검증했습니다. 최적성은 미확인입니다. 가격은 참고가격입니다.",
     "infeasible": "보유 관측 자료 기준으로 조건을 만족하는 스쿼드가 없습니다.",
 }
+_PRICE_INCOMPLETE = " 동일 OVR 내 최대 예산 활용은 시간 내 확인하지 못했습니다."
 _MODES = {
     "synthetic": (SourceKind.SYNTHETIC, _MESSAGES),
     "observed": (SourceKind.WEB, _OBSERVED_MESSAGES),
@@ -69,6 +70,7 @@ def presentation_spec():
         model_metadata="not_provided_by_this_internal_layer",
         messages=dict(_MESSAGES),
         observed_messages=dict(_OBSERVED_MESSAGES),
+        price_optimization_incomplete=_PRICE_INCOMPLETE,
     )
     return {
         **spec,
@@ -96,6 +98,7 @@ def present_agent_result(
     if data_mode not in _MODES:
         raise ValueError("명시한 자료 모드가 필요합니다.")
     source, messages = _MODES[data_mode]
+    price_status = None
     payload = dict(
         kind="code_presentation",
         data_mode=data_mode,
@@ -114,7 +117,10 @@ def present_agent_result(
     )
 
     def finish(status, code=None):
-        body = {**payload, "status": status, "code": code, "answer": messages[status]}
+        answer = messages[status]
+        if status == "optimal" and price_status == "incomplete":
+            answer += _PRICE_INCOMPLETE
+        body = {**payload, "status": status, "code": code, "answer": answer}
         if status not in ("optimal", "feasible"):
             body["squad"] = None
         return CodePresentation(_canonical(body))
@@ -152,6 +158,7 @@ def present_agent_result(
         return finish("internal_error", "inconsistent_build")
     try:
         engine = EngineResult.model_validate(build.engine.model_dump())
+        price_status = engine.price_optimization_status
         payload["engine_version"] = engine.engine_version
         snapshot = build.snapshot
         if (

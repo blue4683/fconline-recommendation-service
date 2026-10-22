@@ -45,16 +45,30 @@ policy = ScoringPolicy.model_validate_json(
 )
 when = datetime(2026, 1, 1, tzinfo=timezone.utc)
 card = PlayerCard(
-    batch_id="synthetic-mf1", source="synthetic", status="ok",
-    observed_at=when, valid_until=when + timedelta(hours=1), delete_after=None,
-    spid=123000001, season_id=123, person_id=1, version="synthetic-mf1-v1",
-    name="가상선수_MF1", base_reinforce_level=5, positions=("ST",),
-    stats={key: 140 for key in STAT_NAMES}, position_ovr={"ST": 128},
-    left_foot=3, right_foot=5,
+    batch_id="synthetic-mf1",
+    source="synthetic",
+    status="ok",
+    observed_at=when,
+    valid_until=when + timedelta(hours=1),
+    delete_after=None,
+    spid=123000001,
+    season_id=123,
+    person_id=1,
+    version="synthetic-mf1-v1",
+    name="가상선수_MF1",
+    base_reinforce_level=5,
+    positions=("ST",),
+    stats={key: 140 for key in STAT_NAMES},
+    position_ovr={"ST": 128},
+    left_foot=3,
+    right_foot=5,
 )
 result = score_multi_factor(
     PerformanceQuery(spid=card.spid, slot="ST", reinforce_level=5, when=when),
-    policy=policy, expected_policy_version=policy.version, profile_id="st", card=card,
+    policy=policy,
+    expected_policy_version=policy.version,
+    profile_id="st",
+    card=card,
 )
 assert result.exclusion is None
 assert result.score_units == 6378
@@ -67,6 +81,6 @@ assert result.display_score == "63.78"
 
 신규 합성155개가 통과했다. 세부 능력치가 서로 다른 경우의 그룹별 수기 산술, 최종0.005 경계 반올림/서로 다른 분모·Decimal context 영향 없음, 64비트 복원 초과·음수·누락, 선택 강화·유효기한 경계, 키 선호의 상승/하락 구간·역할별 체형 차이, 버전/프로필 오류·중첩 변경 우회·행 순서 정규화를 확인했다. 최초 강화 테스트 기대식의 float/Fraction 타입 오류7건은 정수식으로 수정했다. scorer 오류를 숨기기 위한 기준 완화는 없었다.
 
-로컬 Python3.11.15에서 전체 `python -m pytest` **2,052개 통과(36.94초/4 worker)**, `python -m ruff check .`, `python -m ruff format --check .`(273파일), 환경 import/pip check를 통과했다. 새 예제와 설명은 합성 값뿐이며 문서 링크/사용 예/설계 표와 설정 일치·Git diff도 확인한다. 최신 head CI는 PR에서 별도 확인한다.
+로컬 Python3.11.15에서 전체 `python -m pytest` **2,052개 통과(36.94초/4 worker)**, `python -m ruff check .`, `python -m ruff format --check .`(Python273개·Markdown코드예제1개), 환경 import/pip check를 통과했다. 새 예제와 설명은 합성 값뿐이며 문서 링크/사용 예/설계 표와 설정 일치·Git diff도 확인한다. 첫 CI39763434123은2,052테스트/린트 통과 뒤 마지막에 추가한 Markdown 코드 블록 포맷으로 실패했다. 문서 예제를 포맷하고 전체 Ruff/format274개를 다시 통과했으며 수정 head CI는 PR에서 확인한다.
 
 MF-1은 공통 계산 계약의 합성 검증이며 MF-2 선호 세트의 작성·배치 선택·분할·품질 기준, 상세 범위 감사, MF-3 탐색/스냅샷/독립 검증/출력 연결은 후속이다. 운영에 적용할 가중치·체형 함수·새 점수 동점 예산 정책·wire 계약은 아직 확정하지 않았다. 새 실제 추천·수집·학습·모델·DB 실행 승인을 이 증분에서 만들지 않는다.

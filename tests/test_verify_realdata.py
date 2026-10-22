@@ -8,7 +8,17 @@ from itertools import count
 
 import pytest
 from test_ability_parser import ability_html
-from test_realdata_catalog import CLUB, OBSERVED, OTHER, Server, TwoClubServer, template
+from test_realdata_catalog import (
+    CLUB,
+    NATION,
+    NATION_CARD,
+    OBSERVED,
+    OTHER,
+    NationServer,
+    Server,
+    TwoClubServer,
+    template,
+)
 
 from FRS.utils.crawling.realdata_catalog import RealDataRun
 from FRS.utils.crawling.verify_pilot import VerificationError
@@ -42,9 +52,14 @@ def collect(root, server=None, *, step=2, **options):
         root / "data/processed" / RUN_ID,
         server or PayServer({(4, 20, ""): 200, (4, 12, ""): 120, (13, 20, ""): 80}),
         run_id=RUN_ID,
-        template=template(),
         clock=lambda: OBSERVED + timedelta(seconds=next(ticks)),
-        **{"clubs": [CLUB], "max_attempts": 300, "allow_empty_cells": True, **options},
+        **{
+            "clubs": [CLUB],
+            "template": template(),
+            "max_attempts": 300,
+            "allow_empty_cells": True,
+            **options,
+        },
     )
     report = run.execute()
     return root / "data/raw" / RUN_ID, root / "data/processed" / RUN_ID, report
@@ -99,9 +114,13 @@ def test_cli_reads_the_run_under_root_and_reports_failure(standard, tmp_path, ca
         main(["--run-id", RUN_ID, "--root", str(tmp_path), "--allow-empty-cells"]) == 0
     )
     assert json.loads(capsys.readouterr().out)["verified"] is True
-    # 수집 때 빈 칸을 허용했는데 재생에서 허용하지 않으면 재생이 멈춘다.
+    # 빈 칸이 확인된 결과 없음 화면이면 옵션 없이도 재생·독립 대조를 통과한다.
+    assert main(["--run-id", RUN_ID, "--root", str(tmp_path)]) == 0
+    assert json.loads(capsys.readouterr().out)["verified"] is True
+    body = sorted((tmp_path / "data/raw" / RUN_ID).glob("*-player_list-*.body"))[0]
+    body.write_bytes(body.read_bytes() + b" ")
     assert main(["--run-id", RUN_ID, "--root", str(tmp_path)]) == 1
-    assert "재생이 멈췄습니다" in json.loads(capsys.readouterr().out)["reason"]
+    assert "원본 해시" in json.loads(capsys.readouterr().out)["reason"]
 
 
 def test_a_stopped_run_is_not_verified(tmp_path):
@@ -201,3 +220,56 @@ def test_two_clubs_with_a_price_conflict_verify(tmp_path):
     rewrite(processed, "card_price", revive)
     with pytest.raises(VerificationError, match="unknown"):
         check_independently(state, report, bodies, processed, None)
+
+
+def test_a_club_and_nation_run_verifies_and_checks_nationality(tmp_path):
+    raw, processed, report = collect(
+        tmp_path,
+        NationServer(),
+        clubs=[CLUB, NATION],
+        template=template(n4NationId="0"),
+    )
+    assert report["status"] == "completed"
+    result = verify(raw, processed, allow_empty_cells=True)
+    assert result["verified"] and result["catalog_cards"] == 2
+
+    # 원본 해시를 지나도 상세 국기가 국적 조건과 다르면 독립 대조에서 거부한다.
+    state, report, bodies = check_records(raw, processed)
+    index = next(
+        i
+        for i, entry in enumerate(state["responses"])
+        if entry["resource"] == "ability" and entry["form"]["spid"] == NATION_CARD
+    )
+    changed = list(bodies)
+    changed[index] = bodies[index].replace(b"smallflags/27.png", b"smallflags/21.png")
+    with pytest.raises(VerificationError, match="상세 국적"):
+        check_independently(state, report, changed, processed, None)
+
+    # 국가 자격을 클럽 자격으로 바꾸면(해시는 맞춰도) 거부한다.
+    def as_club(lines):
+        for line in lines:
+            line["type"] = "club"
+
+    rewrite(processed, "team_color", as_club)
+    state, report, bodies = check_records(raw, processed)
+    with pytest.raises(VerificationError, match="자격 관측"):
+        check_independently(state, report, bodies, processed, None)
+
+
+def test_an_empty_cell_must_be_the_no_result_page(standard):
+    raw, processed, report = standard()
+    assert report["empty_cells"] == 3
+    state, report, bodies = check_records(raw, processed)
+    assert check_independently(state, report, bodies, processed, None)
+    index = next(
+        i
+        for i, (entry, body) in enumerate(zip(state["responses"], bodies))
+        if entry["resource"] == "player_list" and b"area_playerunit_" not in body
+    )
+    changed = list(bodies)
+    changed[index] = b"<html>empty</html>"
+    with pytest.raises(VerificationError, match="결과 없음"):
+        check_independently(state, report, changed, processed, None)
+    assert check_independently(
+        state, report, changed, processed, None, allow_empty_cells=True
+    )

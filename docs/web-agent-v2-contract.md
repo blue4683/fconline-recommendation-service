@@ -52,6 +52,8 @@
 | `squad` | `total_score_units`, `total_score` | 다요소 11명 합(정수, 1unit=0.01점)과 `"780.79"` 형식 문자열. OVR이면 `null` |
 | `squad.rows[]` | `score_units`, `score` | 선수별 다요소 점수(0~10000 정수)와 `"70.85"` 형식 문자열. OVR이면 `null` |
 
+- 단계 요약은 `outfield_ovr`→`gk_ovr`→`multi_factor` 순서로 한 번씩이다(서버·웹 모두 검사). 각 값은 그 단계에서 확정한 목표값이다. 필드 단계 값은 S1 최대 F*라서, 허용폭 안에서 고른 최종 `squad.outfield_ovr`보다 클 수 있다. 최종 합과 대조하지 않는다.
+- `GET /objectives`의 `parameters.search_seconds`는 JSON 실수(`30.0`)로 나간다.
 - 기존 `raw_ovr`·`performance`(=OVR/2)·`total_ovr`·가격·급여 필드와 검사는 그대로다. 다요소 점수를 `performance`에 넣지 않는다.
 - 서버와 웹은 `score`가 `score_units`의 정확한 두 자리 표기인지, 합계가 행의 합인지, `outfield_ovr + gk_ovr = total_ovr`인지 검사한다. 웹은 점수를 다시 계산하거나 반올림하지 않는다.
 - 다요소 답변 문구는 방식과 실험 정책임을 밝힌다. 예: "넥슨 데이터센터 관측 자료 기준으로 필드 우선·GK 단계와 실험 다요소 점수(draft-core-stat-foot-20261022)로 11명을 검증했고 단계별 최적성을 확인했습니다. 가격은 참고가격입니다." 가격 단계 미확정 시 "동일 다요소 점수 내 최대 예산 활용은 시간 내 확인하지 못했습니다."를 붙인다.
@@ -80,3 +82,8 @@
 - 설정: `AGENT_SCORING_POLICY_PATH`·`AGENT_SCORING_POLICY_VERSION`(`.env.example`). `GET /objectives`는 `agent-objectives.v1`.
 - 보존: v1의 presentation·projection·event·graph·adapter·engine 사양 해시가 develop과 같다(별도 작업 트리에서 대조). v1 응답은 다요소 설정 유무와 무관하게 같다.
 - 검증: `tests/test_web_agent_v2.py` 25개(방식 목록·정책 해시 불일치·합성 자료 차단·v1 불변·v2 OVR/다요소 응답·409·요청 필수 필드·만료·v1 투영 거부·정책 불일치·DTO 변조 8종), 전체 pytest 2,175개·Ruff 통과. 실제 모델·브라우저·실데이터 서버는 실행하지 않았다.
+
+## 9. 웹 구현과 후속 보완 (2026-10-23)
+
+- 웹(WEB-V2-001, PR #157)은 방식 목록·선택 UI·v2 요청/409 처리·엄격 v2 파서·점수/단계/정책 표시를 구현했다. 실제 앱을 TestClient로 호출한 합성 기록과 대조한다. 실제 서버·모델·브라우저 E2E는 아직이다.
+- 웹 제안에 따라 서버 DTO도 단계 순서·중복을 검사하고, 단계 값의 의미와 `search_seconds` 표기를 §4에 적었다.

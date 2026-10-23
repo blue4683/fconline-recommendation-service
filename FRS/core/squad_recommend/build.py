@@ -13,6 +13,7 @@ from FRS.core.request_normalization import (
     conditions_spec,
     normalize_conditions,
 )
+from FRS.core.squad_recommend.objective import MultiFactorObjective
 from FRS.core.squad_recommend.snapshot import (
     RequestSnapshot,
     SnapshotQuery,
@@ -82,7 +83,9 @@ def build_squad_request(
     reinforcements: Iterable[ReinforceStats],
     team_colors: Iterable[TeamColor],
     fixed_salary_cap=None,
+    objective: MultiFactorObjective | None = None,
 ) -> SquadBuildResult:
+    """objective는 내부 명시 호출 전용이다. 생략하면 기존 OVR 목적을 쓴다."""
     normalized = normalize_conditions(
         original, extracted, fixed_salary_cap=fixed_salary_cap
     )
@@ -107,6 +110,7 @@ def build_squad_request(
         prices=prices,
         reinforcements=reinforcements,
         team_colors=team_colors,
+        objective=objective,
     )
     # 비용이 큰 검증·만료 확인은 기존 엔진이 마친다. 이후 자료 재조회/표 생성은 없다.
     engine = solve_squad(snapshot, clock=clock)

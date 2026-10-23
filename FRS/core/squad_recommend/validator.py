@@ -6,8 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_serializer
 
+from FRS.core.squad_recommend.objective import (
+    MultiFactorObjective,
+    objective_from_spec,
+)
 from FRS.core.squad_recommend.performance import PerformanceQuery, score_performance
 from FRS.core.squad_recommend.placement import PlacementQuery, placement
 from FRS.core.squad_recommend.snapshot import (
@@ -59,6 +63,8 @@ class SnapshotCandidate(SquadPick):
     placement_type: str
     matched_positions: tuple[Position, ...]
     observations: SnapshotObservations
+    score_units: Annotated[int, Field(strict=True, ge=0, le=10000)] | None = None
+    score_input_version: Hash | None = None
 
 
 class ValidatedPlayer(SquadPick):
@@ -69,6 +75,15 @@ class ValidatedPlayer(SquadPick):
     performance: float
     raw_ovr: int
     placement_type: str
+    score_units: int | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_unused_score(self, handler):
+        # OVR 목적 결과의 직렬화를 다요소 도입 전과 같게 유지한다.
+        data = handler(self)
+        if self.score_units is None:
+            data.pop("score_units", None)
+        return data
 
 
 class ValidationReport(BaseModel):
@@ -81,6 +96,14 @@ class ValidationReport(BaseModel):
     total_salary: int | None = None
     total_ovr: int | None = None
     performance: float | None = None
+    total_score_units: int | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_unused_score(self, handler):
+        data = handler(self)
+        if self.total_score_units is None:
+            data.pop("total_score_units", None)
+        return data
 
 
 class SnapshotError(ValueError):
@@ -97,6 +120,7 @@ class PreparedSnapshot:
     snapshot_id: str
     candidates: tuple[SnapshotCandidate, ...]
     valid_until: datetime | None
+    objective: MultiFactorObjective | None = None
 
 
 def _key(candidate):
@@ -160,6 +184,12 @@ def _read(snapshot, when):
     query = SnapshotQuery.model_validate(data["query"])
     if when < query.t0:
         raise SnapshotError("time_before_snapshot")
+    objective = None
+    if "objective" in data["metadata"]:
+        try:
+            objective = objective_from_spec(data["metadata"]["objective"])
+        except (ValueError, TypeError, KeyError) as error:
+            raise SnapshotError("objective_mismatch") from error
     candidates = tuple(
         SnapshotCandidate.model_validate(row) for row in data["candidates"]
     )
@@ -236,6 +266,19 @@ def _read(snapshot, when):
             or candidate.ovr_position != score.ovr_position
         ):
             raise SnapshotError("performance_mismatch")
+        if objective is None:
+            if (candidate.score_units, candidate.score_input_version) != (None, None):
+                raise SnapshotError("multi_factor_mismatch")
+        else:
+            # 제출된 점수를 믿지 않고 스냅샷의 정책 원문으로 원관측에서 다시 계산한다.
+            scored = objective.score(
+                PerformanceQuery(**pair), card=card, reinforcement=reinforcement
+            )
+            if scored.exclusion is not None or (
+                candidate.score_units,
+                candidate.score_input_version,
+            ) != (scored.score_units, scored.input_version):
+                raise SnapshotError("multi_factor_mismatch")
     rows = tuple(used.values())
     observed = [row.observed_at for row in rows]
     deadlines = [
@@ -251,12 +294,18 @@ def _read(snapshot, when):
         model_version=None,
         **snapshot_spec(),
     )
+    if objective is not None:
+        expected["objective"] = data["metadata"]["objective"]
     if data["metadata"] != expected:
         raise SnapshotError("snapshot_metadata_mismatch")
     if deadlines and when >= min(deadlines):
         raise SnapshotExpired("data_expired")
     return PreparedSnapshot(
-        query, snapshot.snapshot_id, candidates, min(deadlines) if deadlines else None
+        query,
+        snapshot.snapshot_id,
+        candidates,
+        min(deadlines) if deadlines else None,
+        objective,
     )
 
 
@@ -323,6 +372,7 @@ def validate_squad(snapshot, selection: SquadSelection, *, when):
                 performance=candidate.performance,
                 raw_ovr=candidate.raw_ovr,
                 placement_type=candidate.placement_type,
+                score_units=candidate.score_units,
             )
         )
     total_price = sum(p.price for p in players)
@@ -344,4 +394,7 @@ def validate_squad(snapshot, selection: SquadSelection, *, when):
         total_salary=total_salary,
         total_ovr=total_ovr,
         performance=total_ovr / 2,
+        total_score_units=None
+        if prepared.objective is None
+        else sum(p.score_units for p in ordered),
     )

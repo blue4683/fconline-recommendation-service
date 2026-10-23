@@ -49,3 +49,13 @@ F = 필드 10개 슬롯의 `raw_ovr` 합, G = GK 슬롯의 `raw_ovr`, M = 11명�
 - 작은 무작위 합성 문제 전수 탐색과의 사전식 최적값 대조.
 - 필수 `pytest`·Ruff lint/format.
 - 실제 관측 파일로 OVR 모드와 비교하는 오프라인 실행, API/웹 노출, 기본 모드 변경, 정책 가중치 조정은 이번 범위가 아니다. 새 수집·모델 호출·DB 쓰기·배포도 없다.
+
+## 6. 구현 결과 (2026-10-23)
+
+- `FRS/core/squad_recommend/objective.py`: `MultiFactorObjective`(정책 원문+기대 해시), `objective_spec`(모드·허용폭·단계·정책 원문을 해시). `build_snapshot(..., objective=)`·`build_squad_request(..., objective=)`로만 선택한다.
+- 스냅샷: 다요소 제외는 `resource=multi_factor`로 남기고 후보·기한에서 뺀다. 후보에 `score_units`·`score_input_version`, 메타데이터에 `objective`를 둔다. 정책이 없으면 키를 추가하지 않는다.
+- 검증기: 메타데이터의 정책 원문으로 목적 사양을 재구성해 대조(`objective_mismatch`)하고, 후보 점수를 원관측에서 다시 계산(`multi_factor_mismatch`)한다. 유효 결과에 선수별 `score_units`와 `total_score_units`를 보고한다.
+- 탐색기: `_base_model`로 공통 제약을 만들고 단계마다 새 모델에 앞 단계 제약을 더한다. 가격 단계는 기존 `_maximize_price`를 그대로 쓰며, OVR 고정 제약은 호출자로 옮겼다(제약 추가 순서 동일). 엔진 사양은 `gk_priority_engine_spec`으로 분리했다. `EngineResult.objective`·`objective_stages`를 추가했다.
+- OVR 모드 보존: 새 필드는 기본값일 때 직렬화에서 빠진다. 기존 스냅샷 bytes·`engine_spec`·결과 dump·v1 DTO가 그대로이며, 코드 출력은 OVR 이외 목적을 내부 오류로 거부한다.
+- 검증: 신규 합성 32개(우선순위·허용폭 경계·GK 남은 급여·같은 점수 내 사용액·제외/기한·변조 4종·버전 불일치·단계 미확정 3종·시간 공유·탐욕/만료 표시·무작위 12문제 전수 대조). 무작위 12문제 중 11문제에서 허용폭 안 다른 해가 선택되어 S3이 실제로 작동했다. 전체 pytest 2,145개·Ruff lint/format 288파일 통과. 기존 D6 60문제 벤치마크는 OVR 경로 코드가 바뀌지 않아 재실행하지 않았다.
+- 미실행: 실제 관측 파일 비교, 다요소 모드 지연 측정, API/웹/MCP 노출.

@@ -1,4 +1,4 @@
-"""명시 실험 정책의 순수 다요소 점수. 운영 스냅샷/탐색기에는 연결하지 않는다."""
+"""명시 실험 정책의 순수 다요소 점수. 명시 목적 선택 시에만 스냅샷에 연결한다."""
 
 from fractions import Fraction
 from math import gcd

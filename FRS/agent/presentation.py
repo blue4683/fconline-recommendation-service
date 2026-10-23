@@ -165,6 +165,8 @@ def present_agent_result(
             not isinstance(snapshot, RequestSnapshot)
             or engine.snapshot_id != snapshot.snapshot_id
             or engine.method != "cp_sat"
+            # 코드 출력·v1 DTO는 OVR 목적 전용이다.
+            or engine.objective != "ovr"
             or engine.status == "greedy_failed"
         ):
             raise ValueError

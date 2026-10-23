@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue';
+import ObjectivePicker from './components/ObjectivePicker.vue';
 import ProgressSteps from './components/ProgressSteps.vue';
 import RequestComposer from './components/RequestComposer.vue';
 import ResultView from './components/ResultView.vue';
 import ServerStatus from './components/ServerStatus.vue';
+import { optionFor, parseObjectives } from './contracts/agentObjectives';
 import type { DataMode } from './contracts/webAgentV1';
-import { SCENARIOS, type ScenarioId } from './mocks/fixtures';
+import { DEFAULT_OBJECTIVE, type ObjectiveId } from './contracts/webAgentV2';
+import { OBJECTIVE_LISTINGS, objectivesResponse, SCENARIOS, type ObjectiveListingId, type ScenarioId } from './mocks/fixtures';
 import { createMockTransport } from './mocks/mockTransport';
 import { createHealthChecker, type HealthCheck, type HealthChecker } from './services/health';
+import { createObjectivesChecker, type ObjectivesCheck, type ObjectivesChecker } from './services/objectives';
 import { createLiveTransport, normalizeBaseUrl } from './services/liveTransport';
 import type { Transport, TransportMode } from './services/transport';
 import { useRecommendation } from './services/useRecommendation';
@@ -20,6 +24,8 @@ const props = withDefaults(
     makeTransport?: (mode: TransportMode, scenario: () => ScenarioId) => Transport | null;
     /** 실제 연결의 GET /health 확인. 테스트용 교체 지점. */
     checkHealth?: HealthChecker;
+    /** 실제 연결의 GET /objectives 확인. 테스트용 교체 지점. */
+    checkObjectives?: ObjectivesChecker;
     now?: () => number;
     mockDelayMs?: number;
   }>(),
@@ -27,6 +33,7 @@ const props = withDefaults(
     liveBaseUrl: () => import.meta.env.VITE_FRS_API_BASE_URL ?? '',
     makeTransport: undefined,
     checkHealth: undefined,
+    checkObjectives: undefined,
     now: undefined,
     mockDelayMs: 450,
   },
@@ -35,6 +42,9 @@ const props = withDefaults(
 const baseUrl = computed(() => normalizeBaseUrl(props.liveBaseUrl));
 const mode = ref<TransportMode | null>(null);
 const scenario = ref<ScenarioId>('optimal');
+/** 요청마다 사용자가 고르는 추천 방식. 기본은 OVR이며 서버 목록에서 사용 가능한 방식만 고를 수 있다. */
+const objective = ref<ObjectiveId>(DEFAULT_OBJECTIVE);
+const mockListing = ref<ObjectiveListingId>('available');
 
 const rec = useRecommendation({ now: props.now });
 const nowFn = () => (props.now ?? Date.now)();
@@ -45,21 +55,41 @@ const health = shallowRef<HealthCheck | null>(null);
 const checking = ref(false);
 let healthGeneration = 0;
 
+// 실제 연결의 방식 목록. 서버 상태와 같은 시점에만 한 번씩 조회한다.
+const objectivesChecker = props.checkObjectives ?? createObjectivesChecker();
+const liveObjectives = shallowRef<ObjectivesCheck | null>(null);
+const checkingObjectives = ref(false);
+
 async function refreshHealth(): Promise<void> {
   const base = baseUrl.value;
   if (!base) return;
   const generation = ++healthGeneration;
   checking.value = true;
-  let result: HealthCheck;
-  try {
-    result = await checker(base);
-  } catch {
-    result = { kind: 'unreachable' };
-  }
+  checkingObjectives.value = true;
+  const [healthResult, objectivesResult] = await Promise.all([
+    checker(base).catch((): HealthCheck => ({ kind: 'unreachable' })),
+    objectivesChecker(base).catch((): ObjectivesCheck => ({ kind: 'unreachable' })),
+  ]);
   if (generation !== healthGeneration) return;
-  health.value = result;
+  health.value = healthResult;
+  liveObjectives.value = objectivesResult;
   checking.value = false;
+  checkingObjectives.value = false;
 }
+
+/** 모의 방식 목록. 실제 파서를 그대로 통과시킨다. */
+const mockObjectives = computed<ObjectivesCheck>(() => {
+  const raw = objectivesResponse(mockListing.value);
+  return { kind: 'listed', listing: parseObjectives(raw.body, raw.status) };
+});
+
+const objectives = computed<ObjectivesCheck | null>(() => {
+  if (mode.value === 'mock') return mockObjectives.value;
+  if (mode.value === 'live') return liveObjectives.value;
+  return null;
+});
+
+const listing = computed(() => (objectives.value?.kind === 'listed' ? objectives.value.listing : null));
 
 watch(mode, (m) => {
   rec.reset();
@@ -68,7 +98,9 @@ watch(mode, (m) => {
   } else {
     healthGeneration += 1;
     health.value = null;
+    liveObjectives.value = null;
     checking.value = false;
+    checkingObjectives.value = false;
   }
 });
 
@@ -82,7 +114,9 @@ const dataMode = computed<DataMode | null>(() => {
 
 function transportFor(m: TransportMode): Transport | null {
   if (props.makeTransport) return props.makeTransport(m, () => scenario.value);
-  if (m === 'mock') return createMockTransport({ scenario: () => scenario.value, now: props.now, delayMs: props.mockDelayMs });
+  if (m === 'mock') {
+    return createMockTransport({ scenario: () => scenario.value, now: props.now, delayMs: props.mockDelayMs, listing: () => listing.value });
+  }
   return baseUrl.value ? createLiveTransport(baseUrl.value) : null;
 }
 
@@ -95,6 +129,11 @@ const blockedReason = computed(() => {
     if (h.kind === 'unavailable') return '서버가 준비되지 않아 보낼 수 없습니다. 서버를 확인한 뒤 다시 확인을 눌러 주세요.';
     if (h.kind === 'unreachable') return '서버에 연결하지 못해 보낼 수 없습니다.';
     if (h.kind === 'invalid') return '서버 상태를 확인하지 못해 보낼 수 없습니다.';
+  }
+  if (checkingObjectives.value || objectives.value === null) return '추천 방식 목록을 확인한 뒤 보낼 수 있습니다.';
+  if (objectives.value.kind !== 'listed') return '추천 방식 목록을 확인하지 못해 보낼 수 없습니다.';
+  if (optionFor(listing.value, objective.value)?.available !== true) {
+    return '고른 추천 방식을 지금 사용할 수 없습니다. 사용 가능한 방식을 골라 주세요.';
   }
   return null;
 });
@@ -110,7 +149,7 @@ function onSubmit(message: string): void {
   if (mode.value === null) return;
   const transport = transportFor(mode.value);
   if (!transport) return;
-  void rec.send(message, transport);
+  void rec.send(message, transport, objective.value);
 }
 </script>
 
@@ -152,10 +191,21 @@ function onSubmit(message: string): void {
     <main class="workspace">
       <aside class="side">
         <RequestComposer :running="running" :blocked-reason="blockedReason" @submit="onSubmit" />
+        <ObjectivePicker
+          v-if="mode"
+          v-model="objective"
+          :check="objectives"
+          :checking="mode === 'live' && checkingObjectives"
+          :disabled="running"
+        />
         <div v-if="mode === 'mock'" class="scenario">
           <label for="scenario">모의 결과</label>
           <select id="scenario" v-model="scenario" :disabled="running">
             <option v-for="s in SCENARIOS" :key="s.id" :value="s.id">{{ s.label }}</option>
+          </select>
+          <label for="mock-listing">모의 방식 목록</label>
+          <select id="mock-listing" v-model="mockListing" :disabled="running">
+            <option v-for="l in OBJECTIVE_LISTINGS" :key="l.id" :value="l.id">{{ l.label }}</option>
           </select>
         </div>
         <ServerStatus
@@ -182,7 +232,7 @@ function onSubmit(message: string): void {
         </div>
         <div v-else class="placeholder">
           <p class="lead">예산·클럽·포메이션·강화 네 가지 조건을 적어 보내면 이곳에 검증된 11명이 경기장 배치도와 표로 나타납니다.</p>
-          <p>급여 상한은 310으로 고정되며 입력을 생략할 수 있습니다. 예산과 급여 상한을 넘지 않는 조합 중 OVR 합이 높은 스쿼드를 찾습니다.</p>
+          <p>급여 상한은 310으로 고정되며 입력을 생략할 수 있습니다. 기본 방식은 예산과 급여 상한을 넘지 않는 조합 중 OVR 합이 높은 스쿼드를 찾습니다. 추천 방식은 왼쪽에서 요청마다 고릅니다.</p>
         </div>
       </section>
     </main>

@@ -1,10 +1,25 @@
+import { parseObjectives } from '../src/contracts/agentObjectives';
 import { CONTRACT_VERSION } from '../src/contracts/webAgentV1';
+import { CONTRACT_VERSION_V2 } from '../src/contracts/webAgentV2';
+import { objectivesResponse, type ObjectiveListingId } from '../src/mocks/fixtures';
+import type { ObjectivesCheck } from '../src/services/objectives';
 import type { Transport } from '../src/services/transport';
 
 export const FIXED_NOW = Date.parse('2026-10-20T01:00:00Z');
 
 export function envelope(requestId: string, seq: number, type: string, payload: unknown, extra: Record<string, unknown> = {}) {
   return JSON.stringify({ contract_version: CONTRACT_VERSION, request_id: requestId, seq, type, payload, ...extra });
+}
+
+/** web-agent.v2 envelope. 화면은 v2로 요청하므로 화면 테스트는 이 envelope를 쓴다. */
+export function envelopeV2(requestId: string, seq: number, type: string, payload: unknown, extra: Record<string, unknown> = {}) {
+  return JSON.stringify({ contract_version: CONTRACT_VERSION_V2, request_id: requestId, seq, type, payload, ...extra });
+}
+
+/** 모의 방식 목록을 실제 파서로 통과시킨 GET /objectives 결과. */
+export function listedObjectives(id: ObjectiveListingId = 'available'): ObjectivesCheck {
+  const raw = objectivesResponse(id);
+  return { kind: 'listed', listing: parseObjectives(raw.body, raw.status) };
 }
 
 export function sse(type: string, data: string): string {

@@ -170,7 +170,7 @@ export function str(value: unknown, path: string, { nonEmpty = false } = {}): st
   return value;
 }
 
-function int(value: unknown, path: string, min: number, max: number): number {
+export function int(value: unknown, path: string, min: number, max: number): number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value)) fail(path, '정수가 필요합니다');
   if (value < min || value > max) fail(path, `${min}~${max} 범위가 필요합니다`);
   return value;
@@ -213,7 +213,7 @@ export function oneOf<T extends string>(value: unknown, allowed: readonly T[], p
   return value as T;
 }
 
-function arr(value: unknown, path: string): unknown[] {
+export function arr(value: unknown, path: string): unknown[] {
   if (!Array.isArray(value)) fail(path, '배열이 필요합니다');
   return value;
 }
@@ -415,6 +415,22 @@ export function parseFinal(value: unknown): FinalResult {
  * 잘못된 JSON·버전·필드·이벤트 이름 불일치는 ContractError다.
  */
 export function parseEnvelope(eventName: string, data: string): AgentEvent {
+  return parseEnvelopeAs(eventName, data, CONTRACT_VERSION, parseFinal);
+}
+
+/** 계약 버전별 envelope 공통 해석. v2(webAgentV2.ts)가 같은 순서·필드 검사를 재사용한다. */
+export type EnvelopeOf<F> =
+  | { type: 'started'; seq: number; request_id: string; payload: StartedPayload }
+  | { type: 'progress'; seq: number; request_id: string; payload: ProgressPayload }
+  | { type: 'final'; seq: number; request_id: string; payload: F }
+  | { type: 'error'; seq: number; request_id: string; payload: ErrorPayload };
+
+export function parseEnvelopeAs<F>(
+  eventName: string,
+  data: string,
+  version: string,
+  finalParser: (payload: unknown) => F,
+): EnvelopeOf<F> {
   let raw: unknown;
   try {
     raw = JSON.parse(data);
@@ -423,7 +439,7 @@ export function parseEnvelope(eventName: string, data: string): AgentEvent {
   }
   const o = obj(raw, 'event');
   exactKeys(o, 'event', ['contract_version', 'request_id', 'seq', 'type', 'payload']);
-  if (o.contract_version !== CONTRACT_VERSION) fail('event.contract_version', `지원하지 않는 계약 버전입니다`);
+  if (o.contract_version !== version) fail('event.contract_version', `지원하지 않는 계약 버전입니다`);
   const type = oneOf(o.type, EVENT_TYPES, 'event.type');
   if (eventName !== type) fail('event', 'SSE 이벤트 이름과 type이 다릅니다');
   const request_id = str(o.request_id, 'event.request_id', { nonEmpty: true });
@@ -448,7 +464,7 @@ export function parseEnvelope(eventName: string, data: string): AgentEvent {
       };
     }
     case 'final':
-      return { type, seq, request_id, payload: parseFinal(p) };
+      return { type, seq, request_id, payload: finalParser(p) };
     case 'error': {
       exactKeys(p, 'error', ['code', 'message']);
       return {

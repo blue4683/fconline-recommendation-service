@@ -1,0 +1,276 @@
+{
+ "backend_sha": "ced4573",
+ "fixture_data": "generated_synthetic_only_including_observed_mode",
+ "observed_at": "2026-01-01T00:00:00+00:00",
+ "policy_path": "docs/examples/multi-factor-core-policy.json",
+ "streams": [
+  {
+   "name": "synthetic_ovr_success",
+   "request_id": "fixture-v2-synthetic-ovr-success",
+   "message": "예산 6조, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "ovr",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"synthetic\"},\"request_id\":\"fixture-v2-synthetic-ovr-success\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-synthetic-ovr-success\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-synthetic-ovr-success\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"합성 자료 기준으로 조건을 만족하는 11명을 검증했고 최적성을 확인했습니다.\",\"conditions\":{\"allowed_reinforcements\":[5,6,7,8],\"formation\":\"4-2-3-1\",\"price_cap\":\"6000000000000\",\"salary_cap\":\"310\",\"team_color\":\"리버풀\"},\"data_mode\":\"synthetic\",\"issues\":[],\"narration_source\":\"template\",\"objective\":{\"id\":\"ovr\",\"policy\":null,\"stages\":[]},\"snapshot\":{\"id\":\"f5f03b6a7be3a502e3c4a0ba3ec8836efe6ad53977924435b2df7cdcbdb77527\",\"t0\":\"2026-01-01T00:00:00Z\",\"valid_until\":\"2026-01-02T00:00:00+00:00\"},\"squad\":{\"gk_ovr\":109,\"outfield_ovr\":1023,\"performance\":566.0,\"rows\":[{\"name\":\"가상선수_0014\",\"performance\":54.5,\"person_id\":\"14\",\"placement_type\":\"base\",\"price\":\"8000000000\",\"raw_ovr\":109,\"reinforce_level\":8,\"salary\":\"19\",\"score\":null,\"score_units\":null,\"slot\":\"GK\",\"spid\":\"950000014\"},{\"name\":\"가상선수_0004\",\"performance\":45.0,\"person_id\":\"4\",\"placement_type\":\"base\",\"price\":\"50400000000\",\"raw_ovr\":90,\"reinforce_level\":8,\"salary\":\"12\",\"score\":null,\"score_units\":null,\"slot\":\"RCB\",\"spid\":\"950000004\"},{\"name\":\"가상선수_0005\",\"performance\":45.0,\"person_id\":\"5\",\"placement_type\":\"base\",\"price\":\"60800000000\",\"raw_ovr\":90,\"reinforce_level\":8,\"salary\":\"20\",\"score\":null,\"score_units\":null,\"slot\":\"LCB\",\"spid\":\"950000005\"},{\"name\":\"가상선수_0026\",\"performance\":52.0,\"person_id\":\"26\",\"placement_type\":\"base\",\"price\":\"31200000000\",\"raw_ovr\":104,\"reinforce_level\":8,\"salary\":\"16\",\"score\":null,\"score_units\":null,\"slot\":\"RB\",\"spid\":\"950000026\"},{\"name\":\"가상선수_0018\",\"performance\":53.0,\"person_id\":\"18\",\"placement_type\":\"base\",\"price\":\"26400000000\",\"raw_ovr\":106,\"reinforce_level\":8,\"salary\":\"22\",\"score\":null,\"score_units\":null,\"slot\":\"LB\",\"spid\":\"950000018\"},{\"name\":\"가상선수_0007\",\"performance\":55.5,\"person_id\":\"7\",\"placement_type\":\"base\",\"price\":\"26400000000\",\"raw_ovr\":111,\"reinforce_level\":8,\"salary\":\"22\",\"score\":null,\"score_units\":null,\"slot\":\"RDM\",\"spid\":\"950000007\"},{\"name\":\"가상선수_0008\",\"performance\":57.5,\"person_id\":\"8\",\"placement_type\":\"base\",\"price\":\"78400000000\",\"raw_ovr\":115,\"reinforce_level\":8,\"salary\":\"24\",\"score\":null,\"score_units\":null,\"slot\":\"LDM\",\"spid\":\"950000008\"},{\"name\":\"가상선수_0001\",\"performance\":55.0,\"person_id\":\"1\",\"placement_type\":\"base\",\"price\":\"9600000000\",\"raw_ovr\":110,\"reinforce_level\":8,\"salary\":\"19\",\"score\":null,\"score_units\":null,\"slot\":\"CAM\",\"spid\":\"950000001\"},{\"name\":\"가상선수_0002\",\"performance\":47.5,\"person_id\":\"2\",\"placement_type\":\"base\",\"price\":\"42400000000\",\"raw_ovr\":95,\"reinforce_level\":8,\"salary\":\"22\",\"score\":null,\"score_units\":null,\"slot\":\"RAM\",\"spid\":\"950000002\"},{\"name\":\"가상선수_0003\",\"performance\":49.5,\"person_id\":\"3\",\"placement_type\":\"base\",\"price\":\"27200000000\",\"raw_ovr\":99,\"reinforce_level\":8,\"salary\":\"10\",\"score\":null,\"score_units\":null,\"slot\":\"LAM\",\"spid\":\"950000003\"},{\"name\":\"가상선수_0034\",\"performance\":51.5,\"person_id\":\"34\",\"placement_type\":\"base\",\"price\":\"72000000000\",\"raw_ovr\":103,\"reinforce_level\":8,\"salary\":\"19\",\"score\":null,\"score_units\":null,\"slot\":\"ST\",\"spid\":\"950000034\"}],\"total_ovr\":1132,\"total_price\":\"432800000000\",\"total_salary\":\"205\",\"total_score\":null,\"total_score_units\":null},\"status\":\"optimal\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"5a99698b7e205880c9762e0bee30a2ef19dbecc5389a203786912f82bd7a08cf\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"808e577cd638d545579b55a7387449a42fc56132fc8d69626f33d7379ad8cccd\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"e5a0c66dea760d91422f9a79a00ec02864a48d47939545f83c3fcf42635ecc36\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-synthetic-ovr-success\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_ovr_success",
+   "request_id": "fixture-v2-observed-ovr-success",
+   "message": "예산 6조, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "ovr",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-ovr-success\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-ovr-success\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-ovr-success\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"넥슨 데이터센터 관측 자료 기준으로 조건을 만족하는 11명을 검증했고 최적성을 확인했습니다. 가격은 참고가격입니다.\",\"conditions\":{\"allowed_reinforcements\":[5,6,7,8],\"formation\":\"4-2-3-1\",\"price_cap\":\"6000000000000\",\"salary_cap\":\"310\",\"team_color\":\"리버풀\"},\"data_mode\":\"observed\",\"issues\":[],\"narration_source\":\"template\",\"objective\":{\"id\":\"ovr\",\"policy\":null,\"stages\":[]},\"snapshot\":{\"id\":\"31ad36af895e0184d7f4b96749b2b3833e2625951f081ddc81a6a3a4425f0b2c\",\"t0\":\"2026-01-01T00:00:00Z\",\"valid_until\":\"2026-01-02T00:00:00+00:00\"},\"squad\":{\"gk_ovr\":109,\"outfield_ovr\":1023,\"performance\":566.0,\"rows\":[{\"name\":\"가상선수_0014\",\"performance\":54.5,\"person_id\":\"14\",\"placement_type\":\"base\",\"price\":\"8000000000\",\"raw_ovr\":109,\"reinforce_level\":8,\"salary\":\"19\",\"score\":null,\"score_units\":null,\"slot\":\"GK\",\"spid\":\"950000014\"},{\"name\":\"가상선수_0004\",\"performance\":45.0,\"person_id\":\"4\",\"placement_type\":\"base\",\"price\":\"50400000000\",\"raw_ovr\":90,\"reinforce_level\":8,\"salary\":\"12\",\"score\":null,\"score_units\":null,\"slot\":\"RCB\",\"spid\":\"950000004\"},{\"name\":\"가상선수_0005\",\"performance\":45.0,\"person_id\":\"5\",\"placement_type\":\"base\",\"price\":\"60800000000\",\"raw_ovr\":90,\"reinforce_level\":8,\"salary\":\"20\",\"score\":null,\"score_units\":null,\"slot\":\"LCB\",\"spid\":\"950000005\"},{\"name\":\"가상선수_0026\",\"performance\":52.0,\"person_id\":\"26\",\"placement_type\":\"base\",\"price\":\"31200000000\",\"raw_ovr\":104,\"reinforce_level\":8,\"salary\":\"16\",\"score\":null,\"score_units\":null,\"slot\":\"RB\",\"spid\":\"950000026\"},{\"name\":\"가상선수_0018\",\"performance\":53.0,\"person_id\":\"18\",\"placement_type\":\"base\",\"price\":\"26400000000\",\"raw_ovr\":106,\"reinforce_level\":8,\"salary\":\"22\",\"score\":null,\"score_units\":null,\"slot\":\"LB\",\"spid\":\"950000018\"},{\"name\":\"가상선수_0007\",\"performance\":55.5,\"person_id\":\"7\",\"placement_type\":\"base\",\"price\":\"26400000000\",\"raw_ovr\":111,\"reinforce_level\":8,\"salary\":\"22\",\"score\":null,\"score_units\":null,\"slot\":\"RDM\",\"spid\":\"950000007\"},{\"name\":\"가상선수_0008\",\"performance\":57.5,\"person_id\":\"8\",\"placement_type\":\"base\",\"price\":\"78400000000\",\"raw_ovr\":115,\"reinforce_level\":8,\"salary\":\"24\",\"score\":null,\"score_units\":null,\"slot\":\"LDM\",\"spid\":\"950000008\"},{\"name\":\"가상선수_0001\",\"performance\":55.0,\"person_id\":\"1\",\"placement_type\":\"base\",\"price\":\"9600000000\",\"raw_ovr\":110,\"reinforce_level\":8,\"salary\":\"19\",\"score\":null,\"score_units\":null,\"slot\":\"CAM\",\"spid\":\"950000001\"},{\"name\":\"가상선수_0002\",\"performance\":47.5,\"person_id\":\"2\",\"placement_type\":\"base\",\"price\":\"42400000000\",\"raw_ovr\":95,\"reinforce_level\":8,\"salary\":\"22\",\"score\":null,\"score_units\":null,\"slot\":\"RAM\",\"spid\":\"950000002\"},{\"name\":\"가상선수_0003\",\"performance\":49.5,\"person_id\":\"3\",\"placement_type\":\"base\",\"price\":\"27200000000\",\"raw_ovr\":99,\"reinforce_level\":8,\"salary\":\"10\",\"score\":null,\"score_units\":null,\"slot\":\"LAM\",\"spid\":\"950000003\"},{\"name\":\"가상선수_0034\",\"performance\":51.5,\"person_id\":\"34\",\"placement_type\":\"base\",\"price\":\"72000000000\",\"raw_ovr\":103,\"reinforce_level\":8,\"salary\":\"19\",\"score\":null,\"score_units\":null,\"slot\":\"ST\",\"spid\":\"950000034\"}],\"total_ovr\":1132,\"total_price\":\"432800000000\",\"total_salary\":\"205\",\"total_score\":null,\"total_score_units\":null},\"status\":\"optimal\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"5a99698b7e205880c9762e0bee30a2ef19dbecc5389a203786912f82bd7a08cf\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"dbb186b3947c8da0c346b54b9f35d7e566b4153bacb9c761da41c0f72bd90b8e\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"e5a0c66dea760d91422f9a79a00ec02864a48d47939545f83c3fcf42635ecc36\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-ovr-success\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_multi_success",
+   "request_id": "fixture-v2-observed-multi-success",
+   "message": "예산 6조, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "gk_priority_multi_factor",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-multi-success\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-multi-success\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-multi-success\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"넥슨 데이터센터 관측 자료 기준으로 필드 우선·GK 단계와 실험 다요소 점수(draft-core-stat-foot-20261022)로 11명을 검증했고 단계별 최적성을 확인했습니다. 가격은 참고가격입니다.\",\"conditions\":{\"allowed_reinforcements\":[5,6,7,8],\"formation\":\"4-2-3-1\",\"price_cap\":\"6000000000000\",\"salary_cap\":\"310\",\"team_color\":\"리버풀\"},\"data_mode\":\"observed\",\"issues\":[],\"narration_source\":\"template\",\"objective\":{\"id\":\"gk_priority_multi_factor\",\"policy\":{\"policy_id\":\"draft-core-stat-foot-20261022\",\"status\":\"experimental\",\"version\":\"7df0b5607406d4a89da82086feb88c18b0d3a3924fd9d3b1fbc7db85d1b5a0fc\"},\"stages\":[{\"name\":\"outfield_ovr\",\"status\":\"optimal\",\"value\":1023},{\"name\":\"gk_ovr\",\"status\":\"optimal\",\"value\":109},{\"name\":\"multi_factor\",\"status\":\"optimal\",\"value\":52065}]},\"snapshot\":{\"id\":\"c94d7c4e4494b06af0ba24bffad6ef86612efed9e62056f66215c4db3093c758\",\"t0\":\"2026-01-01T00:00:00Z\",\"valid_until\":\"2026-01-02T00:00:00+00:00\"},\"squad\":{\"gk_ovr\":109,\"outfield_ovr\":1020,\"performance\":564.5,\"rows\":[{\"name\":\"가상선수_0014\",\"performance\":54.5,\"person_id\":\"14\",\"placement_type\":\"base\",\"price\":\"8000000000\",\"raw_ovr\":109,\"reinforce_level\":8,\"salary\":\"19\",\"score\":\"48.75\",\"score_units\":4875,\"slot\":\"GK\",\"spid\":\"950000014\"},{\"name\":\"가상선수_0004\",\"performance\":45.0,\"person_id\":\"4\",\"placement_type\":\"base\",\"price\":\"50400000000\",\"raw_ovr\":90,\"reinforce_level\":8,\"salary\":\"12\",\"score\":\"50.35\",\"score_units\":5035,\"slot\":\"RCB\",\"spid\":\"950000004\"},{\"name\":\"가상선수_0005\",\"performance\":45.0,\"person_id\":\"5\",\"placement_type\":\"base\",\"price\":\"60800000000\",\"raw_ovr\":90,\"reinforce_level\":8,\"salary\":\"20\",\"score\":\"48.58\",\"score_units\":4858,\"slot\":\"LCB\",\"spid\":\"950000005\"},{\"name\":\"가상선수_0025\",\"performance\":50.5,\"person_id\":\"25\",\"placement_type\":\"base\",\"price\":\"20800000000\",\"raw_ovr\":101,\"reinforce_level\":8,\"salary\":\"17\",\"score\":\"50.79\",\"score_units\":5079,\"slot\":\"RB\",\"spid\":\"950000025\"},{\"name\":\"가상선수_0018\",\"performance\":53.0,\"person_id\":\"18\",\"placement_type\":\"base\",\"price\":\"26400000000\",\"raw_ovr\":106,\"reinforce_level\":8,\"salary\":\"22\",\"score\":\"44.32\",\"score_units\":4432,\"slot\":\"LB\",\"spid\":\"950000018\"},{\"name\":\"가상선수_0008\",\"performance\":57.5,\"person_id\":\"8\",\"placement_type\":\"base\",\"price\":\"78400000000\",\"raw_ovr\":115,\"reinforce_level\":8,\"salary\":\"24\",\"score\":\"47.64\",\"score_units\":4764,\"slot\":\"RDM\",\"spid\":\"950000008\"},{\"name\":\"가상선수_0007\",\"performance\":55.5,\"person_id\":\"7\",\"placement_type\":\"base\",\"price\":\"26400000000\",\"raw_ovr\":111,\"reinforce_level\":8,\"salary\":\"22\",\"score\":\"48.51\",\"score_units\":4851,\"slot\":\"LDM\",\"spid\":\"950000007\"},{\"name\":\"가상선수_0001\",\"performance\":55.0,\"person_id\":\"1\",\"placement_type\":\"base\",\"price\":\"9600000000\",\"raw_ovr\":110,\"reinforce_level\":8,\"salary\":\"19\",\"score\":\"38.47\",\"score_units\":3847,\"slot\":\"CAM\",\"spid\":\"950000001\"},{\"name\":\"가상선수_0003\",\"performance\":49.5,\"person_id\":\"3\",\"placement_type\":\"base\",\"price\":\"27200000000\",\"raw_ovr\":99,\"reinforce_level\":8,\"salary\":\"10\",\"score\":\"45.65\",\"score_units\":4565,\"slot\":\"RAM\",\"spid\":\"950000003\"},{\"name\":\"가상선수_0002\",\"performance\":47.5,\"person_id\":\"2\",\"placement_type\":\"base\",\"price\":\"42400000000\",\"raw_ovr\":95,\"reinforce_level\":8,\"salary\":\"22\",\"score\":\"44.41\",\"score_units\":4441,\"slot\":\"LAM\",\"spid\":\"950000002\"},{\"name\":\"가상선수_0034\",\"performance\":51.5,\"person_id\":\"34\",\"placement_type\":\"base\",\"price\":\"72000000000\",\"raw_ovr\":103,\"reinforce_level\":8,\"salary\":\"19\",\"score\":\"53.18\",\"score_units\":5318,\"slot\":\"ST\",\"spid\":\"950000034\"}],\"total_ovr\":1129,\"total_price\":\"422400000000\",\"total_salary\":\"206\",\"total_score\":\"520.65\",\"total_score_units\":52065},\"status\":\"optimal\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"90a9415fce2252bdc26131d66f1f41a1cb7cf696df52b1929cda87f50eaed019\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"dbb186b3947c8da0c346b54b9f35d7e566b4153bacb9c761da41c0f72bd90b8e\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"4474fb3b285c0d2ca350377bb7e83f793046a0d9e7db2a39ca8bfdf18c935125\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-multi-success\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_multi_chelsea",
+   "request_id": "fixture-v2-observed-multi-chelsea",
+   "message": "예산 5조 8000억, 첼시, 4-1-2-3, 5강,7강으로 구성해줘",
+   "objective": "gk_priority_multi_factor",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-multi-chelsea\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-multi-chelsea\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-multi-chelsea\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"넥슨 데이터센터 관측 자료 기준으로 필드 우선·GK 단계와 실험 다요소 점수(draft-core-stat-foot-20261022)로 11명을 검증했고 단계별 최적성을 확인했습니다. 가격은 참고가격입니다.\",\"conditions\":{\"allowed_reinforcements\":[5,7],\"formation\":\"4-1-2-3\",\"price_cap\":\"5800000000000\",\"salary_cap\":\"310\",\"team_color\":\"첼시\"},\"data_mode\":\"observed\",\"issues\":[],\"narration_source\":\"template\",\"objective\":{\"id\":\"gk_priority_multi_factor\",\"policy\":{\"policy_id\":\"draft-core-stat-foot-20261022\",\"status\":\"experimental\",\"version\":\"7df0b5607406d4a89da82086feb88c18b0d3a3924fd9d3b1fbc7db85d1b5a0fc\"},\"stages\":[{\"name\":\"outfield_ovr\",\"status\":\"optimal\",\"value\":1023},{\"name\":\"gk_ovr\",\"status\":\"optimal\",\"value\":111},{\"name\":\"multi_factor\",\"status\":\"optimal\",\"value\":51957}]},\"snapshot\":{\"id\":\"d1d12b897c29c6afba61c9e6dc4bd9da7f7f1c7c9c87e2e8288ce6740588b202\",\"t0\":\"2026-01-01T00:00:00Z\",\"valid_until\":\"2026-01-02T00:00:00+00:00\"},\"squad\":{\"gk_ovr\":111,\"outfield_ovr\":1018,\"performance\":564.5,\"rows\":[{\"name\":\"가상선수_0049\",\"performance\":55.5,\"person_id\":\"49\",\"placement_type\":\"base\",\"price\":\"29200000000\",\"raw_ovr\":111,\"reinforce_level\":7,\"salary\":\"12\",\"score\":\"49.10\",\"score_units\":4910,\"slot\":\"GK\",\"spid\":\"950000049\"},{\"name\":\"가상선수_0040\",\"performance\":54.5,\"person_id\":\"40\",\"placement_type\":\"base\",\"price\":\"16400000000\",\"raw_ovr\":109,\"reinforce_level\":7,\"salary\":\"24\",\"score\":\"49.24\",\"score_units\":4924,\"slot\":\"RCB\",\"spid\":\"950000040\"},{\"name\":\"가상선수_0042\",\"performance\":48.5,\"person_id\":\"42\",\"placement_type\":\"base\",\"price\":\"35600000000\",\"raw_ovr\":97,\"reinforce_level\":7,\"salary\":\"10\",\"score\":\"43.93\",\"score_units\":4393,\"slot\":\"LCB\",\"spid\":\"950000042\"},{\"name\":\"가상선수_0061\",\"performance\":51.5,\"person_id\":\"61\",\"placement_type\":\"base\",\"price\":\"8800000000\",\"raw_ovr\":103,\"reinforce_level\":7,\"salary\":\"19\",\"score\":\"45.75\",\"score_units\":4575,\"slot\":\"RB\",\"spid\":\"950000061\"},{\"name\":\"가상선수_0054\",\"performance\":54.0,\"person_id\":\"54\",\"placement_type\":\"base\",\"price\":\"17200000000\",\"raw_ovr\":108,\"reinforce_level\":7,\"salary\":\"14\",\"score\":\"47.03\",\"score_units\":4703,\"slot\":\"LB\",\"spid\":\"950000054\"},{\"name\":\"가상선수_0044\",\"performance\":53.0,\"person_id\":\"44\",\"placement_type\":\"base\",\"price\":\"31200000000\",\"raw_ovr\":106,\"reinforce_level\":7,\"salary\":\"24\",\"score\":\"47.69\",\"score_units\":4769,\"slot\":\"CDM\",\"spid\":\"950000044\"},{\"name\":\"가상선수_0046\",\"performance\":43.0,\"person_id\":\"46\",\"placement_type\":\"base\",\"price\":\"34800000000\",\"raw_ovr\":86,\"reinforce_level\":7,\"salary\":\"13\",\"score\":\"41.11\",\"score_units\":4111,\"slot\":\"RCM\",\"spid\":\"950000046\"},{\"name\":\"가상선수_0048\",\"performance\":46.0,\"person_id\":\"48\",\"placement_type\":\"base\",\"price\":\"34400000000\",\"raw_ovr\":92,\"reinforce_level\":7,\"salary\":\"11\",\"score\":\"43.84\",\"score_units\":4384,\"slot\":\"LCM\",\"spid\":\"950000048\"},{\"name\":\"가상선수_0070\",\"performance\":55.5,\"person_id\":\"70\",\"placement_type\":\"base\",\"price\":\"36000000000\",\"raw_ovr\":111,\"reinforce_level\":7,\"salary\":\"19\",\"score\":\"55.88\",\"score_units\":5588,\"slot\":\"ST\",\"spid\":\"950000070\"},{\"name\":\"가상선수_0067\",\"performance\":51.5,\"person_id\":\"67\",\"placement_type\":\"base\",\"price\":\"30800000000\",\"raw_ovr\":103,\"reinforce_level\":7,\"salary\":\"20\",\"score\":\"40.29\",\"score_units\":4029,\"slot\":\"RW\",\"spid\":\"950000067\"},{\"name\":\"가상선수_0059\",\"performance\":51.5,\"person_id\":\"59\",\"placement_type\":\"base\",\"price\":\"18000000000\",\"raw_ovr\":103,\"reinforce_level\":7,\"salary\":\"12\",\"score\":\"55.71\",\"score_units\":5571,\"slot\":\"LW\",\"spid\":\"950000059\"}],\"total_ovr\":1129,\"total_price\":\"292400000000\",\"total_salary\":\"178\",\"total_score\":\"519.57\",\"total_score_units\":51957},\"status\":\"optimal\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"90a9415fce2252bdc26131d66f1f41a1cb7cf696df52b1929cda87f50eaed019\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"dbb186b3947c8da0c346b54b9f35d7e566b4153bacb9c761da41c0f72bd90b8e\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"4474fb3b285c0d2ca350377bb7e83f793046a0d9e7db2a39ca8bfdf18c935125\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-multi-chelsea\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_multi_infeasible",
+   "request_id": "fixture-v2-observed-multi-infeasible",
+   "message": "예산 0BP, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "gk_priority_multi_factor",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-multi-infeasible\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-multi-infeasible\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-multi-infeasible\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"보유 관측 자료 기준으로 조건을 만족하는 스쿼드가 없습니다.\",\"conditions\":{\"allowed_reinforcements\":[5,6,7,8],\"formation\":\"4-2-3-1\",\"price_cap\":\"0\",\"salary_cap\":\"310\",\"team_color\":\"리버풀\"},\"data_mode\":\"observed\",\"issues\":[],\"narration_source\":\"template\",\"objective\":{\"id\":\"gk_priority_multi_factor\",\"policy\":{\"policy_id\":\"draft-core-stat-foot-20261022\",\"status\":\"experimental\",\"version\":\"7df0b5607406d4a89da82086feb88c18b0d3a3924fd9d3b1fbc7db85d1b5a0fc\"},\"stages\":[]},\"snapshot\":{\"id\":\"c0e9532cdf1048cd4df18d858202e4587af0535ecc781a897a58d48ad0cd2ed7\",\"t0\":\"2026-01-01T00:00:00Z\",\"valid_until\":null},\"squad\":null,\"status\":\"infeasible\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"90a9415fce2252bdc26131d66f1f41a1cb7cf696df52b1929cda87f50eaed019\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"dbb186b3947c8da0c346b54b9f35d7e566b4153bacb9c761da41c0f72bd90b8e\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"4474fb3b285c0d2ca350377bb7e83f793046a0d9e7db2a39ca8bfdf18c935125\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-multi-infeasible\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_multi_missing_budget",
+   "request_id": "fixture-v2-observed-multi-missing-budget",
+   "message": "급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "gk_priority_multi_factor",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-multi-missing-budget\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-multi-missing-budget\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-multi-missing-budget\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"필수 조건과 안내된 사유를 확인하고 완전한 요청을 다시 입력해 주세요.\",\"conditions\":null,\"data_mode\":\"observed\",\"issues\":[{\"code\":\"missing_condition\",\"field\":\"price_cap\",\"kind\":\"missing\",\"message\":\"필수 조건을 원문에 명시해야 합니다.\",\"occurrence\":null}],\"narration_source\":\"template\",\"objective\":{\"id\":\"gk_priority_multi_factor\",\"policy\":{\"policy_id\":\"draft-core-stat-foot-20261022\",\"status\":\"experimental\",\"version\":\"7df0b5607406d4a89da82086feb88c18b0d3a3924fd9d3b1fbc7db85d1b5a0fc\"},\"stages\":[]},\"snapshot\":null,\"squad\":null,\"status\":\"needs_clarification\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"unused\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"unused\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"4474fb3b285c0d2ca350377bb7e83f793046a0d9e7db2a39ca8bfdf18c935125\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-multi-missing-budget\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_ovr_infeasible",
+   "request_id": "fixture-v2-observed-ovr-infeasible",
+   "message": "예산 0BP, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "ovr",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-ovr-infeasible\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-ovr-infeasible\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-ovr-infeasible\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"보유 관측 자료 기준으로 조건을 만족하는 스쿼드가 없습니다.\",\"conditions\":{\"allowed_reinforcements\":[5,6,7,8],\"formation\":\"4-2-3-1\",\"price_cap\":\"0\",\"salary_cap\":\"310\",\"team_color\":\"리버풀\"},\"data_mode\":\"observed\",\"issues\":[],\"narration_source\":\"template\",\"objective\":{\"id\":\"ovr\",\"policy\":null,\"stages\":[]},\"snapshot\":{\"id\":\"bf2ac93608f5603b419b6832a50230120dcd246e3d045aeda3320a98287c8837\",\"t0\":\"2026-01-01T00:00:00Z\",\"valid_until\":null},\"squad\":null,\"status\":\"infeasible\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"5a99698b7e205880c9762e0bee30a2ef19dbecc5389a203786912f82bd7a08cf\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"dbb186b3947c8da0c346b54b9f35d7e566b4153bacb9c761da41c0f72bd90b8e\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"e5a0c66dea760d91422f9a79a00ec02864a48d47939545f83c3fcf42635ecc36\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-ovr-infeasible\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_ovr_missing_budget",
+   "request_id": "fixture-v2-observed-ovr-missing-budget",
+   "message": "급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "ovr",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-ovr-missing-budget\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-ovr-missing-budget\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-ovr-missing-budget\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"필수 조건과 안내된 사유를 확인하고 완전한 요청을 다시 입력해 주세요.\",\"conditions\":null,\"data_mode\":\"observed\",\"issues\":[{\"code\":\"missing_condition\",\"field\":\"price_cap\",\"kind\":\"missing\",\"message\":\"필수 조건을 원문에 명시해야 합니다.\",\"occurrence\":null}],\"narration_source\":\"template\",\"objective\":{\"id\":\"ovr\",\"policy\":null,\"stages\":[]},\"snapshot\":null,\"squad\":null,\"status\":\"needs_clarification\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"unused\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"unused\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"e5a0c66dea760d91422f9a79a00ec02864a48d47939545f83c3fcf42635ecc36\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-ovr-missing-budget\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_ovr_conflict",
+   "request_id": "fixture-v2-observed-ovr-conflict",
+   "message": "예산 6조, 예산 5조, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "ovr",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-ovr-conflict\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-ovr-conflict\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-ovr-conflict\",\"seq\":2,\"type\":\"progress\"}\n\nevent: final\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"answer\":\"필수 조건과 안내된 사유를 확인하고 완전한 요청을 다시 입력해 주세요.\",\"conditions\":null,\"data_mode\":\"observed\",\"issues\":[{\"code\":\"conflicting_values\",\"field\":\"price_cap\",\"kind\":\"ambiguous\",\"message\":\"같은 조건의 여러 값이 충돌합니다.\",\"occurrence\":null}],\"narration_source\":\"template\",\"objective\":{\"id\":\"ovr\",\"policy\":null,\"stages\":[]},\"snapshot\":null,\"squad\":null,\"status\":\"needs_clarification\",\"supported\":{\"clubs\":[\"리버풀\",\"첼시\",\"바이에른 뮌헨\"],\"formations\":[\"4-2-3-1\",\"4-1-2-3\",\"4-2-2-2\"],\"reinforcements\":[5,6,7,8,9,10,11],\"required_fields\":[\"price_cap\",\"team_color\",\"formation\",\"allowed_reinforcements\"]},\"versions\":{\"adapter\":\"2ffb45a4b48bfab0f797b7f0450f948dc3f6f9dc1987e03f415e1507d22bdc81\",\"engine\":\"unused\",\"graph\":\"f3c02117a7570e0bd8c5603bc97454066e9235b8a910233689dceba3fdaf2030\",\"material\":\"unused\",\"model\":\"qwen3:8b\",\"model_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"normalizer\":\"b68a86ab41748932250bc94a50d6c0ecf3ec1a51bffc8b7aa3f3fcb74f93f8af\",\"preparation\":\"fda8af74ffc2c8961e147ad3dc391dacaa7ad43944d540717f65a6ff7f3bdab8\",\"presentation\":\"e5a0c66dea760d91422f9a79a00ec02864a48d47939545f83c3fcf42635ecc36\",\"projection\":\"201997807beb0d6eea6c0eca30881ad121f4ab3ad35eb42b2013fd15e1799284\",\"selection\":\"9b10b3e1572b7d5f3dc28292117b69bc5ff5fe1bb73808fac794e2347024a5b0\",\"selector\":\"21c6ffd3472f12254aaf36470917d4b7d96909b5b67f5c3c0255c275490e617e\",\"web_contract\":\"web-agent.v2\"}},\"request_id\":\"fixture-v2-observed-ovr-conflict\",\"seq\":3,\"type\":\"final\"}\n\n"
+  },
+  {
+   "name": "observed_multi_provider_error",
+   "request_id": "fixture-v2-observed-multi-provider-error",
+   "message": "예산 6조, 급여 310, 리버풀, 4-2-3-1, 5~8강으로 구성해줘",
+   "objective": "gk_priority_multi_factor",
+   "sse": "event: started\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"data_mode\":\"observed\"},\"request_id\":\"fixture-v2-observed-multi-provider-error\",\"seq\":0,\"type\":\"started\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"조건 확인과 스쿼드 구성을 시작합니다.\",\"stage\":\"agent\"},\"request_id\":\"fixture-v2-observed-multi-provider-error\",\"seq\":1,\"type\":\"progress\"}\n\nevent: progress\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"message\":\"결과와 응답 기한을 확인합니다.\",\"stage\":\"render\"},\"request_id\":\"fixture-v2-observed-multi-provider-error\",\"seq\":2,\"type\":\"progress\"}\n\nevent: error\ndata: {\"contract_version\":\"web-agent.v2\",\"payload\":{\"code\":\"selection_provider_error\",\"message\":\"조건 추출 모델을 사용할 수 없습니다. 잠시 후 새 요청을 보내 주세요.\"},\"request_id\":\"fixture-v2-observed-multi-provider-error\",\"seq\":3,\"type\":\"error\"}\n\n"
+  }
+ ],
+ "rejections": [
+  {
+   "name": "objective_unavailable",
+   "status": 409,
+   "body": {
+    "detail": {
+     "code": "objective_unavailable"
+    }
+   }
+  },
+  {
+   "name": "objective_not_configured",
+   "status": 409,
+   "body": {
+    "detail": {
+     "code": "objective_unavailable"
+    }
+   }
+  },
+  {
+   "name": "v2_without_objective",
+   "status": 422,
+   "body": {
+    "detail": {
+     "code": "invalid_request"
+    }
+   }
+  },
+  {
+   "name": "v1_with_objective",
+   "status": 422,
+   "body": {
+    "detail": {
+     "code": "invalid_request"
+    }
+   }
+  },
+  {
+   "name": "v2_unknown_objective",
+   "status": 422,
+   "body": {
+    "detail": {
+     "code": "invalid_request"
+    }
+   }
+  }
+ ],
+ "objectives": [
+  {
+   "name": "observed_available",
+   "status": 200,
+   "body": {
+    "schema_version": "agent-objectives.v1",
+    "default": "ovr",
+    "objectives": [
+     {
+      "id": "ovr",
+      "available": true,
+      "reason": null,
+      "policy": null,
+      "parameters": null
+     },
+     {
+      "id": "gk_priority_multi_factor",
+      "available": true,
+      "reason": null,
+      "policy": {
+       "policy_id": "draft-core-stat-foot-20261022",
+       "version": "7df0b5607406d4a89da82086feb88c18b0d3a3924fd9d3b1fbc7db85d1b5a0fc",
+       "status": "experimental"
+      },
+      "parameters": {
+       "gk_exchange": 15,
+       "outfield_tolerance": 5,
+       "gk_tolerance": 2,
+       "search_seconds": 30.0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "observed_not_configured",
+   "status": 200,
+   "body": {
+    "schema_version": "agent-objectives.v1",
+    "default": "ovr",
+    "objectives": [
+     {
+      "id": "ovr",
+      "available": true,
+      "reason": null,
+      "policy": null,
+      "parameters": null
+     },
+     {
+      "id": "gk_priority_multi_factor",
+      "available": false,
+      "reason": "not_configured",
+      "policy": null,
+      "parameters": {
+       "gk_exchange": 15,
+       "outfield_tolerance": 5,
+       "gk_tolerance": 2,
+       "search_seconds": 30.0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "observed_policy_mismatch",
+   "status": 200,
+   "body": {
+    "schema_version": "agent-objectives.v1",
+    "default": "ovr",
+    "objectives": [
+     {
+      "id": "ovr",
+      "available": true,
+      "reason": null,
+      "policy": null,
+      "parameters": null
+     },
+     {
+      "id": "gk_priority_multi_factor",
+      "available": false,
+      "reason": "policy_mismatch",
+      "policy": null,
+      "parameters": {
+       "gk_exchange": 15,
+       "outfield_tolerance": 5,
+       "gk_tolerance": 2,
+       "search_seconds": 30.0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "synthetic_material",
+   "status": 200,
+   "body": {
+    "schema_version": "agent-objectives.v1",
+    "default": "ovr",
+    "objectives": [
+     {
+      "id": "ovr",
+      "available": true,
+      "reason": null,
+      "policy": null,
+      "parameters": null
+     },
+     {
+      "id": "gk_priority_multi_factor",
+      "available": false,
+      "reason": "synthetic_material",
+      "policy": null,
+      "parameters": {
+       "gk_exchange": 15,
+       "outfield_tolerance": 5,
+       "gk_tolerance": 2,
+       "search_seconds": 30.0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "agent_unavailable",
+   "status": 503,
+   "body": {
+    "schema_version": "agent-objectives.v1",
+    "default": "ovr",
+    "objectives": [
+     {
+      "id": "ovr",
+      "available": false,
+      "reason": "agent_unavailable",
+      "policy": null,
+      "parameters": null
+     },
+     {
+      "id": "gk_priority_multi_factor",
+      "available": false,
+      "reason": "agent_unavailable",
+      "policy": null,
+      "parameters": {
+       "gk_exchange": 15,
+       "outfield_tolerance": 5,
+       "gk_tolerance": 2,
+       "search_seconds": 30.0
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

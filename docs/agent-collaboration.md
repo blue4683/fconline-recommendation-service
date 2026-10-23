@@ -50,6 +50,23 @@
 - 서버 구현(feat/web-agent-v2): v2 요청/응답·`GET /objectives`·409·정책 설정 env. v1 사양 해시·응답 불변 확인, 합성25개·전체2,175 통과. 계약 §8. 병합 SHA는 PR 병합 후 이 기록을 기준으로 확인한다.
 - 웹 담당 요청(WEB 후속): 방식 목록 조회·선택 UI(기본 OVR·사용 가능 방식만), v2 파서와 점수/단계/정책·실험 표시, v1 파서 유지. 실제 연결 전 서버 구현 PR SHA를 이 기록에서 확인한다. 통합 담당은 frontend/를 수정하지 않는다.
 
+### WEB-V2-001 — web-agent.v2 방식 선택 화면·파서 (2026-10-23)
+
+- 날짜/담당/ID: 2026-10-23 / 웹 / WEB-V2-001. INT-WEB-V2-001에 대한 응답. 상태: 구현·로컬 검증. 병합 아님(통합 담당이 검토·병합).
+- 기준: develop `ced4573`(PR #156, 서버 v2 병합). 작업 브랜치 `feat/web-agent-v2-ui`, 별도 작업 트리. web-agent-v2-contract.md §2~§8, FRS/api/agent_contract.py·agent_events.py·agent_runtime.py·agent_app.py, tests/test_web_agent_v2.py를 읽기 전용으로 확인했다.
+- 변경(frontend/와 이 항목만):
+  1. `contracts/agentObjectives.ts`: `GET /objectives`(agent-objectives.v1) 엄격 파서. 두 방식 각1회, 기본 `ovr`, available⇔사유 없음, OVR은 정책·설정 없음·`agent_unavailable`만, 다요소는 설정 필수·사용 가능일 때만 정책, `agent_unavailable`⇔HTTP 503. `/health`(agent-health.v2) 처리는 그대로다.
+  2. `contracts/webAgentV2.ts`: 서버 WebFinalV2처럼 v2 필드를 떼어 v1 `parseFinal`을 그대로 거친 뒤 점수 표기(`score`=`score_units`의 BigInt 두 자리 표기)·행 합계·`total_score`·GK 1명/`gk_ovr`·필드+GK=OVR 합·방식별 정책/단계·비성공 단계 없음·다요소 성공 단계3개를 검사한다. 모르는 필드는 거부한다. envelope도 `web-agent.v2`만 받는다. v1 파서는 envelope 공통 함수로 나눈 것 외에 동작이 같다.
+  3. 세션: 요청 버전에 맞는 파서를 쓰고, v2 final의 방식이 요청과 다르면 프로토콜 오류다. live 전송은 409 본문의 `detail.code`만 읽어 `objective_unavailable`과 그 밖의 409(사용 중)를 구분한다. 재시도·OVR 대체 전송 없음.
+  4. 화면: 추천 방식 선택(기본 OVR, 사용 불가 방식은 끄고 사유 표시, 다요소는 "실험"·정책 ID·해시 앞자리·고정 탐색 설정 표시). 고른 방식이 목록에서 사용 불가가 되면 선택을 바꾸지 않고 보내기를 막는다. 목록 조회 실패도 보내기를 막는다. 결과에 방식·정책, 필드/GK OVR 합, 다요소일 때만 선수별 점수 열·합계(서버 문자열), 단계 요약(필드 OVR 최대·GK OVR·다요소 합, 최적 확인/시간 내 미확정/실행 안 함)을 보인다. OVR 표시·만료·관측/합성 문구는 유지한다.
+  5. 앱의 실제·모의 요청을 v2로 바꿨다. 이 때문에 기존 화면 테스트 중 v1 envelope를 직접 보내던 것과 v1 기록을 화면에 재생하던 것은 v2 envelope·v2 기록으로 옮겼다. v1 파서·세션·health·거절 테스트는 그대로 통과한다.
+  6. 대조 기록: `frontend/tests/fixtures/generate_backend_v2_fixture.py`가 실제 앱을 TestClient·합성 리그·선택 대역·저장소 예제 정책으로 호출한다(소켓 차단, 양발·신체는 tests/test_web_agent_v2.py와 같은 가상 값). SSE10·거절5(409 objective_unavailable 2·422 3)·/objectives5건, 두 번 생성한 바이트가 같다. 모의 자료의 다요소 점수·정책 ID·해시는 가상 값이다.
+- 웹 쪽 해석(서버 DTO보다 좁게 받는 부분): 다요소 성공의 단계 이름이 `outfield_ovr→gk_ovr→multi_factor` 순서여야 한다(서버 DTO는 개수만 검사, solver·테스트는 이 순서). 목록의 `default`는 `ovr`만 받는다. 단계 값은 그 단계의 목표값으로 보고 최종 합과 대조하지 않는다(기록에서 필드 단계1023·최종 필드1020처럼 다를 수 있음).
+- 통합 담당에게 제안(서버 수정 요청 아님, 필요 시 판단): 단계 순서·이름 중복을 서버 DTO에서도 검사하면 양쪽 검사가 같아진다. 계약 문서에 "단계 값은 단계 시점 값이며 최종 합과 다를 수 있음"과 `parameters.search_seconds`가 실수(30.0)로 직렬화됨을 적어 두면 좋다. 서버 계약의 오류는 찾지 못했다.
+- 검증(로컬, ced4573 기준): Node 22.23.3·npm 10.9.9(Homebrew node@22, CI 고정값과 같음)로 `npm ci`·typecheck·Vitest 8개 파일 245개(기존129 유지·조정 + 신규116)·build 통과. lock·engines 변경 없음. 루트 Python 3.11.15 pytest 2,175개·`ruff check`·`ruff format --check` 통과(새 생성기 포함). 미실행: 실제 서버·모델·브라우저 E2E, headless 화면 확인, PR의 원격 CI(PR에서 확인).
+- 영향 경로·호환성: frontend/ 하위와 이 WEB-V2-001 항목만 변경. FRS/·tests/·scripts/·CI·Docker·루트 설정·frontend/AGENTS.md·설계 문서·다른 WEB/INT 항목 변경 없음. 이전 서버(`/objectives` 없음)에 연결하면 목록 확인 실패로 보내기를 막는다(v1 대체 전송 없음).
+- 다음 담당: 통합 담당. PR 검토·CI 확인·병합, 필요하면 위 제안 반영. 실제 관측 모드 연결 확인은 별도 실행 범위다.
+
 ### INT-MF3-004 — GK 우선 모드 지연 단축 (2026-10-23)
 
 - 사용자 요청. 프로파일 후 정책 해시 캐시·검증 정책 점수 경로·이 모드만 probing 0. 지배 후보 제거·선형/생략 가격 상한·at-most-one·멀티스레드·대칭 끄기는 효과 없음 또는 불안정으로 미채택.

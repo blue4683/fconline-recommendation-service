@@ -3,14 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App.vue';
 import ResultView from '../src/components/ResultView.vue';
 import { REQUEST_EXAMPLES } from '../src/contracts/requestFormat';
-import { finalFor, optimalWithNames, type ScenarioId } from '../src/mocks/fixtures';
+import { finalFor, finalForV2, optimalWithNames, withObjective, type ScenarioId } from '../src/mocks/fixtures';
 import { createMockTransport } from '../src/mocks/mockTransport';
 import { parseHealth } from '../src/contracts/agentHealth';
 import type { HealthCheck } from '../src/services/health';
 import { createLiveTransport } from '../src/services/liveTransport';
 import fixture from './fixtures/backend-agent-app.json';
 import type { Transport } from '../src/services/transport';
-import { controlledTransport, envelope, FIXED_NOW, sse } from './helpers';
+import { controlledTransport, envelopeV2 as envelope, FIXED_NOW, listedObjectives, sse } from './helpers';
 
 const READY_HEALTH: HealthCheck = {
   kind: 'ready',
@@ -111,7 +111,7 @@ describe('App', () => {
     await w.get('form').trigger('submit');
     expect(opened).toHaveLength(1);
 
-    s.push(sse('final', envelope(s.requestId, 2, 'final', finalFor('optimal', FIXED_NOW))));
+    s.push(sse('final', envelope(s.requestId, 2, 'final', finalForV2('optimal', FIXED_NOW, 'ovr'))));
     s.close();
     await vi.waitFor(() => expect(w.findAll('[data-testid=squad-row]')).toHaveLength(11));
   });
@@ -137,9 +137,9 @@ describe('App', () => {
   });
 
   it('HTML처럼 생긴 이름과 설명을 실행하지 않고 텍스트로 보인다', async () => {
-    const payload = optimalWithNames(
-      ['<img src=x onerror=alert(1)>', '<b>굵게</b>', ...Array.from({ length: 9 }, (_, i) => `가상${i}`)],
-      FIXED_NOW,
+    const payload = withObjective(
+      optimalWithNames(['<img src=x onerror=alert(1)>', '<b>굵게</b>', ...Array.from({ length: 9 }, (_, i) => `가상${i}`)], FIXED_NOW),
+      'ovr',
     );
     const { transport, opened } = controlledTransport();
     const w = mountApp({ makeTransport: () => transport });
@@ -276,6 +276,7 @@ describe('App', () => {
     const w = mountApp({
       liveBaseUrl: 'http://127.0.0.1:8001',
       checkHealth: async () => READY_HEALTH,
+      checkObjectives: async () => listedObjectives(),
       makeTransport: (m: string) => (m === 'live' ? createLiveTransport('http://127.0.0.1:8001', fetchImpl) : null),
     });
     await w.get('input[value=live]').setValue(true);
@@ -303,7 +304,7 @@ describe('App', () => {
     const second = opened[1]!;
     second.push(sse('started', envelope(second.requestId, 0, 'started', { data_mode: 'synthetic' })));
     // 첫 요청 ID로 된 final이 두 번째 스트림에 섞여 오면 성공으로 보이지 않는다.
-    second.push(sse('final', envelope(first.requestId, 1, 'final', finalFor('optimal', FIXED_NOW))));
+    second.push(sse('final', envelope(first.requestId, 1, 'final', finalForV2('optimal', FIXED_NOW, 'ovr'))));
     second.close();
     await vi.waitFor(() => expect(w.get('[data-testid=result-title]').text()).toContain('형식과 달라'));
     expect(w.findAll('[data-testid=squad-row]')).toHaveLength(0);

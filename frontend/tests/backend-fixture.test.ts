@@ -11,7 +11,10 @@ import { buildRequest, runStream } from '../src/services/agentSession';
 import { createHealthChecker, type HealthCheck } from '../src/services/health';
 import { createLiveTransport } from '../src/services/liveTransport';
 import { groupDigits } from '../src/utils/format';
+import { parseObjectives } from '../src/contracts/agentObjectives';
+import type { ObjectivesCheck } from '../src/services/objectives';
 import raw from './fixtures/backend-agent-app.json';
+import rawV2 from './fixtures/backend-agent-v2.json';
 import { scriptedTransport } from './helpers';
 
 interface Stream {
@@ -34,6 +37,14 @@ const fixture = raw as unknown as {
   rejections: Recorded[];
   health: Recorded[];
 };
+
+/** 화면은 web-agent.v2로 요청하므로 화면 재생은 v2 fixture(generate_backend_v2_fixture.py)를 쓴다. */
+const fixtureV2 = rawV2 as unknown as { streams: Stream[]; objectives: Recorded[] };
+const streamV2 = (name: string) => fixtureV2.streams.find((s) => s.name === name)!;
+function objectivesCheck(name: string): ObjectivesCheck {
+  const r = fixtureV2.objectives.find((o) => o.name === name)!;
+  return { kind: 'listed', listing: parseObjectives(JSON.parse(JSON.stringify(r.body)), r.status) };
+}
 
 const BASE = 'http://127.0.0.1:8001';
 const OBSERVED = Date.parse(fixture.observed_at);
@@ -196,11 +207,18 @@ describe('8001 앱 fixture — 화면', () => {
   const mounted: ReturnType<typeof mount>[] = [];
   afterEach(() => mounted.splice(0).forEach((w) => w.unmount()));
 
-  function mountLive(check: () => Promise<HealthCheck>, s: Stream | null, now = OBSERVED + 3600 * 1000) {
+  function mountLive(check: () => Promise<HealthCheck>, s: Stream | null, now = OBSERVED + 3600 * 1000, listing = 'synthetic_material') {
     const checker = vi.fn(async () => check());
     const transport = s ? scriptedTransport((id) => s.sse.replaceAll(`"request_id":"${s.request_id}"`, `"request_id":"${id}"`), 11) : null;
     const w = mount(App, {
-      props: { liveBaseUrl: BASE, mockDelayMs: 0, now: () => now, checkHealth: checker, makeTransport: () => transport },
+      props: {
+        liveBaseUrl: BASE,
+        mockDelayMs: 0,
+        now: () => now,
+        checkHealth: checker,
+        checkObjectives: async () => objectivesCheck(listing),
+        makeTransport: () => transport,
+      },
       attachTo: document.body,
     });
     mounted.push(w);
@@ -213,7 +231,7 @@ describe('8001 앱 fixture — 화면', () => {
   }
 
   it('서버가 준비되면 모델·자료 기한을 보이고 실제 응답을 표로 그린다', async () => {
-    const s = stream('success_liverpool');
+    const s = streamV2('synthetic_ovr_success');
     const { w, checker } = mountLive(async () => healthCheck('ready'), s);
     await chooseLive(w);
     expect(w.get('[data-testid=server-title]').text()).toBe('서버 준비됨');
@@ -277,8 +295,8 @@ describe('8001 앱 fixture — 화면', () => {
     ['observed_missing_budget', '조건을 보완'],
     ['observed_conflict', '조건을 보완'],
   ])('%s 관측 결과에 합성 문구를 붙이지 않는다', async (name, title) => {
-    const s = stream(name);
-    const { w } = mountLive(async () => healthCheck('observed_ready'), s);
+    const s = streamV2(name.replace('observed_', 'observed_ovr_'));
+    const { w } = mountLive(async () => healthCheck('observed_ready'), s, undefined, 'observed_available');
     await chooseLive(w);
     expect(w.get('[data-testid=data-note]').text()).toContain('넥슨 데이터센터 관측');
     expect(w.get('[data-testid=server-data-mode]').text()).toContain('관측 자료');
@@ -302,8 +320,8 @@ describe('8001 앱 fixture — 화면', () => {
   });
 
   it('관측 결과 뒤 모의 모드를 고르면 이전 결과를 지우고 합성 안내를 보인다', async () => {
-    const s = stream('observed_success');
-    const { w } = mountLive(async () => healthCheck('observed_ready'), s);
+    const s = streamV2('observed_ovr_success');
+    const { w } = mountLive(async () => healthCheck('observed_ready'), s, undefined, 'observed_available');
     await chooseLive(w);
     await w.get('textarea').setValue(s.message);
     await w.get('form').trigger('submit');
@@ -330,6 +348,7 @@ describe('8001 앱 fixture — 화면', () => {
         mockDelayMs: 0,
         now: () => OBSERVED + 3600 * 1000,
         checkHealth: checker,
+        checkObjectives: async () => objectivesCheck('synthetic_material'),
         makeTransport: () => createLiveTransport(BASE, fetchImpl),
       },
       attachTo: document.body,

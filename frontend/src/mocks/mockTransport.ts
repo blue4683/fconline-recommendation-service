@@ -3,16 +3,22 @@
  * 실제 파서를 그대로 통과하도록 이벤트·줄·UTF-8 경계와 무관하게 청크를 자르고,
  * CRLF·주석 heartbeat·여러 data 행을 섞는다.
  */
-import { CONTRACT_VERSION, type StreamRequest } from '../contracts/webAgentV1';
-import type { Transport } from '../services/transport';
-import { finalFor, type ScenarioId } from './fixtures';
+import { optionFor, type ObjectiveListing } from '../contracts/agentObjectives';
+import { CONTRACT_VERSION_V2 } from '../contracts/webAgentV2';
+import { TransportError, type AnyStreamRequest, type Transport } from '../services/transport';
+import { finalFor, finalForV2, type ScenarioId } from './fixtures';
 
 export interface MockOptions {
   scenario: () => ScenarioId;
   now?: () => number;
   /** 이벤트 사이 지연(ms). 테스트에서는 0. */
   delayMs?: number;
+  /** 모의 방식 목록. 사용할 수 없는 방식을 요청하면 서버처럼 실행 전에 HTTP 409로 거절한다. */
+  listing?: () => ObjectiveListing | null;
 }
+
+const OBJECTIVE_UNAVAILABLE = () =>
+  new TransportError('http', '서버가 요청을 처리하지 못했습니다 (HTTP 409).', 409, 'objective_unavailable');
 
 /** 백엔드 W4-1(FRS/api/agent_events.py PROGRESS)이 실제로 보내는 두 단계. 내부 세부 단계를 꾸며 내지 않는다. */
 const STAGES: [string, string][] = [
@@ -28,10 +34,10 @@ const ERRORS: Record<string, string> = {
 
 type Frame = { type: string; payload: unknown; seq?: number };
 
-function encodeEvent(requestId: string, seq: number, frame: Frame, variant: number): string {
+function encodeEvent(request: AnyStreamRequest, seq: number, frame: Frame, variant: number): string {
   const json = JSON.stringify({
-    contract_version: CONTRACT_VERSION,
-    request_id: requestId,
+    contract_version: request.contract_version,
+    request_id: request.request_id,
     seq: frame.seq ?? seq,
     type: frame.type,
     payload: frame.payload,
@@ -45,7 +51,7 @@ function encodeEvent(requestId: string, seq: number, frame: Frame, variant: numb
   return `event: ${frame.type}${nl}data: ${json}${nl}${nl}`;
 }
 
-function frames(id: ScenarioId, now: number): Frame[] {
+function frames(id: ScenarioId, now: number, request: AnyStreamRequest): Frame[] {
   const out: Frame[] = [{ type: 'started', payload: { data_mode: 'synthetic' } }];
   const progress = (n: number) => STAGES.slice(0, n).map(([stage, message]) => ({ type: 'progress', payload: { stage, message } }));
   switch (id) {
@@ -64,7 +70,8 @@ function frames(id: ScenarioId, now: number): Frame[] {
     default:
       out.push(...progress(STAGES.length));
   }
-  out.push({ type: 'final', payload: finalFor(id, now) });
+  const payload = request.contract_version === CONTRACT_VERSION_V2 ? finalForV2(id, now, request.objective) : finalFor(id, now);
+  out.push({ type: 'final', payload });
   return out;
 }
 
@@ -86,9 +93,13 @@ export function createMockTransport(options: MockOptions): Transport {
   const delay = options.delayMs ?? 0;
   return {
     mode: 'mock',
-    async open(request: StreamRequest, signal: AbortSignal) {
+    async open(request: AnyStreamRequest, signal: AbortSignal) {
       const scenario = options.scenario();
-      const list = frames(scenario, now());
+      if (scenario === 'objective_unavailable') throw OBJECTIVE_UNAVAILABLE();
+      if (request.contract_version === CONTRACT_VERSION_V2 && options.listing) {
+        if (optionFor(options.listing(), request.objective)?.available !== true) throw OBJECTIVE_UNAVAILABLE();
+      }
+      const list = frames(scenario, now(), request);
       const encoder = new TextEncoder();
       let index = 0;
       let p = 0;
@@ -106,7 +117,7 @@ export function createMockTransport(options: MockOptions): Transport {
               return;
             }
           }
-          let text = encodeEvent(request.request_id, index, list[index]!, index);
+          let text = encodeEvent(request, index, list[index]!, index);
           if (index === 1) text = `: heartbeat${'\n'}${text}`;
           const bytes = encoder.encode(text);
           for (let offset = 0; offset < bytes.length; ) {

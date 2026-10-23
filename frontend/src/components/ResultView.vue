@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Conditions, FinalResult, FinalStatus } from '../contracts/webAgentV1';
-import type { Outcome } from '../services/agentSession';
+import type { Conditions, FinalStatus } from '../contracts/webAgentV1';
+import { isFinalV2, MULTI_FACTOR, scoreText, type FinalResultV2, type ObjectiveStage, type StageName, type StageStatus } from '../contracts/webAgentV2';
+import type { AnyFinalResult, Outcome } from '../services/agentSession';
 import { formatTime, groupDigits, koreanUnits } from '../utils/format';
 import FormationPitch from './FormationPitch.vue';
 import SquadTable from './SquadTable.vue';
@@ -78,6 +79,31 @@ const ERROR_TITLES: Record<string, string> = {
   invalid_registry: SELECTION_CHECK,
 };
 
+/** 다요소 방식 성공 결과의 상태 설명. OVR 방식 문구(OVR 합 최대)를 다요소 결과에 쓰지 않는다. */
+const MULTI_NOTE: Partial<Record<FinalStatus, string>> = {
+  optimal: '필드 OVR → GK OVR → 실험 다요소 점수 순서의 단계 목표를 확인한 조합입니다. 실험 점수이며 실제 경기 성능을 보장하지 않습니다.',
+  feasible: '조건은 모두 지켰지만 일부 단계의 최적성은 제한 시간 안에 확인하지 못했습니다. 아래 단계 요약을 확인해 주세요.',
+};
+
+const STAGE_LABELS: Record<StageName, string> = {
+  outfield_ovr: '필드 OVR 최대',
+  gk_ovr: 'GK OVR',
+  multi_factor: '다요소 합',
+};
+
+const STAGE_STATUS: Record<StageStatus, string> = {
+  optimal: '최적 확인',
+  incomplete: '시간 내 미확정',
+  not_run: '실행 안 함',
+};
+
+/** 409 objective_unavailable: 고른 방식을 실행 전에 거절한 경우. 다른 방식으로 바꿔 다시 보내지 않는다. */
+const OBJECTIVE_UNAVAILABLE = {
+  title: '고른 추천 방식을 지금 서버에서 사용할 수 없습니다',
+  note: '서버가 실행 전에 요청을 거절했습니다. OVR 방식으로 바꾸거나 자동으로 다시 보내지 않습니다. 방식 목록을 다시 확인한 뒤 사용 가능한 방식을 골라 새로 보내 주세요.',
+  tone: 'warn' as Tone,
+};
+
 /** 스트림을 열기 전 HTTP 거절. 본문은 해석하지 않고 상태 코드만으로 안내한다(INT-020/021). */
 const HTTP_COPY: Record<number, { title: string; note: string; tone: Tone }> = {
   409: {
@@ -117,8 +143,16 @@ const HTTP_COPY: Record<number, { title: string; note: string; tone: Tone }> = {
   },
 };
 
-const final = computed<FinalResult | null>(() => (props.outcome.kind === 'final' ? props.outcome.result : null));
+const final = computed<AnyFinalResult | null>(() => (props.outcome.kind === 'final' ? props.outcome.result : null));
+const v2 = computed<FinalResultV2 | null>(() => (final.value && isFinalV2(final.value) ? final.value : null));
+const multi = computed(() => v2.value?.objective.id === MULTI_FACTOR);
 const showSquad = computed(() => final.value?.squad != null && !props.expired);
+
+/** 단계 값: OVR 단계는 정수, 다요소 단계는 정수 점수의 정확한 두 자리 표기(반올림 없음). */
+function stageValue(stage: ObjectiveStage): string {
+  if (stage.value === null) return '—';
+  return stage.name === 'multi_factor' ? `${scoreText(stage.value)}점` : String(stage.value);
+}
 
 const header = computed<{ title: string; note: string | null; tone: Tone; detail?: string }>(() => {
   const o = props.outcome;
@@ -133,6 +167,9 @@ const header = computed<{ title: string; note: string | null; tone: Tone; detail
         };
       }
       const copy = STATUS_COPY[o.result.status];
+      if (isFinalV2(o.result) && o.result.objective.id === MULTI_FACTOR && MULTI_NOTE[o.result.status]) {
+        return { ...copy, note: MULTI_NOTE[o.result.status]! };
+      }
       if (o.result.data_mode === 'observed' && o.result.status === 'optimal') {
         return { ...copy, note: '관측 자료와 조건에서 OVR 합이 가장 높은 조합입니다. 실제 경기 성능을 보장하지 않습니다.' };
       }
@@ -150,6 +187,9 @@ const header = computed<{ title: string; note: string | null; tone: Tone; detail
         detail: o.detail,
       };
     case 'transport_error': {
+      if (o.status === 409 && o.code === 'objective_unavailable') {
+        return { ...OBJECTIVE_UNAVAILABLE, detail: 'HTTP 409 objective_unavailable' };
+      }
       const http = o.status === undefined ? undefined : HTTP_COPY[o.status];
       if (http) return { ...http, detail: `HTTP ${o.status}` };
       return { title: '서버와 통신하지 못했습니다', note: o.detail, tone: 'bad' };
@@ -187,6 +227,19 @@ function versionText(v: Record<string, string>): string {
       <p class="note" data-testid="result-data-mode">
         {{ final.data_mode === 'observed' ? '넥슨 데이터센터 관측 자료 · 가격은 참고가격이며 거래를 보장하지 않습니다.' : '합성 가상 리그 자료 · 선수 이름과 수치는 실제와 무관합니다.' }}
       </p>
+      <div v-if="v2" class="objective" data-testid="result-objective">
+        <p>
+          <span class="label">추천 방식</span>
+          <template v-if="multi">
+            필드 우선·GK 단계·다요소 보조 <span class="badge">실험</span>
+          </template>
+          <template v-else>기존 OVR</template>
+        </p>
+        <p v-if="v2.objective.policy" class="policy" data-testid="result-policy">
+          정책 {{ v2.objective.policy.policy_id }}
+          <span class="quiet" :title="v2.objective.policy.version">{{ v2.objective.policy.version.slice(0, 12) }}</span>
+        </p>
+      </div>
       <ul v-if="final.issues.length" class="issues" data-testid="issues">
         <li v-for="(issue, i) in final.issues" :key="i">
           <span class="issue-field">{{ FIELD_LABELS[issue.field] ?? issue.field }}</span>
@@ -217,7 +270,15 @@ function versionText(v: Record<string, string>): string {
             </div>
             <div>
               <dt>OVR 합</dt>
-              <dd>{{ final.squad.total_ovr }}</dd>
+              <dd data-testid="summary-ovr">{{ final.squad.total_ovr }}</dd>
+            </div>
+            <div v-if="v2?.squad" class="split">
+              <dt>필드 OVR · GK OVR</dt>
+              <dd data-testid="summary-ovr-split">{{ v2.squad.outfield_ovr }} · {{ v2.squad.gk_ovr }}</dd>
+            </div>
+            <div v-if="multi && v2?.squad?.total_score">
+              <dt>다요소 점수 합 (실험)</dt>
+              <dd data-testid="summary-score">{{ v2.squad.total_score }}</dd>
             </div>
           </dl>
           <dl class="conditions">
@@ -236,7 +297,19 @@ function versionText(v: Record<string, string>): string {
         </div>
       </dl>
 
-      <SquadTable v-if="showSquad && final.squad" :squad="final.squad" />
+      <section v-if="showSquad && v2 && v2.objective.stages.length" class="stages" data-testid="stages">
+        <h3>단계 요약</h3>
+        <ol>
+          <li v-for="stage in v2.objective.stages" :key="stage.name" :data-stage="stage.name" :data-status="stage.status">
+            <span class="stage-name">{{ STAGE_LABELS[stage.name] }}</span>
+            <span class="stage-status">{{ STAGE_STATUS[stage.status] }}</span>
+            <span class="stage-value">{{ stageValue(stage) }}</span>
+          </li>
+        </ol>
+        <p class="quiet">단계 값은 그 단계에서 확인한 목표값입니다. 다음 단계의 허용폭 때문에 최종 표의 합과 다를 수 있습니다.</p>
+      </section>
+
+      <SquadTable v-if="showSquad && final.squad" :squad="final.squad" :scores="multi" />
 
       <div v-if="final.answer" class="answer">
         <h3>설명</h3>
@@ -383,6 +456,62 @@ function versionText(v: Record<string, string>): string {
   font-size: 0.75rem;
   color: var(--ink-3);
   overflow-wrap: anywhere;
+}
+.objective {
+  display: grid;
+  gap: 0.125rem;
+  font-size: var(--step--1);
+}
+.objective .label {
+  color: var(--ink-3);
+  margin-right: 0.5rem;
+}
+.badge {
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  border-radius: 3px;
+  padding: 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.policy,
+.quiet {
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.summary .split dd {
+  font-size: var(--step-1);
+}
+.stages {
+  display: grid;
+  gap: 0.375rem;
+  font-size: var(--step--1);
+}
+.stages h3 {
+  font-size: var(--step-0);
+}
+.stages ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+  max-width: 32rem;
+}
+.stages li {
+  display: grid;
+  grid-template-columns: 7rem 7rem 1fr;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-top: 1px solid var(--rule);
+}
+.stages li[data-status='incomplete'] .stage-status,
+.stages li[data-status='not_run'] .stage-status {
+  color: var(--warn);
+}
+.stage-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 @media (max-width: 52rem) {
   .squad-layout {

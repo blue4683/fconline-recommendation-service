@@ -184,3 +184,123 @@ class WebFinal(WireModel):
         ):
             raise ValueError("명확화에는 사유만 있어야 합니다.")
         return self
+
+
+# web-agent.v2: 요청마다 고른 추천 방식과 다요소 점수를 더한다. v1 모델은 바꾸지 않는다.
+WEB_CONTRACT_V2 = "web-agent.v2"
+Objective = Literal["ovr", "gk_priority_multi_factor"]
+ScoreUnits = Annotated[int, Field(ge=0, le=10000)]
+ScoreText = Annotated[str, Field(pattern=r"^(0|[1-9][0-9]*)\.[0-9]{2}$")]
+Hash = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+
+
+def _score_text(units):
+    return f"{units // 100}.{units % 100:02d}"
+
+
+class WebRowV2(WebRow):
+    score_units: ScoreUnits | None
+    score: ScoreText | None
+
+    @model_validator(mode="after")
+    def exact_score(self):
+        if (self.score_units is None) != (self.score is None) or (
+            self.score_units is not None and self.score != _score_text(self.score_units)
+        ):
+            raise ValueError("다요소 점수 표기가 정수 점수와 다릅니다.")
+        return self
+
+
+class WebSquadV2(WebSquad):
+    rows: Annotated[list[WebRowV2], Field(min_length=11, max_length=11)]
+    outfield_ovr: Annotated[int, Field(ge=0, le=2000)]
+    gk_ovr: Annotated[int, Field(ge=0, le=200)]
+    total_score_units: Annotated[int, Field(ge=0, le=110000)] | None
+    total_score: ScoreText | None
+
+    @model_validator(mode="after")
+    def score_sums(self):
+        scored = [r.score_units for r in self.rows]
+        keepers = [r.raw_ovr for r in self.rows if r.slot == "GK"]
+        if (
+            len(keepers) != 1
+            or self.gk_ovr != keepers[0]
+            or self.outfield_ovr + self.gk_ovr != self.total_ovr
+        ):
+            raise ValueError("필드/GK OVR 합이 일치하지 않습니다.")
+        if self.total_score_units is None:
+            if any(s is not None for s in scored) or self.total_score is not None:
+                raise ValueError("OVR 방식에는 다요소 점수가 없어야 합니다.")
+        elif (
+            None in scored
+            or sum(scored) != self.total_score_units
+            or self.total_score != _score_text(self.total_score_units)
+        ):
+            raise ValueError("다요소 점수 합계가 일치하지 않습니다.")
+        return self
+
+
+class WebPolicy(WireModel):
+    policy_id: Text
+    version: Hash
+    status: Literal["experimental"]
+
+
+class WebStage(WireModel):
+    name: Literal["outfield_ovr", "gk_ovr", "multi_factor"]
+    status: Literal["optimal", "incomplete", "not_run"]
+    value: Annotated[int, Field(ge=0, le=110000)] | None
+
+
+class WebObjective(WireModel):
+    id: Objective
+    policy: WebPolicy | None
+    stages: list[WebStage]
+
+    @model_validator(mode="after")
+    def by_objective(self):
+        if self.id == "ovr" and (self.policy is not None or self.stages):
+            raise ValueError("OVR 방식에는 정책·단계가 없어야 합니다.")
+        if self.id != "ovr" and self.policy is None:
+            raise ValueError("다요소 방식에는 정책 출처가 필요합니다.")
+        return self
+
+
+class WebFinalV2(WebFinal):
+    squad: WebSquadV2 | None
+    objective: WebObjective
+
+    @model_validator(mode="after")
+    def consistent(self):
+        if self.versions.get("web_contract") != WEB_CONTRACT_V2:
+            raise ValueError("웹 버전이 일치하지 않습니다.")
+        # v1 검사를 v2 버전 표시로 그대로 재사용한다.
+        WebFinal.model_validate(
+            {
+                **self.model_dump(mode="json", exclude={"objective"}),
+                "squad": None
+                if self.squad is None
+                else self.squad.model_dump(
+                    mode="json",
+                    exclude={
+                        "outfield_ovr": True,
+                        "gk_ovr": True,
+                        "total_score_units": True,
+                        "total_score": True,
+                        "rows": {"__all__": {"score_units", "score"}},
+                    },
+                ),
+                "versions": {**self.versions, "web_contract": WEB_CONTRACT},
+            }
+        )
+        success = self.status in ("optimal", "feasible")
+        multi_factor = self.objective.id != "ovr"
+        if self.squad is not None and multi_factor != (
+            self.squad.total_score_units is not None
+        ):
+            raise ValueError("방식과 다요소 점수 유무가 일치하지 않습니다.")
+        if self.objective.stages and not (success and multi_factor):
+            raise ValueError("단계 요약은 다요소 성공 결과에만 있습니다.")
+        if success and multi_factor and len(self.objective.stages) != 3:
+            raise ValueError("다요소 성공 결과에는 세 단계 요약이 필요합니다.")
+        return self

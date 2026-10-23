@@ -71,3 +71,12 @@
 ## 7. 미실행
 
 실제 모델·브라우저 E2E, 실데이터 서버 실행, 웹 구현, MCP 확장, 기본 방식 변경, 정책 가중치 조정, 새 수집·DB 쓰기·배포는 이번 범위가 아니다.
+
+## 8. 서버 구현 (2026-10-23)
+
+- 요청: `StreamRequestV2`(v1 모델 상속, `contract_version="web-agent.v2"`, `objective` 필수). `parse_request`는 `contract_version`으로 고르며 v1 모델은 그대로다. SSE envelope는 요청 버전을 쓰고, 버전이 다른 최종 결과는 기술 오류로 바꾼다.
+- 실행: `requested_objective`가 v2 다요소 요청에만 서비스 고정 목적을 넘긴다. `AgentDependencies.objective` → 그래프 → `build_squad_request(objective=)`. 사용할 수 없으면 실행 전에 HTTP 409.
+- 출력: `present_agent_result(objective=)`가 다요소일 때 행 점수·합계·단계·정책을 더하고 별도 `multi_factor_presentation_spec`을 쓴다. `_final`이 v1은 `WebFinal`, v2는 `WebFinalV2`(v1 검사 재사용 + 점수/단계/정책 검사)로 검증한다. 스냅샷 정책과 서비스 정책이 다르면 기술 오류다. 만료 시 표와 단계 요약을 지운다.
+- 설정: `AGENT_SCORING_POLICY_PATH`·`AGENT_SCORING_POLICY_VERSION`(`.env.example`). `GET /objectives`는 `agent-objectives.v1`.
+- 보존: v1의 presentation·projection·event·graph·adapter·engine 사양 해시가 develop과 같다(별도 작업 트리에서 대조). v1 응답은 다요소 설정 유무와 무관하게 같다.
+- 검증: `tests/test_web_agent_v2.py` 25개(방식 목록·정책 해시 불일치·합성 자료 차단·v1 불변·v2 OVR/다요소 응답·409·요청 필수 필드·만료·v1 투영 거부·정책 불일치·DTO 변조 8종), 전체 pytest 2,175개·Ruff 통과. 실제 모델·브라우저·실데이터 서버는 실행하지 않았다.

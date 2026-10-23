@@ -47,6 +47,7 @@
 ### INT-WEB-V2-001 — web-agent.v2 방식 선택 계약과 웹 변경 요청 (2026-10-23)
 
 - 사용자 결정 / develop898cb64 기반. 계약 docs/web-agent-v2-contract.md: `GET /objectives`(agent-objectives.v1), v2 요청 `objective` 필수, v2 final의 `objective`·`squad.outfield_ovr/gk_ovr/total_score_units/total_score`·`rows[].score_units/score`. v1 요청·응답 bytes 유지.
+- 서버 구현(feat/web-agent-v2): v2 요청/응답·`GET /objectives`·409·정책 설정 env. v1 사양 해시·응답 불변 확인, 합성25개·전체2,175 통과. 계약 §8. 병합 SHA는 PR 병합 후 이 기록을 기준으로 확인한다.
 - 웹 담당 요청(WEB 후속): 방식 목록 조회·선택 UI(기본 OVR·사용 가능 방식만), v2 파서와 점수/단계/정책·실험 표시, v1 파서 유지. 실제 연결 전 서버 구현 PR SHA를 이 기록에서 확인한다. 통합 담당은 frontend/를 수정하지 않는다.
 
 ### INT-MF3-004 — GK 우선 모드 지연 단축 (2026-10-23)

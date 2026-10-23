@@ -65,12 +65,14 @@ class CandidateSquadAgent:
         batches,
         clock,
         fixed_salary_cap=None,
+        objective=None,
     ):
         if not callable(getattr(selector, "select", None)):
             raise TypeError("후보 ID selector를 명시해야 합니다.")
         self._selector, self._material = selector, material
         self._batches, self._clock = batches, clock
         self._fixed_salary_cap = fixed_salary_cap
+        self._objective = objective
 
     def run(self, original, *, t0):
         with tracing_context(enabled=False):
@@ -114,6 +116,7 @@ class CandidateSquadAgent:
                 self._batches,
                 self._clock,
                 self._fixed_salary_cap,
+                self._objective,
             )
         )
         result = graph.run(original, t0=t0)

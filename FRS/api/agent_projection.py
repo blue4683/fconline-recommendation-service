@@ -11,14 +11,19 @@ from FRS.agent.candidate_graph import CandidateRunResult, candidate_agent_spec
 from FRS.agent.candidate_selection import selection_spec
 from FRS.agent.candidates import FIELDS, candidate_spec, canonical, prepare_candidates
 from FRS.agent.graph import agent_spec
-from FRS.agent.presentation import present_agent_result, presentation_spec
-from FRS.api.agent_contract import WEB_CONTRACT, WebFinal
+from FRS.agent.presentation import (
+    multi_factor_presentation_spec,
+    present_agent_result,
+    presentation_spec,
+)
+from FRS.api.agent_contract import WEB_CONTRACT, WEB_CONTRACT_V2, WebFinal, WebFinalV2
 from FRS.core.request_normalization import (
     ExtractedConditions,
     SupportedConditions,
     conditions_spec,
     normalize_conditions,
 )
+from FRS.core.squad_recommend.objective import GK_PRIORITY, MultiFactorObjective
 from FRS.core.squad_recommend.snapshot import RequestSnapshot
 
 ERROR_MESSAGES = {
@@ -90,6 +95,26 @@ def projection_spec():
     return {**spec, "projection_version": hashlib.sha256(canonical(spec)).hexdigest()}
 
 
+def projection_v2_spec():
+    """v2 투영 사양. v1 projection_spec과 응답 bytes는 바꾸지 않는다."""
+    spec = dict(
+        version=1,
+        base=projection_spec()["projection_version"],
+        web_contract=WEB_CONTRACT_V2,
+        output=WebFinalV2.model_json_schema(),
+        objectives=["ovr", GK_PRIORITY],
+        multi_factor_presentation=multi_factor_presentation_spec()[
+            "presentation_version"
+        ],
+        objective_source="service_pinned_policy_cross_checked_with_snapshot",
+        expiry="data_expired_drops_squad_and_stage_summary",
+    )
+    return {**spec, "projection_version": hashlib.sha256(canonical(spec)).hexdigest()}
+
+
+_FINAL = {WEB_CONTRACT: WebFinal, WEB_CONTRACT_V2: WebFinalV2}
+
+
 @dataclass(frozen=True)
 class SelectionProvenance:
     model: str
@@ -109,6 +134,7 @@ class WebOutcome:
     kind: str
     _payload: bytes
     _snapshot: RequestSnapshot | None = None
+    contract: str = WEB_CONTRACT
 
     def encode_payload(self, *, clock):
         if type(self._payload) is not bytes:
@@ -124,7 +150,8 @@ class WebOutcome:
             return canonical(body)
         if self.kind != "final":
             raise ValueError("알 수 없는 종료 종류입니다.")
-        body = WebFinal.model_validate(body).model_dump(mode="json")
+        final = _FINAL[self.contract]
+        body = final.model_validate(body).model_dump(mode="json")
         encoded = canonical(body)
         if self._snapshot is not None:
             if (
@@ -136,7 +163,9 @@ class WebOutcome:
             checked = self._snapshot.check_response(clock())
             if checked["status"] == "data_expired":
                 body.update(status="data_expired", squad=None, answer=EXPIRED)
-                return canonical(WebFinal.model_validate(body).model_dump(mode="json"))
+                if self.contract == WEB_CONTRACT_V2:
+                    body["objective"]["stages"] = []
+                return canonical(final.model_validate(body).model_dump(mode="json"))
         elif body["status"] in ("optimal", "feasible"):
             raise ValueError("성공 결과의 원래 스냅샷이 없습니다.")
         return encoded
@@ -160,11 +189,22 @@ def project_result(
     material_id=None,
     data_mode="synthetic",
     fixed_salary_cap=None,
+    contract=WEB_CONTRACT,
+    objective=None,
 ):
-    """복구/모델 호출 없이 원문-준비-도메인 결과의 결합을 검사한다."""
+    """복구/모델 호출 없이 원문-준비-도메인 결과의 결합을 검사한다.
+
+    objective는 v2 요청이 고른 다요소 목적(서비스가 고정한 정책)이며 v1에서는 None이다.
+    """
     try:
         if data_mode not in DATA_MODES:
             raise ValueError("명시한 자료 모드가 필요합니다.")
+        if contract not in _FINAL or (
+            contract == WEB_CONTRACT and objective is not None
+        ):
+            raise ValueError("요청 계약과 방식이 일치하지 않습니다.")
+        if objective is not None and type(objective) is not MultiFactorObjective:
+            raise ValueError("서비스가 고정한 다요소 목적이 필요합니다.")
         return _project(
             original,
             result,
@@ -173,13 +213,67 @@ def project_result(
             material_id=material_id,
             data_mode=data_mode,
             fixed_salary_cap=fixed_salary_cap,
+            contract=contract,
+            objective=objective,
         )
     except (ValueError, TypeError, KeyError, ValidationError):
         return error_outcome()
 
 
+def _final(body, snapshot, *, contract, objective, presented=None):
+    """v1은 기존 DTO로, v2는 방식·점수 필드를 더한 DTO로 검증한다."""
+    if contract == WEB_CONTRACT:
+        final = WebFinal.model_validate(body)
+        return WebOutcome("final", canonical(final.model_dump(mode="json")), snapshot)
+    pinned = (presented or {}).get("objective")
+    policy = None
+    if objective is not None:
+        policy = dict(
+            policy_id=objective.policy.policy_id,
+            version=objective.policy.version,
+            status=objective.policy.status,
+        )
+        # 스냅샷에 고정된 정책이 서비스 정책과 다르면 결과를 쓰지 않는다.
+        if pinned is not None and pinned["policy"] != policy:
+            raise ValueError("스냅샷 정책과 서비스 정책이 다릅니다.")
+    elif pinned is not None:
+        raise ValueError("OVR 요청에 다요소 결과가 섞였습니다.")
+    body["versions"] = {
+        **body["versions"],
+        "web_contract": WEB_CONTRACT_V2,
+        "projection": projection_v2_spec()["projection_version"],
+    }
+    body["objective"] = dict(
+        id="ovr" if objective is None else GK_PRIORITY,
+        policy=policy,
+        stages=[] if pinned is None else pinned["stages"],
+    )
+    squad = body["squad"]
+    if squad is not None:
+        for row in squad["rows"]:
+            row.setdefault("score_units", None)
+            row.setdefault("score", None)
+        squad.setdefault("total_score_units", None)
+        squad.setdefault("total_score", None)
+        squad["gk_ovr"] = sum(r["raw_ovr"] for r in squad["rows"] if r["slot"] == "GK")
+        squad["outfield_ovr"] = squad["total_ovr"] - squad["gk_ovr"]
+    final = WebFinalV2.model_validate(body)
+    return WebOutcome(
+        "final", canonical(final.model_dump(mode="json")), snapshot, WEB_CONTRACT_V2
+    )
+
+
 def _project(
-    original, result, *, clock, provenance, material_id, data_mode, fixed_salary_cap
+    original,
+    result,
+    *,
+    clock,
+    provenance,
+    material_id,
+    data_mode,
+    fixed_salary_cap,
+    contract,
+    objective,
 ):
     if (
         type(result) is not CandidateRunResult
@@ -241,9 +335,7 @@ def _project(
             narration_source="template",
             data_mode=data_mode,
         )
-        return WebOutcome(
-            "final", canonical(WebFinal.model_validate(body).model_dump(mode="json"))
-        )
+        return _final(body, None, contract=contract, objective=objective)
     if preparation.issues:
         raise ValueError("준비 차단 결과의 실행이 일치하지 않습니다.")
     if result.outcome == "provider_error":
@@ -276,7 +368,12 @@ def _project(
         original, evidence, fixed_salary_cap=fixed_salary_cap
     ):
         raise ValueError("요청의 전체 출현 근거가 일치하지 않습니다.")
-    presented = present_agent_result(agent, clock=clock, data_mode=data_mode).to_dict()
+    presented = present_agent_result(
+        agent,
+        clock=clock,
+        data_mode=data_mode,
+        objective="ovr" if objective is None else GK_PRIORITY,
+    ).to_dict()
     versions.update(
         selection=selection_spec()["selection_version"],
         graph=agent.graph_version,
@@ -321,5 +418,6 @@ def _project(
                 "required_fields"
             ]
         ).model_dump(mode="json")
-    final = WebFinal.model_validate(body)
-    return WebOutcome("final", canonical(final.model_dump(mode="json")), snapshot)
+    return _final(
+        body, snapshot, contract=contract, objective=objective, presented=presented
+    )

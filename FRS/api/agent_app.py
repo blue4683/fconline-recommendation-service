@@ -26,8 +26,10 @@ from FRS.api.agent_runtime import (
     AgentService,
     AgentSettings,
     build_service,
+    objectives_listing,
     utc_now,
 )
+from FRS.core.squad_recommend.objective import GK_PRIORITY
 
 
 class RunStopped(RuntimeError):
@@ -93,7 +95,16 @@ class GuardedMaterial:
         return rows
 
 
+def requested_objective(service, body):
+    """v2가 다요소를 고른 경우에만 서비스가 고정한 목적을 쓴다. v1은 항상 OVR이다."""
+    if getattr(body, "objective", "ovr") == GK_PRIORITY:
+        return service.objective
+    return None
+
+
 def execute(service, body, lease, clock, t0):
+    objective = requested_objective(service, body)
+
     def guarded_clock():
         lease.check()
         return clock()
@@ -106,6 +117,7 @@ def execute(service, body, lease, clock, t0):
             batches=service.batches,
             clock=guarded_clock,
             fixed_salary_cap=service.fixed_salary_cap,
+            objective=objective,
         ).run(body.message, t0=t0)
         lease.check()
         lease.rendering.set()
@@ -117,6 +129,8 @@ def execute(service, body, lease, clock, t0):
             material_id=service.material_id,
             data_mode=service.data_mode,
             fixed_salary_cap=service.fixed_salary_cap,
+            contract=body.contract_version,
+            objective=objective,
         )
     except RunStopped:
         return error_outcome("request_deadline")
@@ -201,6 +215,15 @@ def create_agent_app(
             state, status_code=200 if state["status"] == "ready" else 503
         )
 
+    @app.get("/objectives")
+    async def objectives():
+        service = app.state.service
+        if service is None:
+            return JSONResponse(
+                objectives_listing(None, "agent_unavailable"), status_code=503
+            )
+        return JSONResponse(service.objectives())
+
     @app.post("/recommend/squad/stream")
     async def recommend(request: Request):
         deadline = monotonic() + REQUEST_DEADLINE_SECONDS
@@ -237,6 +260,14 @@ def create_agent_app(
             return JSONResponse(
                 {"detail": {"code": "agent_unavailable"}}, status_code=503
             )
+        service = app.state.service
+        if (
+            getattr(body, "objective", "ovr") == GK_PRIORITY
+            and service.objective is None
+        ):
+            return JSONResponse(
+                {"detail": {"code": "objective_unavailable"}}, status_code=409
+            )
         t0 = clock()
         lease = app.state.gate.acquire(deadline, monotonic)
         if lease is None:
@@ -244,7 +275,9 @@ def create_agent_app(
         service = app.state.service
 
         async def events():
-            sequence = EventSequence(body.request_id, service.data_mode)
+            sequence = EventSequence(
+                body.request_id, service.data_mode, body.contract_version
+            )
             try:
                 yield sequence.started()
                 lease.check()

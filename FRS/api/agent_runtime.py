@@ -8,6 +8,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Annotated, Literal
 
 import httpx2
@@ -28,10 +29,102 @@ from FRS.api.agent_contract import WireModel
 from FRS.api.agent_projection import SelectionProvenance
 from FRS.core.candidate_search.search import BatchSelection
 from FRS.core.request_normalization.conditions import GAME_SALARY_CAP
+from FRS.core.squad_recommend.multi_factor_policy import ScoringPolicy
+from FRS.core.squad_recommend.objective import (
+    DEFAULT_SECONDS,
+    GK_EXCHANGE,
+    GK_PRIORITY,
+    GK_TOLERANCE,
+    OUTFIELD_TOLERANCE,
+    MultiFactorObjective,
+)
 from FRS.schema.models import DataStatus
 from FRS.schema.scope import ROOT
 
 HEALTH_SCHEMA = "agent-health.v2"
+OBJECTIVES_SCHEMA = "agent-objectives.v1"
+OBJECTIVE_REASONS = (
+    "not_configured",
+    "policy_mismatch",
+    "synthetic_material",
+    "agent_unavailable",
+)
+
+
+@dataclass(frozen=True)
+class ObjectiveSettings:
+    """다요소 방식의 명시 정책 파일과 기대 해시. 둘 다 없으면 이 방식을 끈다."""
+
+    policy_path: str | None = None
+    policy_version: str | None = None
+
+    @classmethod
+    def from_env(cls):
+        load_dotenv(ROOT / ".env", override=False)
+        return cls(
+            os.environ.get("AGENT_SCORING_POLICY_PATH", "") or None,
+            os.environ.get("AGENT_SCORING_POLICY_VERSION", "") or None,
+        )
+
+
+def load_objective(settings, data_mode):
+    """정책 자동 선택 없이 명시 파일만 읽는다. (목적, 사용 불가 사유)를 반환한다."""
+    if type(settings) is not ObjectiveSettings:
+        raise ValueError("명시한 다요소 방식 설정이 필요합니다.")
+    if data_mode != "observed":
+        # 합성 자료는 양발 정보를 만들지 않아 다요소 점수를 계산할 수 없다.
+        return None, "synthetic_material"
+    if settings.policy_path is None or settings.policy_version is None:
+        return None, "not_configured"
+    path = Path(settings.policy_path)
+    try:
+        policy = ScoringPolicy.model_validate(
+            strict_json((path if path.is_absolute() else ROOT / path).read_text())
+        )
+        return (
+            MultiFactorObjective(
+                policy=policy, expected_policy_version=settings.policy_version
+            ),
+            None,
+        )
+    except (OSError, ValueError, TypeError, RecursionError):
+        return None, "policy_mismatch"
+
+
+def objectives_listing(objective, reason):
+    multi_factor = dict(
+        id=GK_PRIORITY,
+        available=objective is not None,
+        reason=reason,
+        policy=None,
+        parameters=dict(
+            gk_exchange=GK_EXCHANGE,
+            outfield_tolerance=OUTFIELD_TOLERANCE,
+            gk_tolerance=GK_TOLERANCE,
+            search_seconds=DEFAULT_SECONDS,
+        ),
+    )
+    if objective is not None:
+        multi_factor["policy"] = dict(
+            policy_id=objective.policy.policy_id,
+            version=objective.policy.version,
+            status=objective.policy.status,
+        )
+    ovr_reason = "agent_unavailable" if reason == "agent_unavailable" else None
+    return dict(
+        schema_version=OBJECTIVES_SCHEMA,
+        default="ovr",
+        objectives=[
+            dict(
+                id="ovr",
+                available=ovr_reason is None,
+                reason=ovr_reason,
+                policy=None,
+                parameters=None,
+            ),
+            multi_factor,
+        ],
+    )
 
 
 class AgentSettings(WireModel):
@@ -138,8 +231,19 @@ class AgentService:
     fixed_salary_cap: int = field(default=GAME_SALARY_CAP, init=False)
 
     _metadata: bytes = field(init=False, repr=False)
+    objective: MultiFactorObjective | None = None
+    objective_reason: str | None = "not_configured"
 
     def __post_init__(self):
+        if self.objective is None:
+            if self.objective_reason not in OBJECTIVE_REASONS:
+                raise ValueError("다요소 방식의 사용 불가 사유가 필요합니다.")
+        elif (
+            type(self.objective) is not MultiFactorObjective
+            or self.objective_reason is not None
+            or self.settings.data_mode != "observed"
+        ):
+            raise ValueError("다요소 방식은 관측 모드의 명시 정책에서만 씁니다.")
         if type(self.settings) is not AgentSettings:
             raise ValueError("검증 가능한 자료 모드별 서비스 설정이 필요합니다.")
         expected_type = (
@@ -217,6 +321,9 @@ class AgentService:
             selector_spec()["selector_version"],
         )
 
+    def objectives(self):
+        return objectives_listing(self.objective, self.objective_reason)
+
     def health(self, now):
         metadata = json.loads(self._metadata)
         deadline = datetime.fromisoformat(metadata["valid_until"])
@@ -262,6 +369,7 @@ def build_service(
     verifier=verify_model,
     processed_root=None,
     mongo_client_factory=None,
+    objective_settings=None,
 ):
     if type(settings) is not AgentSettings:
         raise ValueError("명시한 Agent 시작 설정이 필요합니다.")
@@ -285,7 +393,20 @@ def build_service(
             material = MongoObservedMaterial(root, settings.run_id, **options)
         else:
             material = ObservedMaterial(root, settings.run_id)
-    service = AgentService(settings, material, OllamaIDSelector(settings.model), None)
+    objective, reason = load_objective(
+        ObjectiveSettings.from_env()
+        if objective_settings is None
+        else objective_settings,
+        settings.data_mode,
+    )
+    service = AgentService(
+        settings,
+        material,
+        OllamaIDSelector(settings.model),
+        None,
+        objective=objective,
+        objective_reason=reason,
+    )
     if service.health(clock())["reason"] == "data_expired":
         return service
     try:
@@ -299,4 +420,11 @@ def build_service(
         httpx2.HTTPError,
     ):
         verified = None
-    return AgentService(settings, material, service.selector, verified)
+    return AgentService(
+        settings,
+        material,
+        service.selector,
+        verified,
+        objective=objective,
+        objective_reason=reason,
+    )

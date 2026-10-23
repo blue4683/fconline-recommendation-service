@@ -11,6 +11,7 @@ from datetime import datetime
 
 from FRS.agent.graph import AgentRunResult
 from FRS.core.request_normalization import ConditionNormalizationResult
+from FRS.core.squad_recommend.objective import GK_PRIORITY
 from FRS.core.squad_recommend.snapshot import RequestSnapshot
 from FRS.core.squad_recommend.solver import EngineResult
 from FRS.core.squad_recommend.validator import (
@@ -45,6 +46,45 @@ _MODES = {
     "synthetic": (SourceKind.SYNTHETIC, _MESSAGES),
     "observed": (SourceKind.WEB, _OBSERVED_MESSAGES),
 }
+# 다요소 목적(web-agent.v2)의 성공 문구. 방식과 실험 정책임을 밝힌다.
+_MF_BASIS = {
+    "synthetic": "합성 자료 기준으로",
+    "observed": "넥슨 데이터센터 관측 자료 기준으로",
+}
+_MF_SUCCESS = {
+    "optimal": "{basis} 필드 우선·GK 단계와 실험 다요소 점수({policy})로 11명을 검증했고 "
+    "단계별 최적성을 확인했습니다.",
+    "feasible": "{basis} 필드 우선·GK 단계와 실험 다요소 점수({policy})로 11명을 검증했습니다. "
+    "일부 단계의 최적성은 미확인입니다.",
+}
+_MF_PRICE_INCOMPLETE = (
+    " 동일 다요소 점수 내 최대 예산 활용은 시간 내 확인하지 못했습니다."
+)
+_OBSERVED_PRICE_NOTE = " 가격은 참고가격입니다."
+
+
+def multi_factor_presentation_spec():
+    """다요소 목적 출력 사양. OVR 출력 사양(presentation_spec)과 해시를 공유하지 않는다."""
+    spec = dict(
+        base=presentation_spec()["presentation_version"],
+        objective=GK_PRIORITY,
+        rows="ovr_rows_plus_score_units_and_two_decimal_score",
+        squad="totals_plus_score_units_outfield_and_gk_ovr",
+        stages="engine_objective_stages_after_revalidation",
+        policy="snapshot_metadata_policy_id_and_version_experimental",
+        basis=dict(_MF_BASIS),
+        success=dict(_MF_SUCCESS),
+        price_optimization_incomplete=_MF_PRICE_INCOMPLETE,
+        observed_price_note=_OBSERVED_PRICE_NOTE,
+    )
+    return {
+        **spec,
+        "presentation_version": hashlib.sha256(_canonical(spec)).hexdigest(),
+    }
+
+
+def score_text(units):
+    return f"{units // 100}.{units % 100:02d}"
 
 
 def _canonical(value):
@@ -91,18 +131,25 @@ class CodePresentation:
 
 
 def present_agent_result(
-    result: AgentRunResult, *, clock, data_mode="synthetic"
+    result: AgentRunResult, *, clock, data_mode="synthetic", objective="ovr"
 ) -> CodePresentation:
+    """objective는 실행 서비스가 요청에서 받은 방식이며 엔진 결과와 일치해야 한다."""
     if not isinstance(result, AgentRunResult):
         raise TypeError("내부 AgentRunResult가 필요합니다.")
     if data_mode not in _MODES:
         raise ValueError("명시한 자료 모드가 필요합니다.")
+    if objective not in ("ovr", GK_PRIORITY):
+        raise ValueError("지원하는 추천 방식이 필요합니다.")
+    multi_factor = objective == GK_PRIORITY
     source, messages = _MODES[data_mode]
     price_status = None
+    policy_id = None
     payload = dict(
         kind="code_presentation",
         data_mode=data_mode,
-        presentation_version=presentation_spec()["presentation_version"],
+        presentation_version=(
+            multi_factor_presentation_spec() if multi_factor else presentation_spec()
+        )["presentation_version"],
         graph_version=result.graph_version,
         normalizer_version=None,
         engine_version=None,
@@ -118,7 +165,15 @@ def present_agent_result(
 
     def finish(status, code=None):
         answer = messages[status]
-        if status == "optimal" and price_status == "incomplete":
+        if multi_factor and status in _MF_SUCCESS:
+            answer = _MF_SUCCESS[status].format(
+                basis=_MF_BASIS[data_mode], policy=policy_id
+            )
+            if data_mode == "observed":
+                answer += _OBSERVED_PRICE_NOTE
+            if status == "optimal" and price_status == "incomplete":
+                answer += _MF_PRICE_INCOMPLETE
+        elif status == "optimal" and price_status == "incomplete":
             answer += _PRICE_INCOMPLETE
         body = {**payload, "status": status, "code": code, "answer": answer}
         if status not in ("optimal", "feasible"):
@@ -165,14 +220,26 @@ def present_agent_result(
             not isinstance(snapshot, RequestSnapshot)
             or engine.snapshot_id != snapshot.snapshot_id
             or engine.method != "cp_sat"
-            # 코드 출력·v1 DTO는 OVR 목적 전용이다.
-            or engine.objective != "ovr"
+            # 요청 방식과 엔진 목적이 같아야 한다. v1 출력은 OVR 전용이다.
+            or engine.objective != objective
             or engine.status == "greedy_failed"
         ):
             raise ValueError
         if engine.status in ("internal_error", "data_expired"):
             return finish(engine.status)
         contents = snapshot.to_dict()
+        if multi_factor:
+            pinned = contents["metadata"]["objective"]
+            policy_id = pinned["policy"]["policy_id"]
+            payload["objective"] = dict(
+                id=GK_PRIORITY,
+                policy=dict(
+                    policy_id=policy_id,
+                    version=pinned["policy_version"],
+                    status=pinned["policy"]["status"],
+                ),
+                stages=[],
+            )
         t0 = datetime.fromisoformat(contents["query"]["t0"])
         prepared = prepare_snapshot(snapshot, when=t0)
         query = prepared.query.model_dump(mode="json")
@@ -236,6 +303,16 @@ def present_agent_result(
                 total_ovr=report.total_ovr,
                 performance=report.performance,
             )
+            if multi_factor:
+                for row in payload["squad"]["rows"]:
+                    row["score"] = score_text(row["score_units"])
+                payload["squad"].update(
+                    total_score_units=report.total_score_units,
+                    total_score=score_text(report.total_score_units),
+                )
+                payload["objective"]["stages"] = [
+                    stage.model_dump(mode="json") for stage in engine.objective_stages
+                ]
         elif engine.validation is not None:
             raise ValueError
     except SnapshotExpired:

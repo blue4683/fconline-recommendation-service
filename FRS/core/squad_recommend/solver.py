@@ -18,6 +18,7 @@ from FRS.core.squad_recommend.objective import (
     GK_SLOT,
     GK_TOLERANCE,
     OUTFIELD_TOLERANCE,
+    PROBING_LEVEL,
     STAGES,
 )
 from FRS.core.squad_recommend.snapshot import RequestSnapshot
@@ -76,6 +77,7 @@ def gk_priority_engine_spec():
         outfield_tolerance=OUTFIELD_TOLERANCE,
         gk_tolerance=GK_TOLERANCE,
         default_time_seconds=DEFAULT_SECONDS,
+        cp_model_probing_level=PROBING_LEVEL,
         search_time_budget="shared_across_all_stages",
         optimal_status="outfield_gk_and_multi_factor_stages_proven_price_separate",
         unfinished_stage="keep_best_valid_solution_later_stages_not_run",
@@ -254,7 +256,15 @@ def _add_exact_cap(model, variables, values, cap, name):
 
 
 def _maximize_price(
-    model, variables, candidates, slack_digits, chosen, price_cap, config, deadline
+    model,
+    variables,
+    candidates,
+    slack_digits,
+    chosen,
+    price_cap,
+    config,
+    deadline,
+    probing_level=None,
 ):
     """호출자가 앞 목적을 고정한 모델에서 사용액을 최대화한다.
 
@@ -302,6 +312,8 @@ def _maximize_price(
         solver.parameters.max_time_in_seconds = remaining
         solver.parameters.num_search_workers = config.workers
         solver.parameters.random_seed = config.seed
+        if probing_level is not None:
+            solver.parameters.cp_model_probing_level = probing_level
         raw = solver.solve(model)
         if raw == cp_model.UNKNOWN:
             return best, "incomplete"
@@ -364,6 +376,9 @@ def _solve_stage(model, variables, hint, config, deadline):
     solver.parameters.max_time_in_seconds = remaining
     solver.parameters.num_search_workers = config.workers
     solver.parameters.random_seed = config.seed
+    # 단계마다 presolve를 다시 하므로 probing을 끈다. 실데이터에서 단계 증명 시간이
+    # 크게 줄었고 결과 값은 같았다. OVR 모드의 탐색 설정은 바꾸지 않는다.
+    solver.parameters.cp_model_probing_level = PROBING_LEVEL
     raw = solver.solve(model)
     values = (
         tuple(solver.value(x) for x in variables)
@@ -504,6 +519,7 @@ def _solve_gk_priority(snapshot, prepared, *, config, clock):
             prepared.query.price_cap,
             config,
             deadline,
+            probing_level=PROBING_LEVEL,
         )
     except (ValueError, RuntimeError, OverflowError):
         return _finish(

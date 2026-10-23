@@ -120,19 +120,19 @@ def test_without_objective_snapshot_and_result_bytes_are_unchanged():
     assert mf(data).snapshot_id != plain.snapshot_id
 
 
-def test_outfield_ovr_comes_before_a_larger_goalkeeper_upgrade():
+def test_outfield_ovr_comes_first_beyond_the_fifteen_point_exchange():
     data = base()
-    striker = add(data, "ST", 201, ovr=110, salary=10)
-    keeper = add(data, "GK", 202, ovr=120, salary=10)
-    # 급여 상한 60에서는 둘 중 하나만 올릴 수 있다.
+    striker = add(data, "ST", 201, ovr=120, salary=10)
+    keeper = add(data, "GK", 202, ovr=130, salary=10)
+    # 급여 상한 60에서는 둘 중 하나만 올릴 수 있다. GK를 올리면 필드가 20 낮아진다.
     ovr = solve(snapshot(data, salary_cap=60))
-    assert picked(ovr)["GK"].spid == keeper and ovr.validation.total_ovr == 1120
+    assert picked(ovr)["GK"].spid == keeper and ovr.validation.total_ovr == 1130
     result = solve(mf(data, salary_cap=60))
     assert result.status == "optimal" and result.objective == GK_PRIORITY
     assert picked(result)["GK"].spid != keeper
     assert striker in {p.spid for p in result.validation.players}
     assert [(s.name, s.status, s.value) for s in result.objective_stages] == [
-        ("outfield_ovr", "optimal", 1010),
+        ("outfield_ovr", "optimal", 1020),
         ("gk_ovr", "optimal", 100),
         ("multi_factor", "optimal", result.validation.total_score_units),
     ]
@@ -140,11 +140,32 @@ def test_outfield_ovr_comes_before_a_larger_goalkeeper_upgrade():
     assert result.engine_version == gk_priority_engine_spec()["engine_version"]
 
 
+def test_goalkeeper_can_take_up_to_fifteen_outfield_points():
+    data = base()
+    striker = add(data, "ST", 201, ovr=110, salary=10)
+    keeper = add(data, "GK", 202, ovr=120, salary=10)
+    # GK를 올리면 필드가 10 낮아지므로 양보폭 15 안이다.
+    result = solve(mf(data, salary_cap=60))
+    assert picked(result)["GK"].spid == keeper
+    assert striker not in {p.spid for p in result.validation.players}
+    assert [s.value for s in result.objective_stages[:2]] == [1010, 120]
+
+
+@pytest.mark.parametrize("gain, goalkeeper_first", [(15, True), (16, False)])
+def test_goalkeeper_exchange_boundary_is_fifteen(gain, goalkeeper_first):
+    data = base()
+    add(data, "ST", 201, ovr=100 + gain, salary=10)
+    keeper = add(data, "GK", 202, ovr=140, salary=10)
+    result = solve(mf(data, salary_cap=60))
+    assert (picked(result)["GK"].spid == keeper) is goalkeeper_first
+
+
 def test_goalkeeper_uses_the_salary_left_after_the_outfield():
     data = base()
-    striker = add(data, "ST", 201, ovr=110, salary=6)
+    striker = add(data, "ST", 201, ovr=130, salary=6)
     add(data, "GK", 202, ovr=120, salary=12)
     second = add(data, "GK", 203, ovr=110, salary=11)
+    # 더 좋은 GK는 필드 30을 포기해야 하므로 남은 급여로 살 수 있는 GK를 고른다.
     result = solve(mf(data, salary_cap=62))
     assert striker in {p.spid for p in result.validation.players}
     assert picked(result)["GK"].spid == second
@@ -290,11 +311,13 @@ def test_stages_share_one_time_budget():
         return actual(self, model)
 
     with (
-        patch("FRS.core.squad_recommend.solver.monotonic", side_effect=(0, 1, 11)),
+        patch("FRS.core.squad_recommend.solver.monotonic", side_effect=(0, 1, 31)),
         patch.object(cp_model.CpSolver, "solve", inspect),
     ):
         result = solve(mf(base()))
-    assert seen == [9]
+    # 명시 다요소 목적만 기본 30초를 공유하고 OVR 모드는 10초를 유지한다.
+    assert seen == [29] and result.config.max_time_seconds == 30
+    assert solve(snapshot(base())).config.max_time_seconds == 10
     assert result.status == "feasible"
     assert [s.status for s in result.objective_stages] == [
         "optimal",
@@ -313,7 +336,7 @@ def test_greedy_baseline_and_expiry_keep_the_objective_label():
 
 
 def lexicographic(snap):
-    """작은 문제를 전수 탐색해 4단계 사전식 최적값을 구한다."""
+    """작은 문제를 전수 탐색해 단계별 사전식 최적값을 구한다."""
     content = snap.to_dict()
     query = content["query"]
     pools = [[r for r in content["candidates"] if r["slot"] == s] for s in SLOTS]
@@ -334,11 +357,13 @@ def lexicographic(snap):
     if not rows:
         return None
     best_outfield = max(r[0] for r in rows)
-    best_keeper = max(r[1] for r in rows if r[0] == best_outfield)
-    allowed = [r for r in rows if r[0] >= best_outfield - 5 and r[1] >= best_keeper - 2]
+    exchange = [r for r in rows if r[0] >= best_outfield - 15]
+    best_keeper = max(r[1] for r in exchange)
+    outfield = max(r[0] for r in exchange if r[1] == best_keeper)
+    allowed = [r for r in rows if r[0] >= outfield - 5 and r[1] >= best_keeper - 2]
     best_score = max(r[2] for r in allowed)
     best_price = max(r[3] for r in allowed if r[2] == best_score)
-    return best_outfield, best_keeper, best_score, best_price
+    return best_outfield, best_keeper, outfield, best_score, best_price
 
 
 @pytest.mark.parametrize("seed", range(12))
@@ -376,7 +401,7 @@ def test_small_random_problems_match_exhaustive_lexicographic_optimum(seed):
     if expected is None:
         assert result.status == "infeasible"
         return
-    best_outfield, best_keeper, best_score, best_price = expected
+    best_outfield, best_keeper, gk_outfield, best_score, best_price = expected
     assert result.status == "optimal"
     assert result.price_optimization_status == "optimal"
     assert [s.value for s in result.objective_stages] == [
@@ -387,6 +412,6 @@ def test_small_random_problems_match_exhaustive_lexicographic_optimum(seed):
     report = result.validation
     outfield = sum(p.raw_ovr for p in report.players if p.slot != "GK")
     keeper = picked(result)["GK"].raw_ovr
-    assert outfield >= best_outfield - 5 and keeper >= best_keeper - 2
+    assert outfield >= gk_outfield - 5 and keeper >= best_keeper - 2
     assert report.total_score_units == best_score
     assert report.total_price == best_price

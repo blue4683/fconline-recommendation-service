@@ -12,6 +12,8 @@ from ortools.sat.python import cp_model
 from pydantic import BaseModel, ConfigDict, Field, model_serializer
 
 from FRS.core.squad_recommend.objective import (
+    DEFAULT_SECONDS,
+    GK_EXCHANGE,
     GK_PRIORITY,
     GK_SLOT,
     GK_TOLERANCE,
@@ -69,8 +71,11 @@ def gk_priority_engine_spec():
         objective=GK_PRIORITY,
         secondary_objective="lexicographic_stages",
         stages=list(STAGES),
+        gk_stage="max_16_gk_plus_outfield_within_outfield_exchange",
+        gk_exchange=GK_EXCHANGE,
         outfield_tolerance=OUTFIELD_TOLERANCE,
         gk_tolerance=GK_TOLERANCE,
+        default_time_seconds=DEFAULT_SECONDS,
         search_time_budget="shared_across_all_stages",
         optimal_status="outfield_gk_and_multi_factor_stages_proven_price_separate",
         unfinished_stage="keep_best_valid_solution_later_stages_not_run",
@@ -460,9 +465,13 @@ def _solve_gk_priority(snapshot, prepared, *, config, clock):
             )
         best_outfield = total(outfield, chosen)
 
-        # S2: 필드 OVR을 최대로 고정한 뒤 남은 급여·예산으로 GK를 고른다.
-        model, variables, _ = constrained((outfield, "==", best_outfield))
-        proven, chosen = maximize(model, variables, goalkeeper, chosen)
+        # S2: 필드를 최대 GK_EXCHANGE까지 양보해 GK를 최대화하고, 같은 GK면 필드를
+        # 최대화한다. 필드 변동폭이 GK_EXCHANGE 이하라 계수 GK_EXCHANGE+1이 정확하다.
+        model, variables, _ = constrained((outfield, ">=", best_outfield - GK_EXCHANGE))
+        weights = [
+            (GK_EXCHANGE + 1) * g + f for g, f in zip(goalkeeper, outfield, strict=True)
+        ]
+        proven, chosen = maximize(model, variables, weights, chosen)
         done.append(stage("gk_ovr", proven, chosen, goalkeeper))
         if not proven:
             return finish(
@@ -471,7 +480,7 @@ def _solve_gk_priority(snapshot, prepared, *, config, clock):
 
         # S3: 필드·GK 허용폭 안에서 다요소 점수 합을 최대화한다.
         bounds = (
-            (outfield, ">=", best_outfield - OUTFIELD_TOLERANCE),
+            (outfield, ">=", total(outfield, chosen) - OUTFIELD_TOLERANCE),
             (goalkeeper, ">=", total(goalkeeper, chosen) - GK_TOLERANCE),
         )
         model, variables, _ = constrained(*bounds)
@@ -517,12 +526,17 @@ def solve_squad(
     config: SolverConfig | None = None,
     clock: Callable[[], datetime] = _utc_now,
 ):
+    explicit = config is not None
     config = (
-        SolverConfig()
-        if config is None
-        else SolverConfig.model_validate(config.model_dump())
+        SolverConfig.model_validate(config.model_dump()) if explicit else SolverConfig()
     )
     prepared, invalid = _initial(snapshot, "cp_sat", clock())
+    if not explicit and (
+        (prepared is not None and prepared.objective is not None)
+        or (invalid is not None and invalid.objective == GK_PRIORITY)
+    ):
+        # 명시 다요소 목적만 기본 30초를 공유한다. OVR 모드는 10초를 유지한다.
+        config = SolverConfig(max_time_seconds=DEFAULT_SECONDS)
     if invalid is not None:
         return invalid.model_copy(update={"config": config})
     missing = tuple(slot for slot, count in _coverage(prepared) if count == 0)

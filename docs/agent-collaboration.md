@@ -44,6 +44,14 @@
 
 ## 진행·변경·질문 기록
 
+### INT-MF3-BENCH-001 — GK 우선 모드 독립 합성 진단과 상태 오류 수정 (2026-10-23)
+
+- 사용자 병행 작업 요청 / 시작 developced4573, 최신 공용 기록·웹 설계도 확인. 웹 담당의 frontend/와 WEB-*를 보존하며 별도 [24문제 합성 진단](gk-priority-synthetic-benchmark.md)을 구현한다. 작업 중 외부 병합된 #157과 #158/develop6b22b2c를 기반에 포함했다. 웹 PR의 병합은 이 작업에서 수행하지 않았다.
+- 3포메이션·강화3종·예산2종18문제, 급여 하한 증명3문제, 독립 Fraction/전수 대조3문제를 두 모드에서 비교한다. 같은 후보 풀·기준 해/급여 증명·자료/질의/스냅샷/정책/소스 해시·실패 보존·명시 CLI·소켓 차단·별도 지연 분모다. 실제 관측·판단·모델·DB·.env·서버/브라우저·수집·배포는 사용하지 않는다.
+- 수정 전001의 급여 부족3문제에서 GK 모드 internal_error를 재현했다. 선택 해 없이 종료할 때 strict zip 길이 불일치가 원인이다. 해당 경로만 수정하고 INFEASIBLE/UNKNOWN/모델 오류 회귀3개를 추가했다. 목적·가중치·15/5/2·시간/스레드·OVR/v1/v2 계약은 유지한다.
+- 수정 후002는24완료·불일치0. 두 모드 주 목적 optimal21/해 없음3, 가격 optimal은 OVR21·GK14(나머지7 미완료), 전수3문제 모두 단계/점수/가격 일치. 해 존재18문제 요청 p50/p95: OVR0.098/2.675초·GK0.192/30.241초. 운영 SLA/선호 개선·D6 대체 판정이 아니며 criteria/passed=null. 두 실행24자료/질의/스냅샷 동일, 원본 실행은 Git 제외 보존한다.
+- 신규14/전체pytest2,191·Ruff·문서/diff 확인. 최신 PR head CI는 실제 상태로 확인하며 master#143 초안/충돌·종료 실행/기한·타 담당 체크아웃을 보존한다.
+
 ### INT-WEB-V2-001 — web-agent.v2 방식 선택 계약과 웹 변경 요청 (2026-10-23)
 
 - 사용자 결정 / develop898cb64 기반. 계약 docs/web-agent-v2-contract.md: `GET /objectives`(agent-objectives.v1), v2 요청 `objective` 필수, v2 final의 `objective`·`squad.outfield_ovr/gk_ovr/total_score_units/total_score`·`rows[].score_units/score`. v1 요청·응답 bytes 유지.

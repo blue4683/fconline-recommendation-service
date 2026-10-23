@@ -122,6 +122,29 @@ def test_without_objective_snapshot_and_result_bytes_are_unchanged():
     assert mf(data).snapshot_id != plain.snapshot_id
 
 
+def test_nonempty_gk_pools_with_insufficient_total_salary_are_infeasible():
+    snap = mf(base(), salary_cap=54)
+    assert all(
+        any(c["slot"] == slot for c in snap.to_dict()["candidates"]) for slot in SLOTS
+    )
+    result = solve(snap)
+    assert result.status == "infeasible" and result.solver_status == "INFEASIBLE"
+    assert result.validation is None and result.objective_stages == ()
+
+
+@pytest.mark.parametrize(
+    "raw, status",
+    [(cp_model.UNKNOWN, "unknown"), (cp_model.MODEL_INVALID, "internal_error")],
+)
+def test_first_gk_stage_without_a_solution_preserves_solver_status(raw, status):
+    with patch(
+        "FRS.core.squad_recommend.solver._solve_stage", return_value=(raw, None)
+    ):
+        result = solve(mf(base()))
+    assert result.status == status
+    assert result.validation is None and result.objective_stages == ()
+
+
 def test_outfield_ovr_comes_first_beyond_the_fifteen_point_exchange():
     data = base()
     striker = add(data, "ST", 201, ovr=120, salary=10)

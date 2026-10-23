@@ -419,7 +419,7 @@ def _solve_gk_priority(snapshot, prepared, *, config, clock):
     def finish(status, *, chosen=(), raw=None, stages=(), price_status=None):
         picks = tuple(
             SquadPick(spid=c.spid, slot=c.slot, reinforce_level=c.reinforce_level)
-            for c, x in zip(candidates, chosen, strict=True)
+            for c, x in zip(candidates if chosen else (), chosen, strict=True)
             if x
         )
         ran = {s.name for s in stages}

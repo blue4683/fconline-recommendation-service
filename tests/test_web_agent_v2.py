@@ -328,6 +328,8 @@ def mutate(shown, change):
         lambda d: d["objective"].update(policy=None),
         lambda d: d["squad"]["rows"][0].update(score_units=None, score=None),
         lambda d: d["versions"].update(web_contract="web-agent.v1"),
+        lambda d: d["objective"].update(stages=d["objective"]["stages"][::-1]),
+        lambda d: d["objective"].update(stages=[d["objective"]["stages"][0]] * 3),
     ],
 )
 def test_v2_dto_rejects_inconsistent_scores_and_objective(results, change):

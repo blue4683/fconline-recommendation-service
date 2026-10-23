@@ -301,6 +301,16 @@ class WebFinalV2(WebFinal):
             raise ValueError("방식과 다요소 점수 유무가 일치하지 않습니다.")
         if self.objective.stages and not (success and multi_factor):
             raise ValueError("단계 요약은 다요소 성공 결과에만 있습니다.")
-        if success and multi_factor and len(self.objective.stages) != 3:
-            raise ValueError("다요소 성공 결과에는 세 단계 요약이 필요합니다.")
+        if (
+            success
+            and multi_factor
+            and [s.name for s in self.objective.stages]
+            != [
+                "outfield_ovr",
+                "gk_ovr",
+                "multi_factor",
+            ]
+        ):
+            # 웹 파서와 같게 세 단계를 엔진 순서대로 한 번씩만 받는다.
+            raise ValueError("다요소 성공 결과에는 세 단계 요약이 순서대로 필요합니다.")
         return self

@@ -14,12 +14,14 @@ from test_candidate_search import BATCHES, CLUBS, changed
 from test_schema import OBSERVED, VALID
 from test_squad_engine import SLOTS, data_set, forge, snapshot, solve
 
-from FRS.core.squad_recommend.multi_factor_policy import ScoringPolicy
+from FRS.core.squad_recommend.multi_factor import score_multi_factor
+from FRS.core.squad_recommend.multi_factor_policy import ScoringPolicy, content_hash
 from FRS.core.squad_recommend.objective import (
     GK_PRIORITY,
     MultiFactorObjective,
     objective_spec,
 )
+from FRS.core.squad_recommend.performance import PerformanceQuery
 from FRS.core.squad_recommend.snapshot import SnapshotQuery, build_snapshot
 from FRS.core.squad_recommend.solver import (
     engine_spec,
@@ -415,3 +417,39 @@ def test_small_random_problems_match_exhaustive_lexicographic_optimum(seed):
     assert outfield >= gk_outfield - 5 and keeper >= best_keeper - 2
     assert report.total_score_units == best_score
     assert report.total_price == best_price
+
+
+def test_gk_priority_stages_disable_probing_but_ovr_mode_keeps_defaults():
+    seen = []
+    actual = cp_model.CpSolver.solve
+
+    def inspect(self, model):
+        seen.append(self.parameters.cp_model_probing_level)
+        return actual(self, model)
+
+    data = base()
+    with patch.object(cp_model.CpSolver, "solve", inspect):
+        solve(snapshot(data))
+        ovr_calls = len(seen)
+        solve(mf(data))
+    default = cp_model.CpSolver().parameters.cp_model_probing_level
+    assert seen[:ovr_calls] == [default] * ovr_calls and default != 0
+    assert seen[ovr_calls:] and set(seen[ovr_calls:]) == {0}
+
+
+def test_validated_policy_path_matches_the_public_scorer():
+    card = base()["cards"][0]
+    query = PerformanceQuery(
+        spid=card.spid, slot="GK", reinforce_level=5, when=OBSERVED
+    )
+    public = score_multi_factor(
+        query,
+        policy=POLICY,
+        expected_policy_version=POLICY.version,
+        profile_id="gk",
+        card=card,
+    )
+    assert OBJECTIVE.score(query, card=card, reinforcement=None) == public
+    # 캐시한 정책 해시는 새로 검증한 같은 내용의 해시와 같다.
+    fresh = ScoringPolicy.model_validate(POLICY.model_dump())
+    assert fresh.version == POLICY.version == content_hash(POLICY.spec())

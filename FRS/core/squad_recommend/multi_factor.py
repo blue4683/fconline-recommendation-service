@@ -206,6 +206,25 @@ def score_multi_factor(
     policy = ScoringPolicy.model_validate(policy.model_dump())
     if expected_policy_version != policy.version:
         raise ValueError("요청한 정책 버전이 제공한 내용과 다릅니다.")
+    return score_with_validated_policy(
+        query,
+        policy=policy,
+        profile_id=profile_id,
+        card=card,
+        reinforcement=reinforcement,
+    )
+
+
+def score_with_validated_policy(
+    query: PerformanceQuery,
+    *,
+    policy: ScoringPolicy,
+    profile_id: str,
+    card: PlayerCard | None,
+    reinforcement: ReinforceStats | None = None,
+):
+    """이미 검증·버전 고정한 정책으로 점수를 낸다. 많은 후보를 같은 정책으로 계산할 때
+    정책 재검증을 반복하지 않기 위한 내부 경로이며 카드·질의 검증은 그대로 한다."""
     if not isinstance(query, PerformanceQuery):
         raise TypeError("PerformanceQuery로 점수 요청을 명시해야 합니다.")
     query = PerformanceQuery.model_validate(query.model_dump())

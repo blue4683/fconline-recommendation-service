@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from functools import cached_property
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -184,8 +185,9 @@ class ScoringPolicy(Frozen):
             "missing": "exclude pair; no fallback or per-card reweighting",
         }
 
-    @property
+    @cached_property
     def version(self):
+        # 불변 모델이므로 한 번 계산한 해시를 재사용한다. 필드·비교·직렬화에는 영향 없다.
         return content_hash(self.spec())
 
 

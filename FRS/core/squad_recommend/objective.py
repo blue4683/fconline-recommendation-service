@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import Field, model_validator
 
-from FRS.core.squad_recommend.multi_factor import score_multi_factor
+from FRS.core.squad_recommend.multi_factor import score_with_validated_policy
 from FRS.core.squad_recommend.multi_factor_policy import (
     Frozen,
     ScoringPolicy,
@@ -19,6 +19,8 @@ GK_TOLERANCE = 2
 # GK 단계에서 GK를 위해 양보할 수 있는 필드 OVR 합의 최대 폭.
 GK_EXCHANGE = 15
 DEFAULT_SECONDS = 30.0
+# 단계별 CP-SAT presolve의 probing 수준. 이 모드에만 적용한다.
+PROBING_LEVEL = 0
 STAGES = ("outfield_ovr", "gk_ovr", "multi_factor", "price")
 
 Hash = Annotated[str, Field(strict=True, pattern=r"^[0-9a-f]{64}$")]
@@ -40,10 +42,10 @@ class MultiFactorObjective(Frozen):
         return next(s.profile_id for s in self.policy.slots if s.slot == slot)
 
     def score(self, query: PerformanceQuery, *, card, reinforcement):
-        return score_multi_factor(
+        # 정책은 이 객체를 만들 때 검증하고 기대 해시와 대조했다.
+        return score_with_validated_policy(
             query,
             policy=self.policy,
-            expected_policy_version=self.expected_policy_version,
             profile_id=self.profile_for(query.slot),
             card=card,
             reinforcement=reinforcement,

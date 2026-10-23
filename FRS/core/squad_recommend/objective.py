@@ -16,6 +16,9 @@ GK_PRIORITY = "gk_priority_multi_factor"
 GK_SLOT = "GK"
 OUTFIELD_TOLERANCE = 5
 GK_TOLERANCE = 2
+# GK 단계에서 GK를 위해 양보할 수 있는 필드 OVR 합의 최대 폭.
+GK_EXCHANGE = 15
+DEFAULT_SECONDS = 30.0
 STAGES = ("outfield_ovr", "gk_ovr", "multi_factor", "price")
 
 Hash = Annotated[str, Field(strict=True, pattern=r"^[0-9a-f]{64}$")]
@@ -55,7 +58,10 @@ def objective_spec(objective: MultiFactorObjective):
         stages=list(STAGES),
         outfield="sum_raw_ovr_of_non_gk_slots",
         gk_slot=GK_SLOT,
+        gk_stage="max_gk_then_outfield_within_outfield_exchange",
+        gk_exchange=GK_EXCHANGE,
         outfield_tolerance=OUTFIELD_TOLERANCE,
+        outfield_tolerance_basis="outfield_of_gk_stage",
         gk_tolerance=GK_TOLERANCE,
         multi_factor="sum_of_quantized_score_units_all_11_slots",
         price="maximum_total_price_at_proven_multi_factor_optimum",

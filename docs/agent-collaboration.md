@@ -59,6 +59,11 @@
 - WEB-V2-001(PR #157) 검토·병합: 파일 경계(frontend/와 WEB 항목)·계약 대조·최신 head CI 확인 후 2789463. 제안 반영(fix/v2-stage-order): 서버 DTO 단계 순서·중복 검사, 계약 §4·§9에 단계 값 의미·search_seconds 표기.
 - 웹 담당 요청(WEB 후속): 방식 목록 조회·선택 UI(기본 OVR·사용 가능 방식만), v2 파서와 점수/단계/정책·실험 표시, v1 파서 유지. 실제 연결 전 서버 구현 PR SHA를 이 기록에서 확인한다. 통합 담당은 frontend/를 수정하지 않는다.
 
+### INT-WEB-V2-002 — web-agent.v2 실제 관측 자료 E2E (2026-10-26)
+
+- 사용자 승인 / develop 2379b59. 리버풀 재수집 `real-data-20261023-a`(1,656회 completed) 후 `observed-web-e2e-20261026-008`: 정적 빌드 웹(5173)→Agent 8001(파일 모드·정책 해시 지정)→qwen3:8b. 같은 문장으로 OVR·다요소 각 1회 optimal, 저장 final WebFinalV2 통과, 화면에 방식·실험 표시·점수·단계 요약 표시 확인.
+- 웹 파일·WEB-* 기록은 바꾸지 않았다. 웹 자동 조회(`/health`·`/objectives`)는 각 3회였고 모델 호출이 아니다. 상세 docs/web-agent-v2-observed-e2e.md.
+
 ### WEB-V2-001 — web-agent.v2 방식 선택 화면·파서 (2026-10-23)
 
 - 날짜/담당/ID: 2026-10-23 / 웹 / WEB-V2-001. INT-WEB-V2-001에 대한 응답. 상태: 구현·로컬 검증. 병합 아님(통합 담당이 검토·병합).

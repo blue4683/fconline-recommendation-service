@@ -14,6 +14,16 @@ import {
   type SquadRow,
   type Supported,
 } from '../contracts/webAgentV1';
+import {
+  CONTRACT_VERSION_V2,
+  MULTI_FACTOR,
+  scoreText,
+  type FinalResultV2,
+  type ObjectiveId,
+  type ObjectivePolicy,
+  type ObjectiveStage,
+  type SquadV2,
+} from '../contracts/webAgentV2';
 
 export const SUPPORTED: Supported = {
   required_fields: ['price_cap', 'team_color', 'formation', 'allowed_reinforcements'],
@@ -138,6 +148,7 @@ export type ScenarioId =
   | 'expiring_soon'
   | 'selection_error'
   | 'request_deadline'
+  | 'objective_unavailable'
   | 'protocol_error'
   | 'disconnect';
 
@@ -159,6 +170,7 @@ export const SCENARIOS: ScenarioInfo[] = [
   { id: 'internal_error', label: '내부 오류' },
   { id: 'selection_error', label: '조건 추출 모델 사용 불가' },
   { id: 'request_deadline', label: '응답 기한 초과' },
+  { id: 'objective_unavailable', label: '고른 방식 사용 불가 (HTTP 409)' },
   { id: 'protocol_error', label: '잘못된 이벤트 순서' },
   { id: 'disconnect', label: '결과 전 연결 끊김' },
 ];
@@ -240,7 +252,7 @@ const FORMAT_ISSUES: ConditionIssue[] = [
   },
 ];
 
-/** 시나리오의 final payload. 'selection_error'·'request_deadline'·'protocol_error'·'disconnect'는 final이 없다. */
+/** 시나리오의 final payload(v1). 'selection_error'·'request_deadline'·'objective_unavailable'·'protocol_error'·'disconnect'는 final이 없다. */
 export function finalFor(id: ScenarioId, now: number): FinalResult | null {
   switch (id) {
     case 'optimal': {
@@ -348,6 +360,7 @@ export function finalFor(id: ScenarioId, now: number): FinalResult | null {
       };
     case 'selection_error':
     case 'request_deadline':
+    case 'objective_unavailable':
     case 'protocol_error':
     case 'disconnect':
       return null;
@@ -364,5 +377,119 @@ export function optimalWithNames(names: string[], now: number): FinalResult {
     snapshot: snapshot(now, DAY, 'mock-snap-names'),
     answer: names[0] ?? null,
     narration_source: 'template',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// web-agent.v2 모의 자료. 정책 ID·해시·점수는 모두 가상 값이며 실제 정책·선수 점수와 무관하다.
+// 실제 서버는 관측 자료 모드에서만 다요소 방식을 제공한다(합성 자료는 양발 정보가 없음).
+// 모의 응답은 표시 확인용이므로 합성 가상 리그 결과에 다요소 점수를 붙여 재생한다.
+
+export const MOCK_POLICY: ObjectivePolicy = {
+  policy_id: 'mock-multi-factor-policy',
+  version: '5f'.repeat(32),
+  status: 'experimental',
+};
+
+/** 서버 objectives_listing의 다요소 탐색 설정과 같은 모양. 값은 계약 문서 예시와 같다. */
+const MOCK_PARAMETERS = { gk_exchange: 15, outfield_tolerance: 5, gk_tolerance: 2, search_seconds: 30.0 };
+
+export type ObjectiveListingId = 'available' | 'not_configured' | 'synthetic_material' | 'policy_mismatch';
+
+export const OBJECTIVE_LISTINGS: { id: ObjectiveListingId; label: string }[] = [
+  { id: 'available', label: '두 방식 모두 사용 가능' },
+  { id: 'not_configured', label: '다요소 정책 미설정' },
+  { id: 'synthetic_material', label: '합성 자료라 다요소 불가' },
+  { id: 'policy_mismatch', label: '정책 해시 불일치' },
+];
+
+/** GET /objectives의 원시 응답(상태 코드와 본문). 화면은 실제 파서로 이 본문을 해석한다. */
+export function objectivesResponse(id: ObjectiveListingId): { status: number; body: unknown } {
+  const available = id === 'available';
+  return {
+    status: 200,
+    body: {
+      schema_version: 'agent-objectives.v1',
+      default: 'ovr',
+      objectives: [
+        { id: 'ovr', available: true, reason: null, policy: null, parameters: null },
+        {
+          id: MULTI_FACTOR,
+          available,
+          reason: available ? null : id,
+          policy: available ? { ...MOCK_POLICY } : null,
+          parameters: { ...MOCK_PARAMETERS },
+        },
+      ],
+    },
+  };
+}
+
+/** 가상 다요소 점수(0.01점 단위 정수). 행마다 다르게 정한 값이며 실제 계산 결과가 아니다. */
+function mockScoreUnits(index: number): number {
+  return 4200 + ((index * 613) % 4100);
+}
+
+function squadV2(squad: NonNullable<FinalResult['squad']>, multi: boolean): SquadV2 {
+  const rows = squad.rows.map((row, i) => {
+    const units = multi ? mockScoreUnits(i) : null;
+    return { ...row, score_units: units, score: units === null ? null : scoreText(units) };
+  });
+  const gk = rows.find((r) => r.slot === 'GK')!.raw_ovr;
+  const total = multi ? rows.reduce((a, r) => a + r.score_units!, 0) : null;
+  return {
+    ...squad,
+    rows,
+    outfield_ovr: squad.total_ovr - gk,
+    gk_ovr: gk,
+    total_score_units: total,
+    total_score: total === null ? null : scoreText(total),
+  };
+}
+
+function stagesFor(status: FinalStatus, squad: SquadV2): ObjectiveStage[] {
+  if (status === 'optimal') {
+    return [
+      { name: 'outfield_ovr', status: 'optimal', value: squad.outfield_ovr },
+      { name: 'gk_ovr', status: 'optimal', value: squad.gk_ovr },
+      { name: 'multi_factor', status: 'optimal', value: squad.total_score_units },
+    ];
+  }
+  // 가능해: 필드 단계만 증명하고 GK 단계는 시간 안에 증명하지 못했으며 다요소 단계는 실행하지 않은 경우.
+  return [
+    { name: 'outfield_ovr', status: 'optimal', value: squad.outfield_ovr },
+    { name: 'gk_ovr', status: 'incomplete', value: squad.gk_ovr },
+    { name: 'multi_factor', status: 'not_run', value: null },
+  ];
+}
+
+const MULTI_ANSWER: Partial<Record<FinalStatus, string>> = {
+  optimal: `합성 가상 자료 기준으로 필드 우선·GK 단계와 실험 다요소 점수(${MOCK_POLICY.policy_id})로 11명을 검증했고 단계별 최적성을 확인했습니다.`,
+  feasible: `합성 가상 자료 기준으로 필드 우선·GK 단계와 실험 다요소 점수(${MOCK_POLICY.policy_id})로 조건을 만족하는 11명을 검증했지만 모든 단계의 최적성은 확인하지 못했습니다.`,
+};
+
+/** 시나리오의 v2 final payload. */
+export function finalForV2(id: ScenarioId, now: number, objective: ObjectiveId): FinalResultV2 | null {
+  const v1 = finalFor(id, now);
+  return v1 === null ? null : withObjective(v1, objective);
+}
+
+/** v1 모의 결과에 방식·필드/GK OVR·(다요소일 때) 가상 점수와 단계를 더해 v2 payload로 만든다. */
+export function withObjective(v1: FinalResult, objective: ObjectiveId): FinalResultV2 {
+  const multi = objective === MULTI_FACTOR;
+  const squad = v1.squad === null ? null : squadV2(v1.squad, multi);
+  const success = v1.status === 'optimal' || v1.status === 'feasible';
+  const answer = multi && success && v1.answer !== null ? (MULTI_ANSWER[v1.status] ?? v1.answer) : v1.answer;
+  return {
+    ...v1,
+    versions: { ...v1.versions, web_contract: CONTRACT_VERSION_V2 },
+    squad,
+    answer,
+    narration_source: answer !== v1.answer ? 'template' : v1.narration_source,
+    objective: {
+      id: objective,
+      policy: multi ? { ...MOCK_POLICY } : null,
+      stages: multi && success && squad ? stagesFor(v1.status, squad) : [],
+    },
   };
 }

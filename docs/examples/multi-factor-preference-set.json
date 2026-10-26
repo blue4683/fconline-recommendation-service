@@ -1,0 +1,146 @@
+{
+  "schema_version": "mf-preference-set.v1",
+  "set_id": "synthetic-mf2-example",
+  "material": {
+    "source": "synthetic",
+    "player_card_batch": "synthetic-mf2",
+    "reinforce_stats_batch": null,
+    "reference_time": "2026-01-01T00:00:00Z"
+  },
+  "policies": [
+    {
+      "policy_id": "draft-core-stat-foot-20261022",
+      "version": "7df0b5607406d4a89da82086feb88c18b0d3a3924fd9d3b1fbc7db85d1b5a0fc"
+    }
+  ],
+  "pairs": [
+    {
+      "pair_id": "tune-01",
+      "split": "tuning",
+      "slot": "ST",
+      "a": {
+        "card": {
+          "spid": 900000101,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "b": {
+        "card": {
+          "spid": 900000102,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "judgments": [
+        {
+          "judge_id": "synthetic-rule-1",
+          "judge_kind": "synthetic",
+          "verdict": "prefer_b",
+          "basis": "ability",
+          "rationale": "가상 규칙: 약발 5 카드를 선호",
+          "play_style": "가상 성향: 양발 활용 우선",
+          "judged_at": "2026-01-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "pair_id": "tune-02",
+      "split": "tuning",
+      "slot": "RS",
+      "a": {
+        "card": {
+          "spid": 900000103,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "b": {
+        "card": {
+          "spid": 900000104,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "judgments": [
+        {
+          "judge_id": "synthetic-rule-1",
+          "judge_kind": "synthetic",
+          "verdict": "prefer_b",
+          "basis": "ability",
+          "rationale": "가상 규칙: 약발 2 카드를 피함",
+          "play_style": "가상 성향: 양발 활용 우선",
+          "judged_at": "2026-01-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "pair_id": "hold-01",
+      "split": "holdout",
+      "slot": "ST",
+      "a": {
+        "card": {
+          "spid": 900000105,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "b": {
+        "card": {
+          "spid": 900000106,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "judgments": [
+        {
+          "judge_id": "synthetic-rule-1",
+          "judge_kind": "synthetic",
+          "verdict": "prefer_a",
+          "basis": "ability",
+          "rationale": "가상 규칙: 약발 4 이상을 선호",
+          "play_style": "가상 성향: 양발 활용 우선",
+          "judged_at": "2026-01-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "pair_id": "hold-02",
+      "split": "holdout",
+      "slot": "ST",
+      "a": {
+        "card": {
+          "spid": 900000107,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "b": {
+        "card": {
+          "spid": 900000108,
+          "batch_id": "synthetic-mf2",
+          "version": "synthetic-mf2-v1"
+        },
+        "reinforce_level": 5
+      },
+      "judgments": [
+        {
+          "judge_id": "synthetic-rule-1",
+          "judge_kind": "synthetic",
+          "verdict": "undecidable",
+          "basis": "ability",
+          "rationale": "가상 규칙: 차이를 판단하지 않음",
+          "play_style": "가상 성향: 양발 활용 우선",
+          "judged_at": "2026-01-01T00:00:00Z"
+        }
+      ]
+    }
+  ]
+}

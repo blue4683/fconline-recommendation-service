@@ -112,6 +112,7 @@ class SquadAgent:
                     t0=t0,
                     clock=dependencies.clock,
                     fixed_salary_cap=dependencies.fixed_salary_cap,
+                    objective=dependencies.objective,
                     **material,
                 ),
                 "stages": state["stages"] + ("build",),

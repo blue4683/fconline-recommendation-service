@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import type { Squad } from '../contracts/webAgentV1';
+import type { Squad, SquadRow } from '../contracts/webAgentV1';
+import type { SquadV2 } from '../contracts/webAgentV2';
 import { formatScore, groupDigits } from '../utils/format';
 
-/** 서버가 확정한 행과 합계를 그대로 표시한다. 정렬·재계산하지 않는다. */
-defineProps<{ squad: Squad }>();
+/**
+ * 서버가 확정한 행과 합계를 그대로 표시한다. 정렬·재계산하지 않는다.
+ * scores는 다요소 방식 결과에서만 켠다. 점수는 서버 문자열(score·total_score)을 그대로 보인다.
+ */
+const props = defineProps<{ squad: Squad | SquadV2; scores?: boolean }>();
+
+function rowScore(row: SquadRow): string {
+  return 'score' in row && typeof row.score === 'string' ? row.score : '';
+}
+
+function totalScore(): string {
+  const s = props.squad;
+  return 'total_score' in s && typeof s.total_score === 'string' ? s.total_score : '';
+}
 </script>
 
 <template>
@@ -17,6 +30,7 @@ defineProps<{ squad: Squad }>();
           <th scope="col" class="num">강화</th>
           <th scope="col" class="num">OVR</th>
           <th scope="col" class="num">성능</th>
+          <th v-if="scores" scope="col" class="num">다요소 점수</th>
           <th scope="col" class="num">가격 (BP)</th>
           <th scope="col" class="num">급여</th>
           <th scope="col">배치</th>
@@ -32,6 +46,7 @@ defineProps<{ squad: Squad }>();
           <td class="num">{{ row.reinforce_level }}강</td>
           <td class="num">{{ row.raw_ovr }}</td>
           <td class="num">{{ formatScore(row.performance) }}</td>
+          <td v-if="scores" class="num" data-testid="row-score">{{ rowScore(row) }}</td>
           <td class="num" data-testid="row-price">{{ groupDigits(row.price) }}</td>
           <td class="num" data-testid="row-salary">{{ groupDigits(row.salary) }}</td>
           <td>{{ row.placement_type === 'base' ? '기본' : row.placement_type }}</td>
@@ -42,6 +57,7 @@ defineProps<{ squad: Squad }>();
           <th scope="row" colspan="3">합계</th>
           <td class="num" data-testid="total-ovr">{{ squad.total_ovr }}</td>
           <td class="num">{{ formatScore(squad.performance) }}</td>
+          <td v-if="scores" class="num" data-testid="total-score">{{ totalScore() }}</td>
           <td class="num" data-testid="total-price">{{ groupDigits(squad.total_price) }}</td>
           <td class="num" data-testid="total-salary">{{ groupDigits(squad.total_salary) }}</td>
           <td />

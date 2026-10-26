@@ -13,6 +13,10 @@ from FRS.core.candidate_search.search import (
     CandidateQuery,
     candidate_search,
 )
+from FRS.core.squad_recommend.objective import (
+    MultiFactorObjective,
+    objective_spec,
+)
 from FRS.core.squad_recommend.performance import (
     PerformanceQuery,
     performance_spec,
@@ -181,11 +185,19 @@ def build_snapshot(
     reinforcements: Iterable[ReinforceStats],
     team_colors: Iterable[TeamColor],
     supported_clubs=PRIORITY_CLUBS,
+    objective: MultiFactorObjective | None = None,
 ):
-    """전달 자료만 사용한다. DB 일관 읽기·팀 합계 제약·11인 탐색은 수행하지 않는다."""
+    """전달 자료만 사용한다. DB 일관 읽기·팀 합계 제약·11인 탐색은 수행하지 않는다.
+
+    objective가 없으면 기존 OVR 스냅샷과 같은 bytes를 만든다.
+    """
     if not isinstance(query, SnapshotQuery):
         raise TypeError("SnapshotQuery로 요청을 명시해야 합니다.")
     query = SnapshotQuery.model_validate(query.model_dump())
+    if objective is not None:
+        if not isinstance(objective, MultiFactorObjective):
+            raise TypeError("MultiFactorObjective로 목적을 명시해야 합니다.")
+        objective = MultiFactorObjective.model_validate(objective.model_dump())
     if query.team_color not in supported_clubs:
         raise ValueError("지원하지 않는 클럽입니다.")
     # 호출자의 generator는 각각 한 번만 순회하고 중첩 필드까지 재검증·복사한다.
@@ -263,6 +275,29 @@ def build_snapshot(
                         )
                     )
                     continue
+                extra = {}
+                if objective is not None:
+                    scored = objective.score(
+                        PerformanceQuery(**pair),
+                        card=candidate.card,
+                        reinforcement=candidate.reinforcement,
+                    )
+                    if scored.exclusion is not None:
+                        # 다요소 제외를 OVR로 대신하지 않고 관측도 기한에 넣지 않는다.
+                        exclusions.append(
+                            dict(
+                                spid=spid,
+                                reinforce_level=level,
+                                slot=slot,
+                                resource="multi_factor",
+                                reason=scored.exclusion,
+                            )
+                        )
+                        continue
+                    extra = dict(
+                        score_units=scored.score_units,
+                        score_input_version=scored.input_version,
+                    )
                 documents = _documents(candidate)
                 for resource, row in documents.items():
                     used[(resource, _canonical(row.model_dump(mode="json")))] = row
@@ -280,6 +315,7 @@ def build_snapshot(
                             r: row.model_dump(mode="json")
                             for r, row in documents.items()
                         },
+                        **extra,
                     )
                 )
     rows = tuple(used.values())
@@ -297,6 +333,8 @@ def build_snapshot(
         model_version=None,
         **policy,
     )
+    if objective is not None:
+        metadata["objective"] = objective_spec(objective)
     return RequestSnapshot(
         _canonical(
             dict(

@@ -1,4 +1,8 @@
 import type { StreamRequest } from '../contracts/webAgentV1';
+import type { StreamRequestV2 } from '../contracts/webAgentV2';
+
+/** v1·v2 요청. 응답 envelope는 요청과 같은 계약 버전이어야 한다. */
+export type AnyStreamRequest = StreamRequest | StreamRequestV2;
 
 export type TransportMode = 'mock' | 'live';
 
@@ -8,6 +12,8 @@ export class TransportError extends Error {
     readonly kind: 'network' | 'http' | 'content_type' | 'no_body',
     message: string,
     readonly status?: number,
+    /** 스트림 전 거절 본문의 detail.code. 409에서만 읽으며 화면 안내 구분에만 쓴다. */
+    readonly code?: string,
   ) {
     super(message);
     this.name = 'TransportError';
@@ -21,5 +27,5 @@ export class TransportError extends Error {
  */
 export interface Transport {
   readonly mode: TransportMode;
-  open(request: StreamRequest, signal: AbortSignal): Promise<ReadableStream<Uint8Array>>;
+  open(request: AnyStreamRequest, signal: AbortSignal): Promise<ReadableStream<Uint8Array>>;
 }

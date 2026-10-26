@@ -1,7 +1,8 @@
 import { computed, onBeforeUnmount, ref, shallowRef } from 'vue';
 import { MAX_MESSAGE_CODE_POINTS, type ProgressPayload } from '../contracts/webAgentV1';
 import { codePointLength, isBlank } from '../utils/format';
-import { buildRequest, runStream, type Outcome } from './agentSession';
+import type { ObjectiveId } from '../contracts/webAgentV2';
+import { buildRequestV2, runStream, type Outcome } from './agentSession';
 import type { Transport } from './transport';
 
 export type Phase = 'idle' | 'running' | 'done';
@@ -61,7 +62,8 @@ export function useRecommendation(options: RecommendationOptions = {}) {
     return phase.value !== 'running' && !isBlank(message) && codePointLength(message) <= MAX_MESSAGE_CODE_POINTS;
   }
 
-  async function send(message: string, transport: Transport): Promise<void> {
+  /** web-agent.v2로 보낸다. 방식은 화면에서 사용자가 고른 값이며 실패해도 다른 방식으로 바꿔 보내지 않는다. */
+  async function send(message: string, transport: Transport, objective: ObjectiveId): Promise<void> {
     if (!canSend(message)) return;
     const mine = ++generation;
     controller?.abort();
@@ -73,7 +75,7 @@ export function useRecommendation(options: RecommendationOptions = {}) {
     outcome.value = null;
     expired.value = false;
 
-    const request = buildRequest(message);
+    const request = buildRequestV2(message, objective);
     lastRequestId.value = request.request_id;
     const result = await runStream(transport, request, controller.signal, {
       onStarted: () => {

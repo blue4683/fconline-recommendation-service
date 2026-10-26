@@ -30,6 +30,8 @@ from FRS.utils.crawling.realdata_catalog import (
     ELIGIBILITY_BASIS,
     LIST_CAP,
     MIXED_ELIGIBILITY_BASIS,
+    OVR_MAX,
+    OVR_MIN,
     ClubSpec,
     NationSpec,
     RealDataRun,
@@ -259,6 +261,7 @@ def replay(
             positions=positions,
             position_field=position_field,
             allow_empty_cells=allow_empty_cells,
+            split_ovr=state.get("split_ovr", False),
             clock=clock,
             timing_version=timing_version(state),
         )
@@ -323,18 +326,52 @@ def _club_names(state):
     return dict(zip(ids, state["clubs"], strict=True))
 
 
+def check_ovr_leaves(state, leaves, split_rows):
+    """OVR로 나눈 칸: 범위가 0~200을 빈틈·겹침 없이 덮고, 카드가 겹치지 않으며,
+    나눈 칸의 카드는 모두 그 범위 안의 마지막 칸에서 다시 보여야 한다."""
+    groups = {}
+    for cell, rows in leaves.items():
+        if cell[4] is not None:
+            groups.setdefault(cell[:4], []).append((cell[4], rows))
+    require(
+        bool(groups) <= bool(state.get("split_ovr")),
+        "OVR 분할을 쓰지 않은 실행에 OVR 범위 칸이 있습니다",
+    )
+    for group, items in groups.items():
+        items.sort()
+        edge = OVR_MIN
+        seen = set()
+        for (low, high), rows in items:
+            require(low == edge and low <= high, f"{group}: OVR 칸이 비거나 겹칩니다")
+            require(not seen & rows, f"{group}: OVR 칸끼리 같은 카드가 있습니다")
+            seen |= rows
+            edge = high + 1
+        require(edge == OVR_MAX + 1, f"{group}: OVR 범위를 다 덮지 않습니다")
+    for cell, rows in split_rows.items():
+        if cell[3] is None:
+            continue  # 급여 칸 분할은 포지션 칸의 잘림 때문에 포함 관계를 보장하지 않는다.
+        low, high = cell[4] or (OVR_MIN, OVR_MAX)
+        inner = set()
+        for (low2, high2), found in groups.get(cell[:4], ()):
+            if low <= low2 and high2 <= high:
+                inner |= found
+        require(rows <= inner, f"{cell[:4]}: 나눈 OVR 칸의 카드가 아래 칸에 없습니다")
+
+
 def check_independently(
     state, report, bodies, processed_path, position_field, allow_empty_cells=False
 ):
     """3단계. 주 파서 없이 원본에서 읽은 값으로 분할·카드·능력치·파생을 대조한다."""
     names = _club_names(state)
-    split = {
-        (s["club"], s["low"], s["high"], s["position"]) for s in state["split_log"]
-    }
-    truncated = {
-        (t["club"], t["low"], t["high"], t["position"])
-        for t in state["truncated_cells"]
-    }
+
+    def logged(item):
+        # OVR 범위는 범위 칸의 기록에만 있다. 없으면 범위 없는 칸이다.
+        ovr = (item["ovr_low"], item["ovr_high"]) if "ovr_low" in item else None
+        return (item["club"], item["low"], item["high"], item["position"], ovr)
+
+    split = {logged(s) for s in state["split_log"]}
+    truncated = {logged(t) for t in state["truncated_cells"]}
+    split_rows = {}
     leaves = {}
     catalog = set()
     memberships = set()  # (클럽 이름, spid). 여러 클럽 경력 카드는 클럽마다 하나씩
@@ -342,6 +379,7 @@ def check_independently(
     lists = [e for e in state["responses"] if e["resource"] == "player_list"]
     # 포지션 칸이 아니면 폼의 포지션 값은 저장된 템플릿 값 그대로다.
     blank = lists[0]["form"].get(position_field) if position_field else None
+    full = (lists[0]["form"].get("n4OvrMin"), lists[0]["form"].get("n4OvrMax"))
     for entry, body in zip(state["responses"], bodies, strict=True):
         form = entry["form"]
         if entry["resource"] == "ability":
@@ -351,11 +389,13 @@ def check_independently(
         if form["n1Strong"] != "5":
             continue  # 11강 급여 대조 요청. 카드 목록에 넣지 않는다.
         position = form.get(position_field) if position_field else None
+        span = (form.get("n4OvrMin"), form.get("n4OvrMax"))
         cell = (
             names[_team_ids(form)],
             int(form["n4SalaryMin"]),
             int(form["n4SalaryMax"]),
             None if position == blank else position,
+            None if span == full else (int(span[0]), int(span[1])),
         )
         rows = set(ROW_ID.findall(body))
         if not rows and not allow_empty_cells:
@@ -365,6 +405,7 @@ def check_independently(
             )
         if cell in split:
             require(len(rows) == LIST_CAP, "200장이 아닌 칸을 나눴습니다")
+            split_rows[cell] = rows
             continue
         require(
             len(rows) < LIST_CAP or cell in truncated,
@@ -375,12 +416,13 @@ def check_independently(
         memberships |= {(cell[0], int(spid)) for spid in rows}
     for club in state["clubs"]:
         # 포지션으로 나눈 칸은 같은 급여 한 값을 공유하므로 급여 범위로만 덮음을 본다.
-        spans = sorted({(low, high) for name, low, high, _ in leaves if name == club})
+        spans = sorted({(low, high) for name, low, high, *_ in leaves if name == club})
         edge = BANDS[0][0]
         for low, high in spans:
             require(low == edge and low <= high, f"{club}: 급여 칸이 비거나 겹칩니다")
             edge = high + 1
         require(edge == BANDS[-1][1] + 1, f"{club}: 급여 범위를 다 덮지 않습니다")
+    check_ovr_leaves(state, leaves, split_rows)
     require(len(catalog) == report["catalog_cards"], "목록 카드 수가 다릅니다")
 
     cards = {

@@ -25,8 +25,8 @@
 | 웹 계약 | web-agent.v0 구현/검증: agent-http-sse-contract.md·INT-022~025. 실제 브라우저3사례 확인·검증용 서버 종료 |
 | 실제 기존 API | GET /health, GET /cards/{spid}, POST /recommend/position. 채팅/스쿼드 스트림 아님 |
 | 보호 경로 | 웹은 frontend/ 웹 파일과 자기 WEB-* 기록만 수정. frontend/AGENTS.md·FRS/·기존 tests/·공통 설정 등은 읽기 전용 |
-| 검증 기준 | Python 필수 검사 유지. W5#84 통합 기준Python1,492·웹 Node22/타입·108테스트·빌드 통과. 웹CI 미구축. W6 문서에서 새로 실행한 수치가 아님 |
-| 구현된 자동 보호 | Python CI만 존재. 경로 자동 차단/웹 CI·파일 권한 격리는 미구축 |
+| 검증 기준 | Python 필수 검사 유지. 웹 CI 후속(INT-CI-001): 로컬Python2,089·웹 Node22.23.3/npm10.9.9·타입/129테스트/빌드 통과. 최신 head의 Python/웹 CI 결과는 해당 PR에서 확인 |
+| 구현된 자동 보호 | Python CI와 별도 웹 CI. 경로 자동 차단·파일 권한 격리는 미구축. CI는 실제 브라우저/모델 E2E나 브랜치 보호 설정을 대신하지 않음 |
 | 데이터/실행 | 합성 Agent MVP 우선. 1-D/1-F 미완료, 새 수집·실모델 실행/비용·외부 tracing 승인 확대 없음 |
 
 ## 계약·환경 확인 대기
@@ -37,12 +37,122 @@
 | WEB-001 | Node/npm·Vue/Vite/TypeScript·테스트 도구 버전과 설치/검증 명령 | 웹 | 구현. 버전 고정·명령은 아래 WEB-001과 frontend/README. 웹 CI 추가는 INT-004 대기 |
 | INT-002 | 경로·주소/origin·CORS·실행/준비 상태 | 통합 | 별도 합성 앱/8001·origin2개/readiness·임시 실제 연결 검증(INT-023~025). 검증용 서버 종료 |
 | INT-003 | 동시 실행·중복·취소·시간 상한/재시도 정책 | 통합 | 동시1/대기0/초과409·150초/보수적 종료 구현(INT-023). ID 상관관계만·중복 억제 없음·재시도0 |
-| INT-004 | mock/live 계약 검사·보호 경로 확인·웹 CI 구성 | 통합 | 웹 도구/스크립트 확정 후 별도 구현/검증. 현재 자동 차단 없음 |
+| INT-004 | mock/live 계약 검사·보호 경로 확인·웹 CI 구성 | 통합 | 기존 가상 fixture 검사와 웹 CI는 INT-CI-001. 최신 백엔드 fixture 재생성·경로 자동 차단은 별도 후속 |
 | INT-005 | 실제 합성 Agent 연결과 최종 만료/설명 검사 | 통합 | W1~W4 백엔드 구현 후 엔드포인트·PR·SHA·합성 대조 결과 공유 |
 
 위 표의 ID는 추적 키다. 표에 항목이 있다고 요청이 확인/실행된 것은 아니다. 상세 갱신은 아래 기록에 남긴다.
 
 ## 진행·변경·질문 기록
+
+### INT-MF3-BENCH-001 — GK 우선 모드 독립 합성 진단과 상태 오류 수정 (2026-10-23)
+
+- 사용자 병행 작업 요청 / 시작 developced4573, 최신 공용 기록·웹 설계도 확인. 웹 담당의 frontend/와 WEB-*를 보존하며 별도 [24문제 합성 진단](gk-priority-synthetic-benchmark.md)을 구현한다. 작업 중 외부 병합된 #157과 #158/develop6b22b2c를 기반에 포함했다. 웹 PR의 병합은 이 작업에서 수행하지 않았다.
+- 3포메이션·강화3종·예산2종18문제, 급여 하한 증명3문제, 독립 Fraction/전수 대조3문제를 두 모드에서 비교한다. 같은 후보 풀·기준 해/급여 증명·자료/질의/스냅샷/정책/소스 해시·실패 보존·명시 CLI·소켓 차단·별도 지연 분모다. 실제 관측·판단·모델·DB·.env·서버/브라우저·수집·배포는 사용하지 않는다.
+- 수정 전001의 급여 부족3문제에서 GK 모드 internal_error를 재현했다. 선택 해 없이 종료할 때 strict zip 길이 불일치가 원인이다. 해당 경로만 수정하고 INFEASIBLE/UNKNOWN/모델 오류 회귀3개를 추가했다. 목적·가중치·15/5/2·시간/스레드·OVR/v1/v2 계약은 유지한다.
+- 수정 후002는24완료·불일치0. 두 모드 주 목적 optimal21/해 없음3, 가격 optimal은 OVR21·GK14(나머지7 미완료), 전수3문제 모두 단계/점수/가격 일치. 해 존재18문제 요청 p50/p95: OVR0.098/2.675초·GK0.192/30.241초. 운영 SLA/선호 개선·D6 대체 판정이 아니며 criteria/passed=null. 두 실행24자료/질의/스냅샷 동일, 원본 실행은 Git 제외 보존한다.
+- 신규14/전체pytest2,191·Ruff·문서/diff 확인. 최신 PR head CI는 실제 상태로 확인하며 master#143 초안/충돌·종료 실행/기한·타 담당 체크아웃을 보존한다.
+
+### INT-WEB-V2-001 — web-agent.v2 방식 선택 계약과 웹 변경 요청 (2026-10-23)
+
+- 사용자 결정 / develop898cb64 기반. 계약 docs/web-agent-v2-contract.md: `GET /objectives`(agent-objectives.v1), v2 요청 `objective` 필수, v2 final의 `objective`·`squad.outfield_ovr/gk_ovr/total_score_units/total_score`·`rows[].score_units/score`. v1 요청·응답 bytes 유지.
+- 서버 구현(feat/web-agent-v2): v2 요청/응답·`GET /objectives`·409·정책 설정 env. v1 사양 해시·응답 불변 확인, 합성25개·전체2,175 통과. 계약 §8. 병합 SHA는 PR 병합 후 이 기록을 기준으로 확인한다.
+- WEB-V2-001(PR #157) 검토·병합: 파일 경계(frontend/와 WEB 항목)·계약 대조·최신 head CI 확인 후 2789463. 제안 반영(fix/v2-stage-order): 서버 DTO 단계 순서·중복 검사, 계약 §4·§9에 단계 값 의미·search_seconds 표기.
+- 웹 담당 요청(WEB 후속): 방식 목록 조회·선택 UI(기본 OVR·사용 가능 방식만), v2 파서와 점수/단계/정책·실험 표시, v1 파서 유지. 실제 연결 전 서버 구현 PR SHA를 이 기록에서 확인한다. 통합 담당은 frontend/를 수정하지 않는다.
+
+### INT-WEB-V2-002 — web-agent.v2 실제 관측 자료 E2E (2026-10-26)
+
+- 사용자 승인 / develop 2379b59. 리버풀 재수집 `real-data-20261023-a`(1,656회 completed) 후 `observed-web-e2e-20261026-008`: 정적 빌드 웹(5173)→Agent 8001(파일 모드·정책 해시 지정)→qwen3:8b. 같은 문장으로 OVR·다요소 각 1회 optimal, 저장 final WebFinalV2 통과, 화면에 방식·실험 표시·점수·단계 요약 표시 확인.
+- 웹 파일·WEB-* 기록은 바꾸지 않았다. 웹 자동 조회(`/health`·`/objectives`)는 각 3회였고 모델 호출이 아니다. 상세 docs/web-agent-v2-observed-e2e.md.
+
+### WEB-V2-001 — web-agent.v2 방식 선택 화면·파서 (2026-10-23)
+
+- 날짜/담당/ID: 2026-10-23 / 웹 / WEB-V2-001. INT-WEB-V2-001에 대한 응답. 상태: 구현·로컬 검증. 병합 아님(통합 담당이 검토·병합).
+- 기준: develop `ced4573`(PR #156, 서버 v2 병합). 작업 브랜치 `feat/web-agent-v2-ui`, 별도 작업 트리. web-agent-v2-contract.md §2~§8, FRS/api/agent_contract.py·agent_events.py·agent_runtime.py·agent_app.py, tests/test_web_agent_v2.py를 읽기 전용으로 확인했다.
+- 변경(frontend/와 이 항목만):
+  1. `contracts/agentObjectives.ts`: `GET /objectives`(agent-objectives.v1) 엄격 파서. 두 방식 각1회, 기본 `ovr`, available⇔사유 없음, OVR은 정책·설정 없음·`agent_unavailable`만, 다요소는 설정 필수·사용 가능일 때만 정책, `agent_unavailable`⇔HTTP 503. `/health`(agent-health.v2) 처리는 그대로다.
+  2. `contracts/webAgentV2.ts`: 서버 WebFinalV2처럼 v2 필드를 떼어 v1 `parseFinal`을 그대로 거친 뒤 점수 표기(`score`=`score_units`의 BigInt 두 자리 표기)·행 합계·`total_score`·GK 1명/`gk_ovr`·필드+GK=OVR 합·방식별 정책/단계·비성공 단계 없음·다요소 성공 단계3개를 검사한다. 모르는 필드는 거부한다. envelope도 `web-agent.v2`만 받는다. v1 파서는 envelope 공통 함수로 나눈 것 외에 동작이 같다.
+  3. 세션: 요청 버전에 맞는 파서를 쓰고, v2 final의 방식이 요청과 다르면 프로토콜 오류다. live 전송은 409 본문의 `detail.code`만 읽어 `objective_unavailable`과 그 밖의 409(사용 중)를 구분한다. 재시도·OVR 대체 전송 없음.
+  4. 화면: 추천 방식 선택(기본 OVR, 사용 불가 방식은 끄고 사유 표시, 다요소는 "실험"·정책 ID·해시 앞자리·고정 탐색 설정 표시). 고른 방식이 목록에서 사용 불가가 되면 선택을 바꾸지 않고 보내기를 막는다. 목록 조회 실패도 보내기를 막는다. 결과에 방식·정책, 필드/GK OVR 합, 다요소일 때만 선수별 점수 열·합계(서버 문자열), 단계 요약(필드 OVR 최대·GK OVR·다요소 합, 최적 확인/시간 내 미확정/실행 안 함)을 보인다. OVR 표시·만료·관측/합성 문구는 유지한다.
+  5. 앱의 실제·모의 요청을 v2로 바꿨다. 이 때문에 기존 화면 테스트 중 v1 envelope를 직접 보내던 것과 v1 기록을 화면에 재생하던 것은 v2 envelope·v2 기록으로 옮겼다. v1 파서·세션·health·거절 테스트는 그대로 통과한다.
+  6. 대조 기록: `frontend/tests/fixtures/generate_backend_v2_fixture.py`가 실제 앱을 TestClient·합성 리그·선택 대역·저장소 예제 정책으로 호출한다(소켓 차단, 양발·신체는 tests/test_web_agent_v2.py와 같은 가상 값). SSE10·거절5(409 objective_unavailable 2·422 3)·/objectives5건, 두 번 생성한 바이트가 같다. 모의 자료의 다요소 점수·정책 ID·해시는 가상 값이다.
+- 웹 쪽 해석(서버 DTO보다 좁게 받는 부분): 다요소 성공의 단계 이름이 `outfield_ovr→gk_ovr→multi_factor` 순서여야 한다(서버 DTO는 개수만 검사, solver·테스트는 이 순서). 목록의 `default`는 `ovr`만 받는다. 단계 값은 그 단계의 목표값으로 보고 최종 합과 대조하지 않는다(기록에서 필드 단계1023·최종 필드1020처럼 다를 수 있음).
+- 통합 담당에게 제안(서버 수정 요청 아님, 필요 시 판단): 단계 순서·이름 중복을 서버 DTO에서도 검사하면 양쪽 검사가 같아진다. 계약 문서에 "단계 값은 단계 시점 값이며 최종 합과 다를 수 있음"과 `parameters.search_seconds`가 실수(30.0)로 직렬화됨을 적어 두면 좋다. 서버 계약의 오류는 찾지 못했다.
+- 검증(로컬, ced4573 기준): Node 22.23.3·npm 10.9.9(Homebrew node@22, CI 고정값과 같음)로 `npm ci`·typecheck·Vitest 8개 파일 245개(기존129 유지·조정 + 신규116)·build 통과. lock·engines 변경 없음. 루트 Python 3.11.15 pytest 2,175개·`ruff check`·`ruff format --check` 통과(새 생성기 포함). 미실행: 실제 서버·모델·브라우저 E2E, headless 화면 확인, PR의 원격 CI(PR에서 확인).
+- 영향 경로·호환성: frontend/ 하위와 이 WEB-V2-001 항목만 변경. FRS/·tests/·scripts/·CI·Docker·루트 설정·frontend/AGENTS.md·설계 문서·다른 WEB/INT 항목 변경 없음. 이전 서버(`/objectives` 없음)에 연결하면 목록 확인 실패로 보내기를 막는다(v1 대체 전송 없음).
+- 다음 담당: 통합 담당. PR 검토·CI 확인·병합, 필요하면 위 제안 반영. 실제 관측 모드 연결 확인은 별도 실행 범위다.
+
+### INT-MF3-004 — GK 우선 모드 지연 단축 (2026-10-23)
+
+- 사용자 요청. 프로파일 후 정책 해시 캐시·검증 정책 점수 경로·이 모드만 probing 0. 지배 후보 제거·선형/생략 가격 상한·at-most-one·멀티스레드·대칭 끄기는 효과 없음 또는 불안정으로 미채택.
+- 9개 조건 결과 값 동일, 기준 3클럽 전체 시간 약 절반. OVR 모드 설정·결과 불변. 계약 §9. 독립 검증의 이중 재읽기는 유지.
+
+### INT-MF3-003 — 실데이터 비교와 GK 양보폭·탐색 시간 결정 (2026-10-23)
+
+- 실데이터 오프라인 비교 mf3-real-compare-20261023-001(읽기 전용·소켓 차단·해시 불변): 필드 고정 GK 단계가 GK OVR 66~93으로 떨어지고 10초 내 단계 미완료. 진단 교환 곡선 제시 후 사용자 결정: GK 단계 필드≥F*−15 안 GK 최대(동점 필드 최대), 다요소 허용폭 기준을 그 필드값으로, 이 모드만 30초.
+- 계약 §1~3·§7 갱신. 구현·재비교는 별도 기능 PR.
+- 구현(feat/gk-exchange-stage): 합성35개·전체pytest2,148·Ruff 통과, 재비교002 3클럽 모두 최적·GK 122~125·필드 +4~+10. 계약 §8. API/웹 노출·기본 모드·가중치·새 수집·모델·DB 쓰기·배포 없음.
+
+### INT-MF3-002 — 필드 우선·GK 단계·다요소 보조 목적 결정 (2026-10-23)
+
+- 사용자 결정 / develop92b5ec2 기반. MF-2 파일럿 결과를 근거 범위(OVR 근접 쌍)로 해석해 다요소를 OVR 근접 해 사이의 보조 기준으로 쓴다. GK는 사용자 운용(필드 우선, 남은 급여로 GK)에 맞춰 단계로 분리한다. 허용폭 필드합 −5·GK −2, 마지막 단계 사용액 최대.
+- MF3-D1 명시 core-stat-foot 정책, D2 OVR 없는 후보 제외 유지, D3/D4 위 4단계 사전식 목적, D5 wire 미노출, D6 엔진·검증·합성까지·명시 선택만. 계약 docs/mf3-gk-priority-objective.md. 구현은 별도 기능 PR.
+- 실제 관측 비교·API/웹 노출·기본 모드 변경·가중치 조정·새 수집·모델·DB 쓰기·배포 없음.
+- 구현(feat/gk-priority-objective): 목적 모듈·스냅샷/검증기/탐색기 연결·합성32개·전체pytest2,145·Ruff 통과. OVR 모드 bytes/사양/dump 불변, 코드 출력은 다른 목적 거부. 상세 계약 §6.
+
+### INT-MF3-001 — 다요소 엔진 연결 전 영향 분석 (2026-10-23)
+
+- 사용자 요청 / 기준 develop6446504ce4cb42614b2ff2de21df1a054ca24f2d. MF-2 실제 선호 평가는 다른 담당이 수행하며 자료/판단/보고서를 열거나 수정하지 않는다. [영향 분석](multi-factor-integration-impact.md)에 현재 사실·제안·결정 대기를 나눠 기록한다. 상대 수신/확인을 주장하지 않는다.
+- 스냅샷/후보·주/가격 보조 목적·성능 탐욕·경계/간극·독립 검증·버전 전파·build/Agent·코드 출력/HTTP/SSE/MCP·웹 parser/표시·합성 생성/전수 오라클의 변경 지점을 현재 코드와 대조했다. 기존 OVR 계약과0.5단위 웹 경계에 MF-1의0.01점 값을 그대로 넣을 수 없으며, 벤치마크 능력치/합성 Agent 양발 준비가 별도임을 확인했다.
+- MF3-D1~D6은 정책/체형·OVR 없는 후보·주 목적/역할 합산·가격 동점·wire 범위·적용/실행의 미확정 목록이다. 새 결정 채택·가중치 조정·MF-3 구현으로 표시하지 않는다. 선행 결정별 구현 순서와 합성 회귀 행렬은 제안이다.
+- 문서·링크·소스 심볼/경로·diff·기능 파일 무변경을 확인한다. 로컬 기능 테스트/엔진/벤치마크는 문서 변경이라 실행하지 않는다. 실제 관측/모델/DB/.env 미조회, 새 수집·모델/metadata·학습·DB 쓰기·서버/브라우저·배포0. 기존 운영/잠금/기한·1-D/F 미완료·타 담당·master#143 초안/충돌은 보존한다. 최신 문서 PR CI/병합은 실제 상태로 따로 확인한다.
+
+### INT-SCORE-006 — MF-2 파일럿 사람 판단 가져오기·평가 (2026-10-23)
+
+- 사용자 판단 / develop6446504 기준. `judge-01`의 24쌍 판단을 가져와 기존 평가기로 측정했다. 첫 파일은 `st-02` 근거 누락으로 거부됐고, 평가 전 사용자가 그 쌍을 다시 판단한 파일(`f1b4044f…`)을 사용했다. 거부 파일을 보존했다.
+- 판단 후 세트 `b7b4e02a…`, 대기0. 보류8: 다요소6/8·OVR2/8, 조정16: 다요소14/16·OVR7/16. 약발 제거11/16·주력 제거12/16. `passed=null`·기준 없음. OVR 근접 쌍만 고른 선택 편향·판단자1명·프로필별 보류1쌍 제한을 유지한다.
+- 가중치 조정·운영 승격·MF-3·새 수집·모델·DB 쓰기·배포 없음. 쌍별 자료·판단·보고서는 Git 제외 로컬. 상세 multi-factor-preference-pilot.md §7.
+
+### INT-SCORE-005 — MF-2 판단 양식의 수치 비교 개선 (2026-10-22)
+
+- 사용자 요청 / develop3d112bd 기반. 같은 항목의 A/B·차이(A−B)를 한 행에 정렬하고 기존 키워드 사전의 한글 이름·같은 색의 수치 강조·신체 비강조·그룹별 반응형 표·쌍 이동을 제공한다. 로컬 HTML 템플릿만 분리하며 서비스 frontend/·API/wire·운영 점수는 유지한다.
+- 기존 브라우저 저장 키·입력 이름·판단 파일 계약·시점을 유지한다. 실제24쌍의 form.html만 같은 경로로 갱신하고 원본과 별도 영수증을 보존했다. 기존JSON5개·세트44becdaf·쌍/A/B/정책은 불변이다. 실제 판단을 작성하지 않았으며 선호 평가·가중치 조정은 실행하지 않았다.
+- 합성 회귀3개 추가·전체pytest2,113(32.93초/4worker)·Ruff lint/format281파일·diff 검사 통과. 합성 브라우저와 jsdom에서 기존 임시 입력 복원·쌍 이동/경계·시점·부분 저장→가져오기(2판단/22대기)를 확인했다. 실제 자료·판단·상세 영수증은 Git 제외 로컬에만 둔다. MF-3·새 수집·모델·DB·기존 서버 교체·배포·master#143 병합 없음.
+
+### INT-SCORE-004 — MF-2 실제 선호 평가 결정·준비 (2026-10-22)
+
+- 통합 / 사용자 결정: MF2-D1~D6 모두 권장안(배치 b·원래 유효 구간, core-stat-foot, 24쌍·사용자 단독·규칙 추출 후 검토, 프로필별 2:1·시드123, 현재 지표, 측정만, ability만). 기준 develop b568efbacc50a8d1c4bb2f541c4de4e5aca272a4. docs/multi-factor-preference-pilot.md에 결정·도구·실제 준비 결과·판단 방법을 기록한다.
+- FRS/evaluation/preference_prep.py에 명시 선정 규칙(mf-pair-selection.v1)·결정적 쌍 추출·블라인드 판단 양식·판단 파일(mf-judgment-sheet.v1) 가져오기를 추가하고, 평가기의 필드 감사를 field_issues로 분리했다(예제 보고서 해시 불변). 다요소 점수는 선정에 쓰지 않는다.
+- 실제 준비: real-data-20261022-b 읽기 전용, 24쌍·인물48·조정16/보류8·필드 문제0, 판단 전 세트44becdaf. 쌍별 OVR/점수는 판단자인 사용자에게 공개하지 않았다. 사람 판단 없음, 실제 일치율 미평가. 상세 자료는 Git 제외 artifacts/multi-factor-evaluation/mf2-pilot-20261022-b.
+- 검증: 신규21/전체pytest2,110·Ruff lint·format283파일·환경/pip 통과, 합성 양식 jsdom 저장→가져오기 확인. 최신 head CI/PR은 실제 상태로 확인한다. 웹·frontend/·WEB-*·운영 엔진/API/MCP 변경 없음, 상대 수신 주장 없음. 수집·모델·DB 쓰기·학습·서버·배포0, 관측 상태/기한·종료 실행·타 담당 체크아웃·master PR#143 보존.
+
+### INT-CI-001 — 웹 타입·테스트·빌드 자동 검증 (2026-10-22)
+
+- 통합 / 사용자가 MF-2 실제 평가 준비를 다른 담당에게 맡겼음을 확인한 후 독립 웹 CI를 진행했다. 기준 developb568efbacc50a8d1c4bb2f541c4de4e5aca272a4의 공용 기록/웹 설계도 확인. docs/frontend-ci.md에 기존 미구축 상태의 후속과 검증 한계를 기록한다.
+- 새 frontend.yml은 기존 Python CI와 같은 세 대상 PR/push에서 Node22.23.3/npm10.9.9·lock 설치·타입 검사·테스트·빌드를 수행한다. checkout/setup-node는 SHA 고정, contents:read·10분·npm lock 캐시이며 기존 Python workflow는 유지한다.
+- 로컬 웹 타입/129테스트/빌드, 전체pytest2,089(35.17초/4worker)·Ruff lint/format278·환경/pip·문서 링크, YAML 이벤트/작업 경로/캐시/SHA/실패 정책을 확인했다. 최신 head의 실제 Python/웹 CI 결과는 PR에서 확인한다.
+- frontend 문서/지침의 CI 상태만 갱신하고 웹 앱·package/lock·API/엔진·MF-2/3·WEB-*는 수정하지 않는다. 경로 보호/브랜치 보호 설정·실모델·브라우저·DB·수집·배포는 포함하지 않으며 상대 수신/확인을 주장하지 않는다. master#143 초안/충돌·소진 승인·기존 자료/기한·타 담당은 보존한다.
+
+### INT-SCORE-003 — MF-2 선호 평가 계약·도구 (2026-10-22)
+
+- 통합 / 사용자 MF-2 진행 요청, 기준 develop77e4fe2079675c16ffb51702e62308bea7f243c0(#141·#142 병합 후)과 INT-SCORE-001/002 확인. docs/multi-factor-preference-evaluation.md에 코드·설계 차이 검토, 세트/보고서 계약, 사용법, 결정 대기 MF2-D1~D6을 기록한다.
+- FRS/evaluation/multi_factor.py에 PreferenceSet(쌍·슬롯·관측 키·강화·배치/정책 버전·출처·판단·근거·판단자·성향·시점·조정/보류)·순수 평가기·오프라인 CLI를 추가했다. 정답은 판단 자료이며 scorer 출력으로 만들지 않는다. 사람/합성 판단·조정/보류 분할을 합치지 않고, 보류 평가용 사람 판단이 없으면 품질 not_evaluated, 기준 없음(criteria/passed=null)이다.
+- 검증: 신규37/전체pytest2,089(32.92초/4worker)·Ruff lint·format280파일·환경/pip 통과. 합성 예제는 가상 카드8·합성 판단4건이며 실제 선호 일치율이 아니다. 최신 head CI/PR은 실제 상태로 확인한다.
+- 운영 OVR scorer/스냅샷/CP-SAT/탐욕/독립 스쿼드 검증/Agent/API/MCP/웹 및 WEB-*·frontend/는 수정하지 않았다. 웹 영향 없음(새 wire 없음). 상대 수신/확인을 주장하지 않는다. 실자료/DB·모델/metadata·수집·학습·서버/브라우저·배포0, 이전 실행/잠금·관측 상태/기한·1-D/F 미완료·타 담당 체크아웃과 master PR#143 상태 보존.
+
+### INT-SCORE-002 — MF-1 순수 다요소 scorer 구현 (2026-10-22)
+
+- 통합 / 사용자 설계 기반 구현 요청, 기준 develop6c07be70bea0d3209d501bdab6e1ca6346f65367 및 INT-SCORE-001/웹 설계도 확인. 첫 증분은 명시 실험 정책·순수 계산·합성 검증이다. docs/multi-factor-performance-implementation.md에 입력/출력·검증·후속 경계를 기록한다.
+- ScoringPolicy의 불변 중첩 입력/완전성/정규 해시, 명시 버전/슬롯 프로필, 기본5강+정확 강화 차이, 유리수/HALF_UP 정수 점수, 그룹/약발/명시 신체 선호·기여/원시 값·입력/관측 출처·제외 사유를 추가했다. 초안 수치는 명시 experimental JSON 예제로 제공하고 자동 로드/운영 채택하지 않는다.
+- 신규155/전체pytest2,052(36.94초/4worker)·Ruff lint/format274(Python273·문서예제1)·환경/pip 통과. 예시6378/7369·범위/누락/기한·역할별 체형·변조/행 순서·수기 산술/반올림·입력 불변/I/O 부재를 확인했다. 최신 head CI/PR은 별도 확인하며 실제 선수 선호/추천 품질 검증으로 보고하지 않는다.
+- 운영 OVR scorer/스냅샷/CP-SAT/탐욕/독립 스쿼드 검증/Agent/API/MCP/웹 및 WEB-*는 유지한다. 향후 새 목적/동점/출력 wire와 MF-2 비교 자료/판정은 별도 확정 범위다. 상대 수신/확인·정책 합의를 주장하지 않는다. 실자료/DB·모델/metadata·수집·서버/브라우저·배포0, 이전 실행/잠금·관측 상태/기한·1-D/F 미완료·타 담당 보존.
+
+### INT-SCORE-001 — 다요소 선수 성능 평가 설계 (2026-10-22)
+
+- 통합 / 기준 develop58c954e7a64753fda0e0dc7fbeca053f46472ed5의 공용 기록·웹 설계도·실제 코드를 확인했다. 사용자 요청은 약발·체형·주력·포지션별 핵심 능력치를 반영하는 평가의 설계다. docs/multi-factor-performance-design.md에 MF-0 초안을 작성한다.
+- 현재 D7 OVR/2와 동점 예산 계약은 유지한다. 세부 능력치 중심 가중합·비선형 약발·신체 선호 함수·core/body 정책 분리·정수 점수·전수/선호 검증·이행은 제안이다. 사용자 방향 동의를 수치/품질 기준/구현 승인으로 확대하지 않는다.
+- 웹 영향: 향후 새 점수·구성 근거·정책/프로필·합계 단위를 표시하려면 wire/출력 계약을 별도 확인해야 한다. 현행 web-agent.v1/healthv2·frontend/·WEB-*는 수정하지 않는다. 이 기록으로 상대 수신/확인이나 새 계약 합의를 주장하지 않는다.
+- 현재 scorer/스냅샷/solver/validator/출력의 OVR 의존성을 함께 기록했다. 구현·실제 추천/관측 파일 읽기·수집·학습·모델/metadata·DB/서버/브라우저·배포는 실행하지 않는다. 과거 실행/잠금·자료 기한·1-D/F 미완료와 타 담당 체크아웃을 보존한다.
+- 문서 로컬 링크·내부 합7개/프로필 합8개·34고유 키/20슬롯·약발표·가상6378/7369점수단위·Git diff 검증을 통과했다. 새 기능이 없어 로컬 기능 테스트는 미실행이며 PR CI의 기존 회귀 결과/병합 상태는 실제 확인 뒤 보고한다. 문서 병합은 미확정 점수 정책 채택을 뜻하지 않는다.
 
 ### INT-034 — W8 문서 Q&A·선택적 LangSmith 구현 (2026-10-21)
 

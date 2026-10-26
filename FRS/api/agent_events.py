@@ -8,7 +8,13 @@ from pydantic import Field, TypeAdapter, field_validator
 
 from FRS.agent.candidates import canonical
 from FRS.agent.json_contract import strict_json
-from FRS.api.agent_contract import WEB_CONTRACT, DataMode, WireModel
+from FRS.api.agent_contract import (
+    WEB_CONTRACT,
+    WEB_CONTRACT_V2,
+    DataMode,
+    Objective,
+    WireModel,
+)
 from FRS.api.agent_projection import WebOutcome, error_outcome, projection_spec
 
 MAX_BODY_BYTES = 65536
@@ -37,6 +43,13 @@ class StreamRequest(WireModel):
         return value
 
 
+class StreamRequestV2(StreamRequest):
+    """v2는 웹이 고른 추천 방식을 필수로 받는다. v1 요청 모델은 바꾸지 않는다."""
+
+    contract_version: Literal["web-agent.v2"]
+    objective: Objective
+
+
 class RequestError(ValueError):
     def __init__(self, code, status_code=422):
         self.code, self.status_code = code, status_code
@@ -49,7 +62,14 @@ def parse_request(raw):
     if len(raw) > MAX_BODY_BYTES:
         raise RequestError("body_too_large", 413)
     try:
-        return StreamRequest.model_validate(strict_json(raw.decode("utf-8")))
+        data = strict_json(raw.decode("utf-8"))
+        model = (
+            StreamRequestV2
+            if isinstance(data, dict)
+            and data.get("contract_version") == WEB_CONTRACT_V2
+            else StreamRequest
+        )
+        return model.model_validate(data)
     except (ValueError, TypeError, RecursionError) as exc:
         raise RequestError("invalid_request") from exc
 
@@ -73,9 +93,12 @@ def event_spec():
 
 
 class EventSequence:
-    def __init__(self, request_id, data_mode="synthetic"):
+    def __init__(self, request_id, data_mode="synthetic", contract=WEB_CONTRACT):
         self.request_id = TypeAdapter(RequestId).validate_python(request_id)
         self.data_mode = TypeAdapter(DataMode).validate_python(data_mode)
+        if contract not in (WEB_CONTRACT, WEB_CONTRACT_V2):
+            raise ValueError("지원하는 웹 계약 버전이 필요합니다.")
+        self.contract = contract
         self._seq, self._started, self._terminal = 0, False, False
 
     def _encode(self, kind, payload):
@@ -83,7 +106,7 @@ class EventSequence:
             raise ValueError("SSE 실행 순서가 일치하지 않습니다.")
         encoded = canonical(
             dict(
-                contract_version=WEB_CONTRACT,
+                contract_version=self.contract,
                 request_id=self.request_id,
                 seq=self._seq,
                 type=kind,
@@ -108,7 +131,9 @@ class EventSequence:
     def terminal(self, outcome, *, clock):
         if self._terminal or not self._started:
             raise ValueError("SSE 종료 순서가 일치하지 않습니다.")
-        if type(outcome) is not WebOutcome:
+        if type(outcome) is not WebOutcome or (
+            outcome.kind == "final" and outcome.contract != self.contract
+        ):
             outcome = error_outcome()
         try:
             payload = json.loads(outcome.encode_payload(clock=clock))

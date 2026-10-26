@@ -21,7 +21,13 @@ from datetime import datetime
 from pathlib import Path
 
 from FRS.core.reinforcement import reinforcement_delta
-from FRS.schema.models import CardPrice, PlayerCard, ReinforceStats, TeamColor
+from FRS.schema.models import (
+    CardPrice,
+    CardSalary,
+    PlayerCard,
+    ReinforceStats,
+    TeamColor,
+)
 from FRS.utils.crawling.ability_parser import ParseContext, keyword_map
 from FRS.utils.crawling.realdata_catalog import (
     ABILITY_URL,
@@ -32,6 +38,8 @@ from FRS.utils.crawling.realdata_catalog import (
     MIXED_ELIGIBILITY_BASIS,
     OVR_MAX,
     OVR_MIN,
+    PRICE_FILES,
+    PRICES_COLLECTED,
     ClubSpec,
     NationSpec,
     RealDataRun,
@@ -117,6 +125,14 @@ def check_intervals(state, responses):
     require(valid, "요청 간격이 1초보다 짧습니다")
 
 
+def prices_only(state):
+    return state.get("mode") == "prices_only"
+
+
+def expected_files(state):
+    return PRICE_FILES if prices_only(state) else PROCESSED_FILES
+
+
 def check_records(raw_path, processed_path):
     """1단계. manifest·원본·보고서의 형식과 해시를 대조하고 원본 본문을 돌려준다."""
     state = json.loads((raw_path / "manifest.json").read_text(encoding="utf-8"))
@@ -128,7 +144,10 @@ def check_records(raw_path, processed_path):
         "실행 ID와 경로가 다릅니다",
     )
     require(
-        state["status"] == report["status"] == "completed",
+        state.get("mode") == report.get("mode")
+        and state["status"]
+        == report["status"]
+        == (PRICES_COLLECTED if prices_only(state) else "completed"),
         "완료한 실행만 검증합니다",
     )
     require(timing_version(state) == timing_version(report), "요청 시각 형식 불일치")
@@ -183,7 +202,7 @@ def check_records(raw_path, processed_path):
     )
     hashes = report["processed_hashes"]
     require(
-        set(hashes) == {f"{name}.jsonl" for name in PROCESSED_FILES}
+        set(hashes) == {f"{name}.jsonl" for name in expected_files(state)}
         and {p.name for p in processed_path.glob("*.jsonl")} == set(hashes),
         "가공 파일 목록이 다릅니다",
     )
@@ -261,6 +280,7 @@ def replay(
             positions=positions,
             position_field=position_field,
             allow_empty_cells=allow_empty_cells,
+            prices_only=prices_only(state),
             split_ovr=state.get("split_ovr", False),
             clock=clock,
             timing_version=timing_version(state),
@@ -268,7 +288,7 @@ def replay(
         holder["run"] = run
         replayed = run.execute()
         require(
-            replayed["status"] == "completed",
+            replayed["status"] == state["status"],
             f"재생이 멈췄습니다: {replayed['stop_reason']}",
         )
         require(
@@ -299,7 +319,7 @@ def replay(
                 _canonical(replayed[key]) == _canonical(report.get(key, 0)),
                 f"재생한 보고서의 {key}가 다릅니다",
             )
-        for name in PROCESSED_FILES:
+        for name in expected_files(state):
             require(
                 (root / "processed" / state["run_id"] / f"{name}.jsonl").read_bytes()
                 == (processed_path / f"{name}.jsonl").read_bytes(),
@@ -424,7 +444,23 @@ def check_independently(
         require(edge == BANDS[-1][1] + 1, f"{club}: 급여 범위를 다 덮지 않습니다")
     check_ovr_leaves(state, leaves, split_rows)
     require(len(catalog) == report["catalog_cards"], "목록 카드 수가 다릅니다")
+    if prices_only(state):
+        require(not abilities, "가격 갱신 실행에 능력치 요청이 있습니다")
+        salaries = read_jsonl(processed_path / "catalog_salary.jsonl", CardSalary)
+        require(
+            sorted(s.spid for s in salaries) == sorted(catalog)
+            and all(s.reinforce_level == 5 for s in salaries)
+            and report["profile_cards"] == 0,
+            "목록 급여가 목록 카드와 다릅니다",
+        )
+    else:
+        check_profiles(report, abilities, catalog, memberships, names, processed_path)
+    check_memberships_and_prices(state, report, processed_path, memberships)
+    return len(leaves)
 
+
+def check_profiles(report, abilities, catalog, memberships, names, processed_path):
+    """능력치 상세·강화 파생을 원본에서 읽은 값과 대조한다(전체 수집 실행)."""
     cards = {
         c.spid: c for c in read_jsonl(processed_path / "player_card.jsonl", PlayerCard)
     }
@@ -473,6 +509,9 @@ def check_independently(
             == {p: v + delta for p, v in card.position_ovr.items()},
             f"{row.spid}: {row.reinforce_level}강 파생이 강화 표와 다릅니다",
         )
+
+
+def check_memberships_and_prices(state, report, processed_path, memberships):
     colors = read_jsonl(processed_path / "team_color.jsonl", TeamColor)
     require(
         {(c.name, c.spid) for c in colors} == memberships
@@ -498,7 +537,6 @@ def check_independently(
         ),
         "가격 충돌 키가 unknown으로 남지 않았습니다",
     )
-    return len(leaves)
 
 
 def verify(
@@ -537,7 +575,7 @@ def verify(
         leaf_cells=leaves,
         catalog_cards=report["catalog_cards"],
         profile_cards=report["profile_cards"],
-        replayed_processed_files=len(PROCESSED_FILES),
+        replayed_processed_files=len(expected_files(state)),
         network_requests=0,
     )
 

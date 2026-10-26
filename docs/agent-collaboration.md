@@ -59,6 +59,10 @@
 - WEB-V2-001(PR #157) 검토·병합: 파일 경계(frontend/와 WEB 항목)·계약 대조·최신 head CI 확인 후 2789463. 제안 반영(fix/v2-stage-order): 서버 DTO 단계 순서·중복 검사, 계약 §4·§9에 단계 값 의미·search_seconds 표기.
 - 웹 담당 요청(WEB 후속): 방식 목록 조회·선택 UI(기본 OVR·사용 가능 방식만), v2 파서와 점수/단계/정책·실험 표시, v1 파서 유지. 실제 연결 전 서버 구현 PR SHA를 이 기록에서 확인한다. 통합 담당은 frontend/를 수정하지 않는다.
 
+### INT-RD-PRICE-001 — 가격만 갱신하는 목록 실행과 파생 배치 (2026-10-26)
+
+- 사용자 결정 / develop 490f7e7 기반. 수집기 `--prices-only`(능력치 요청 없음, `prices_collected`), `verify_realdata` 지원, `refresh_prices.py`(기준 카드·급여·강화 + 새 가격·자격, 제외 보고, 재생성 대조). 공급기·엔진·API·웹 계약 변경 없음. 실제 실행·DB·서비스 전환은 별도 승인. 상세 real-data-branch-design §12.23.
+
 ### INT-WEB-V2-002 — web-agent.v2 실제 관측 자료 E2E (2026-10-26)
 
 - 사용자 승인 / develop 2379b59. 리버풀 재수집 `real-data-20261023-a`(1,656회 completed) 후 `observed-web-e2e-20261026-008`: 정적 빌드 웹(5173)→Agent 8001(파일 모드·정책 해시 지정)→qwen3:8b. 같은 문장으로 OVR·다요소 각 1회 optimal, 저장 final WebFinalV2 통과, 화면에 방식·실험 표시·점수·단계 요약 표시 확인.

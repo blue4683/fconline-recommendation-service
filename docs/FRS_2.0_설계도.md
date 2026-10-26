@@ -793,6 +793,8 @@ Stage 3 엔진 호출. LLM은 선수를 고르지 않는다.
 
 ## 11. 검증 로그
 
+2026-10-26 master 이력 동기화: master `c3905eb` tree = develop 조상 `110cf43` tree 확인 후, develop tree 그대로 master를 부모로 기록한 #161을 사용자 승인으로 merge commit `ef14b1c` 병합(tree `3238f59` 불변). 이후 master는 develop의 조상이고 develop→master PR #143은 충돌 없음. master 병합·배포 없음.
+
 2026-10-26 web-agent.v2 실제 E2E: 리버풀 재수집 `real-data-20261023-a` 1,656/1,800회 completed·verify_realdata 통과(가격 기한 10/27 08:17 KST). `observed-web-e2e-20261026-008` 실제 qwen3:8b·브라우저로 같은 문장 OVR(1,538·GK136)·다요소(1,528·필드1,406·GK122·777.51) 모두 optimal, 저장 final WebFinalV2 통과. 상태2·추론2·외부 연결 차단0. 다요소 모드 GK가 OVR 모드보다 낮은 경우를 관찰(양보폭15 의도 동작). 문서만 변경.
 
 2026-10-23 GK 우선 합성 진단: 24문제(조건 행렬18·급여 부족3·전수3) 두 모드 비교. strict zip의 해 없는 종료 오류 수정 후 주 목적 optimal21/해 없음3·불일치0, 가격 최적 OVR21/GK14(7 미완료), 전수3/3 일치. 행렬18 요청 p50/p95 OVR0.098/2.675초·GK0.192/30.241초. 신규14/전체pytest2,191·Ruff 통과. 단회 합성 측정이며 운영 SLA/선호 품질·D6 판정 불변, criteria/passed=null. INT-MF3-BENCH-001.

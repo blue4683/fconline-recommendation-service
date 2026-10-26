@@ -48,6 +48,8 @@
 
 **master 이력 동기화 1회 예외 (2026-10-26 사용자 승인):** master의 squash 승격 커밋이 develop 조상이 아니어서 develop→master PR이 충돌했다. master `c3905eb`의 tree가 develop 조상 `110cf43`과 같음을 확인하고, develop tree를 그대로 둔 master 병합 PR #161만 merge commit(`ef14b1c`)으로 병합했다. 다른 PR은 계속 Squash merge다. 이 예외는 master 병합·배포 승인이 아니다.
 
+**master 승격 병합 방식 (2026-10-26 사용자 결정):** 사용자 요청으로 develop `3a24ab3`을 #143으로 master에 merge commit(`852f79e`) 병합했다. develop→master 승격은 merge commit으로 해 master가 develop의 조상으로 남게 한다(squash 승격은 다음 승격 충돌을 만든다). develop 대상 작업 PR은 계속 Squash merge다. master 병합 자체는 매번 별도 요청이 필요하며 배포 승인이 아니다.
+
 **완료 브랜치 정리 (2026-10-20 사용자 승인):** 기존 완료분과 이후 완료되는 작업 브랜치를 로컬·원격 모두 정리한다. PR의 실제 병합 여부, 현재 브랜치 끝과 병합 당시 head의 일치(또는 그 끝이 PR 병합 커밋 자체이고 develop에 포함됨), 병합 결과의 develop 도달 여부, 다른 열린 PR/사용 중인 작업 디렉터리 여부를 먼저 확인한다. Squash 병합은 단순 조상 검사만으로 완료를 판정하지 않는다. develop/master/main, 미병합·추가 커밋·사용 중인 브랜치와 다른 담당의 활성 브랜치는 보존한다. 작업 중인 브랜치는 다음 브랜치로 이동한 뒤 삭제한다. 삭제·보류 결과를 보고하며, 이 승인은 강제 푸시·기존 이력 재작성을 포함하지 않는다. 확인이 불충분한 브랜치는 보존하고 사유를 기록한다.
 
 ## 브랜치 이름

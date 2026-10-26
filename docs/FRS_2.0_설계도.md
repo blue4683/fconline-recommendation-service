@@ -793,6 +793,8 @@ Stage 3 엔진 호출. LLM은 선수를 고르지 않는다.
 
 ## 11. 검증 로그
 
+2026-10-26 master 승격: 사용자 요청으로 #143(develop `3a24ab3`, 32커밋)을 draft 해제 후 merge commit `852f79e`로 master 병합. 정확한 head의 Python/웹 CI와 master push CI(40250979522/40250979530) 통과, master tree = develop tree. 배포·수집·모델 호출 없음.
+
 2026-10-26 master 이력 동기화: master `c3905eb` tree = develop 조상 `110cf43` tree 확인 후, develop tree 그대로 master를 부모로 기록한 #161을 사용자 승인으로 merge commit `ef14b1c` 병합(tree `3238f59` 불변). 이후 master는 develop의 조상이고 develop→master PR #143은 충돌 없음. master 병합·배포 없음.
 
 2026-10-26 web-agent.v2 실제 E2E: 리버풀 재수집 `real-data-20261023-a` 1,656/1,800회 completed·verify_realdata 통과(가격 기한 10/27 08:17 KST). `observed-web-e2e-20261026-008` 실제 qwen3:8b·브라우저로 같은 문장 OVR(1,538·GK136)·다요소(1,528·필드1,406·GK122·777.51) 모두 optimal, 저장 final WebFinalV2 통과. 상태2·추론2·외부 연결 차단0. 다요소 모드 GK가 OVR 모드보다 낮은 경우를 관찰(양보폭15 의도 동작). 문서만 변경.

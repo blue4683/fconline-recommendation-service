@@ -69,6 +69,10 @@ REQUIRED_KEYS = (
     *(f"strSkill{i}" for i in range(1, 5)),
 )
 BONUSES = (0, 1, 2, 4, 6, 8, 11, 15, 17, 19, 21, 24, 27)
+# 가격만 갱신하는 실행(2026-10-26 사용자 결정)의 가공 파일. 능력치·강화 파일은 없고,
+# 기존 완료 배치와 합칠 때 쓰는 목록 급여(5강)를 따로 남긴다.
+PRICE_FILES = ("card_price", "team_color", "catalog_salary")
+PRICES_COLLECTED = "prices_collected"
 
 
 class CatalogStopped(RuntimeError):
@@ -320,11 +324,14 @@ class RealDataRun:
         position_field=None,
         allow_empty_cells=False,
         catalog_only=False,
+        prices_only=False,
         split_ovr=False,
         clock=_now,
         timing_version=1,
     ):
         validate_run_id(run_id)
+        if catalog_only and prices_only:
+            raise ValueError("측정 실행과 가격 갱신 실행은 함께 쓸 수 없습니다.")
         if type(timing_version) is not int or timing_version not in (1, 2):
             raise ValueError("지원하는 요청 시각 형식은 1 또는 2입니다.")
         self.timing_version = timing_version
@@ -348,6 +355,7 @@ class RealDataRun:
             raise ValueError("포지션 목록에는 확인된 필드 이름이 필요합니다.")
         self.allow_empty_cells = allow_empty_cells
         self.catalog_only = catalog_only
+        self.prices_only = prices_only
         self.split_ovr = split_ovr
         if split_ovr:
             if not self.positions:
@@ -403,6 +411,8 @@ class RealDataRun:
             self.state["nations"] = nations
         if split_ovr:
             self.state["split_ovr"] = True
+        if prices_only:
+            self.state["mode"] = "prices_only"
         if timing_version == 2:
             self.state["timing_version"] = 2
         self.flush()
@@ -707,6 +717,37 @@ class RealDataRun:
                 )
             )
 
+    def catalog_salaries(self):
+        """목록의 5강 급여를 관측 그대로 남긴다. 합칠 때 기존 배치 급여와 대조한다."""
+        at = self.clock()
+        return [
+            CardSalary(
+                batch_id=self.run_id,
+                source="nexon_web",
+                observed_at=row.observed_at,
+                delete_after=None,
+                spid=spid,
+                version=row.version,
+                reinforce_level=5,
+                salary=row.salary,
+                **_policy_values(Resource.SALARY, row.observed_at, at),
+            )
+            for spid, row in sorted(self.rows.items())
+        ]
+
+    def save_prices(self):
+        records = dict(
+            card_price=list(self.prices.values()),
+            team_color=list(self.memberships.values()),
+            catalog_salary=self.catalog_salaries(),
+        )
+        for name in PRICE_FILES:
+            path = self.processed_path / f"{name}.jsonl"
+            path.write_text(
+                "".join(row.model_dump_json() + "\n" for row in records[name]),
+                encoding="utf-8",
+            )
+
     def save(self):
         self.records["card_price"] = list(self.prices.values())
         self.records["team_color"] = list(self.memberships.values())
@@ -724,6 +765,11 @@ class RealDataRun:
             if self.catalog_only:
                 # 측정 실행: 목록·급여 대조까지만 하고 능력치·가공 파일은 만들지 않는다.
                 self.state["status"] = "catalog_measured"
+            elif self.prices_only:
+                # 가격 갱신 실행: 능력치 요청 없이 가격·자격·목록 급여만 남긴다. 이 결과만으로는
+                # 공급기가 읽지 않으며, 기존 완료 배치와 합친 파생 배치로만 쓴다.
+                self.save_prices()
+                self.state["status"] = PRICES_COLLECTED
             else:
                 self.collect_abilities()
                 self.save()
@@ -762,21 +808,30 @@ class RealDataRun:
         )
         if self.timing_version == 2:
             report["timing_version"] = 2
+        if self.prices_only:
+            report["mode"] = "prices_only"
         _write_json(self.processed_path / "report.json", report)
         return report
 
 
-def plan(clubs, *, max_attempts=None, catalog_only=False, split_ovr=False):
+def plan(
+    clubs, *, max_attempts=None, catalog_only=False, prices_only=False, split_ovr=False
+):
     cells = initial_cells(clubs)
+    if catalog_only and prices_only:
+        raise ValueError("측정 실행과 가격 갱신 실행은 함께 쓸 수 없습니다.")
+    mode = "catalog_only" if catalog_only else "prices_only" if prices_only else "full"
     return dict(
         scope="real_data_branch_single_run",
-        mode="catalog_only" if catalog_only else "full",
+        mode=mode,
         eligibility_basis=eligibility_basis(c.club for c in cells),
         initial_list_requests=len(cells),
         split_rule="only_when_exactly_200_rows",
         split_order=["salary", "position", *(["ovr"] if split_ovr else [])],
         parity_requests=len(tuple(dict.fromkeys(c.club for c in cells))),
-        ability_requests=0 if catalog_only else "one_per_unique_card_at_reinforce_5",
+        ability_requests=0
+        if catalog_only or prices_only
+        else "one_per_unique_card_at_reinforce_5",
         price_conflict="mark_key_unknown_and_report",
         retries=0,
         min_request_interval_seconds=1,
@@ -879,6 +934,11 @@ def main(argv=None):
         help="목록·급여 대조만 요청해 카드 수를 잰다. 능력치·가공 파일 없음",
     )
     parser.add_argument(
+        "--prices-only",
+        action="store_true",
+        help="목록·급여 대조만 요청해 가격·자격·목록 급여를 남긴다. 기존 배치와 합쳐 쓴다",
+    )
+    parser.add_argument(
         "--split-ovr",
         action="store_true",
         help="포지션까지 나눠도 200장인 칸을 OVR 범위로 더 나눈다",
@@ -894,6 +954,7 @@ def main(argv=None):
                     teams,
                     max_attempts=args.max_attempts,
                     catalog_only=args.catalog_only,
+                    prices_only=args.prices_only,
                     split_ovr=args.split_ovr,
                 ),
                 ensure_ascii=False,
@@ -922,12 +983,17 @@ def main(argv=None):
             position_field=args.position_field,
             allow_empty_cells=args.allow_empty_cells,
             catalog_only=args.catalog_only,
+            prices_only=args.prices_only,
             split_ovr=args.split_ovr,
             timing_version=2,
         )
         report = run.execute()
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0 if report["status"] in ("completed", "catalog_measured") else 1
+    return (
+        0
+        if report["status"] in ("completed", "catalog_measured", PRICES_COLLECTED)
+        else 1
+    )
 
 
 if __name__ == "__main__":

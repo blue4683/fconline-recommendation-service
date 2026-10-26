@@ -512,3 +512,5 @@ OVR 분할 구현(`--split-ovr`, 네트워크 0):
 
 남은 일: 가격은 24시간마다 다시 받아야 한다(다음 가격 실행마다 새 run-id·상한 승인). 기준 b의 기한(10/29 08:30 KST) 뒤에는 전체 수집이 필요하다. data 체크아웃의 코드는 master `cfcbe82`라 web-agent.v2가 없으므로, 상주 Agent를 그 체크아웃에서 시작하려면 코드 갱신을 먼저 정해야 한다.
 
+후속(같은 날, 사용자 승인): data 체크아웃의 로컬 master를 `cfcbe82`에서 `994561e`로 fast-forward했다(작업 트리 변경·의존성 파일 변경 없음, `.env` 바이트 불변, `--check-environment` 통과). 상주 Agent는 시작하지 않았다. 새 `.env.example` 키 `AGENT_SCORING_POLICY_PATH`·`AGENT_SCORING_POLICY_VERSION`은 data 체크아웃 `.env`에 없으므로, 그대로 시작하면 다요소 방식은 꺼진다. 이 값 설정은 별도 결정이다. 같은 요청으로 #166을 #167로 master에 merge commit `21b9e5f` 병합했다(master tree = develop tree).
+

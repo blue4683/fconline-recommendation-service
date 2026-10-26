@@ -795,6 +795,8 @@ Stage 3 엔진 호출. LLM은 선수를 고르지 않는다.
 
 ## 11. 검증 로그
 
+2026-10-26 data 체크아웃 코드 갱신: 로컬 master `cfcbe82`→`994561e` fast-forward, `.env` 불변·의존성 변경 없음·`--check-environment` 통과, 상주 Agent 미시작. #167(#166 문서) master merge commit `21b9e5f`, master tree = develop tree.
+
 2026-10-26 첫 가격 갱신: `real-data-20261026-prices-a` 86/100회 prices_collected·검증 통과, 파생 `real-data-20261026-refresh-a`(기준 b, 5,445장·제외0·`--verify` 통과), DB 1회 적재 건수 일치, Agent run-id 전환 후 모델 없는 시작 확인(material·기한 새 배치). #165 master merge commit `994561e`·CI 통과. 가격 기한 10/27 12:41 KST.
 
 2026-10-26 가격만 갱신 구현: 수집기 `--prices-only`·검증기·`refresh_prices` 파생. 합성7·전체pytest2,198·Ruff 통과. 저장된 리버풀 목록22개 재생(네트워크0)으로 기준 a/3클럽 b와 파생·`--verify` 통과, b 기준도 리버풀1,634장 유지·급여 불일치0, OVR 결과가 실제 E2E와 같고 기한은 새 가격 기준. 실제 가격 실행 없음.
